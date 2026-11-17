@@ -244,7 +244,7 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
         onConfirm={() => backfillMut.mutate(s.id, { onSuccess: () => setRebuild(false) })}
         body={
           <div className="flex flex-col gap-2 text-sm">
-            <p>{tr("清空当前推算结果，改用币安公开的全部成交记录（约最近 2 个月）重新推算。", "Discards the current reconstruction and replays every fill Binance still lists (about the last 2 months).")}</p>
+            <p>{tr("清空当前推算结果，改用币安公开的全部成交记录（约最近 2 个月；成交多的带单员只有最近约 6000 笔）重新推算。", "Discards the current reconstruction and replays every fill Binance still lists (about the last 2 months; only the latest ~6000 for very active traders).")}</p>
             <ul className="list-disc pl-5 text-muted-fg">
               <li>{tr("比这更早开的仓位依然看不到；在那之前开、之后加仓的仓位只会算到加仓部分。", "Positions opened before that stay invisible; ones opened earlier and added to later only count the added part.")}</li>
               <li>{tr("使用该信号源的任务需先停止。重建后再启动，任务会按启动策略处理这些仓位。", "Tasks using this source must be stopped first. When started again, they treat these positions per their start policy.")}</li>
@@ -400,7 +400,7 @@ function AddLeadModal({ open, onClose, onAdded }: { open: boolean; onClose: () =
             <p>{tr(`「${hidden?.nickname ?? ""}」没有公开持仓，只能用他公开的成交记录推算仓位：`, `"${hidden?.nickname ?? ""}" hides positions; they can only be reconstructed from public fills:`)}</p>
             <ul className="list-disc pl-5 text-muted-fg">
               <li>{tr("比带单员实际成交晚约 2 分钟（实测 122–135 秒），进出频繁的带单员不适合跟。", "About 2 minutes behind the trader (measured 122–135 s); a poor fit for fast in-and-out traders.")}</li>
-              <li>{tr("添加后会用公开的历史成交（约最近 2 个月）推算当前仓位；更早开的仓位看不到。", "After adding, current positions are rebuilt from the public history (about the last 2 months); older positions are invisible.")}</li>
+              <li>{tr("添加后会用公开的历史成交（约最近 2 个月，成交多的只有最近约 6000 笔）推算当前仓位；更早开的仓位看不到。", "After adding, current positions are rebuilt from the public history (about the last 2 months, or the latest ~6000 fills for very active traders); older positions are invisible.")}</li>
               <li>{tr("推算可能与真实持仓不同（例如他平掉历史之前开的仓位时）；杠杆未知。", "The reconstruction can differ from the real positions (e.g. when closing positions older than the history); leverage is unknown.")}</li>
               <li>{tr("数据来自币安网页接口，可能随时失效。", "Data comes from Binance's website API and may stop working.")}</li>
             </ul>
