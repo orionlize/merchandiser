@@ -24,6 +24,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -87,6 +88,10 @@ type leadCache struct {
 	books         map[string]*fillBook
 	// Source id → history backfill job (see leadbackfill.go).
 	backfills map[string]*Backfill
+	// Binance mark prices by symbol, for reconstructed positions.
+	marksMu sync.Mutex
+	marks   map[string]decimal.Decimal
+	marksAt time.Time
 }
 
 var lc = &leadCache{
@@ -534,13 +539,53 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 			return rawSnap{}, err
 		}
 	}
+	recon := st.Positions()
+	// The trader's last fill price can be days old; prefer the live mark.
+	var marks map[string]decimal.Decimal
+	if len(recon) > 0 {
+		marks = l.bnMarks(ctx)
+	}
 	var positions []rawPos
-	for _, p := range st.Positions() {
-		positions = append(positions, rawPos{symbol: p.Symbol, units: p.Qty, entry: p.Entry, mark: p.LastPx, upnl: p.LastPx.Sub(p.Entry).Mul(p.Qty)})
+	for _, p := range recon {
+		mark := p.LastPx
+		if m, ok := marks[p.Symbol]; ok && m.IsPositive() {
+			mark = m
+		}
+		positions = append(positions, rawPos{symbol: p.Symbol, units: p.Qty, entry: p.Entry, mark: mark, upnl: mark.Sub(p.Entry).Mul(p.Qty)})
 	}
 	raw := rawSnap{equity: equity, positions: positions}
 	b.cached = &cachedRaw{time.Now(), raw}
 	return raw, nil
+}
+
+// bnMarks returns live mark prices by symbol, or nil when unreachable.
+// Served from www.binance.com, which answers where fapi.binance.com is
+// geo-blocked. One request covers every symbol; shared for a few seconds.
+func (l *LeadTrader) bnMarks(ctx context.Context) map[string]decimal.Decimal {
+	lc.marksMu.Lock()
+	defer lc.marksMu.Unlock()
+	if lc.marks != nil && time.Since(lc.marksAt) < 5*time.Second {
+		return lc.marks
+	}
+	req, err := newReq(ctx, http.MethodGet, "https://www.binance.com/fapi/v1/premiumIndex", "")
+	if err != nil {
+		return lc.marks
+	}
+	v, err := SendJSON(l.client, model.Binance, req)
+	if err != nil {
+		slog.Debug("binance mark prices", "err", err)
+		return lc.marks
+	}
+	out := map[string]decimal.Decimal{}
+	for _, x := range v.Arr() {
+		if m := x.JDec("markPrice"); m.IsPositive() {
+			out[x.JStr("symbol")] = m
+		}
+	}
+	if len(out) > 0 {
+		lc.marks, lc.marksAt = out, time.Now()
+	}
+	return lc.marks
 }
 
 // leadResolve returns (base, coins per size unit, coins per price unit) for
