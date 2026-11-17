@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Search } from "lucide-react";
+import { BarChart3, ChevronRight, Lock, ReceiptText, ScrollText, Search } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ServerSetup } from "../components/ServerSetup";
 import { Button, Dot, Field, Input, Loading, Modal, Seg, Select, Toggle } from "../components/ui";
 import { api, errMsg, type Platform, type Settings as S, type SymbolRow } from "../lib/api";
-import { time } from "../lib/format";
+import { pnlClass, signed, time } from "../lib/format";
 import { useTr } from "../lib/i18n";
-import { qc, useHealth, useSettings } from "../lib/queries";
+import { qc, useAction, useHealth, useOverview, useSettings } from "../lib/queries";
 import { downloadText, pickTextFile } from "../lib/files";
 import { serverConfig } from "../lib/server";
 import { applyTheme, useUi } from "../lib/store";
@@ -21,24 +21,77 @@ export function Settings() {
     { v: "notify" as const, l: tr("通知与心跳", "Notifications") },
   ];
   return (
-    <div className="flex h-full min-h-0">
-      <nav className="flex w-[170px] shrink-0 flex-col gap-1 px-4 py-6">
+    <div className="flex h-full min-h-0 max-md:flex-col max-md:overflow-y-auto">
+      <MoreHeader />
+      <nav className="flex w-[170px] shrink-0 flex-col gap-1 px-4 py-6 max-md:w-full max-md:flex-row max-md:border-b max-md:border-border max-md:py-2">
         {items.map((i) => (
-          <button key={i.v} onClick={() => setSub(i.v)} className={clsx("h-9 rounded-md px-3 text-left text-sm transition-colors duration-150", sub === i.v ? "bg-muted text-fg" : "text-muted-fg hover:text-fg")}>
+          <button key={i.v} onClick={() => setSub(i.v)} className={clsx("h-9 rounded-md px-3 text-left text-sm whitespace-nowrap transition-colors duration-150", sub === i.v ? "bg-muted text-fg" : "text-muted-fg hover:text-fg")}>
             {i.l}
           </button>
         ))}
       </nav>
-      <div key={sub} className="anim-fade min-w-0 flex-1 overflow-y-auto px-6 py-6">
+      <div key={sub} className="anim-fade min-w-0 flex-1 px-4 py-4 md:overflow-y-auto md:px-6 md:py-6">
         {sub === "general" ? <General /> : sub === "symbols" ? <Symbols /> : <Notify />}
       </div>
     </div>
   );
 }
 
+/** Phone-only top of the "More" tab: e-stop, records and lock, which live in the sidebar on desktop. */
+function MoreHeader() {
+  const tr = useTr();
+  const { go, toast } = useUi();
+  const { data: h } = useHealth();
+  const { data: ov } = useOverview();
+  const estop = useAction(api.estop, { invalidate: [["health"], ["overview"]] });
+  const lock = useAction(api.lock, {});
+  const link = (label: string, right: ReactNode, tab: string, icon: ReactNode) => (
+    <button onClick={() => go("records", tab)} className="flex h-12 w-full items-center gap-3 border-b border-border px-4 text-left text-sm last:border-b-0">
+      <span className="text-muted-fg">{icon}</span>
+      <span className="flex-1">{label}</span>
+      <span className="num text-xs text-muted-fg">{right}</span>
+      <ChevronRight size={14} className="text-muted-fg" />
+    </button>
+  );
+  return (
+    <div className="flex flex-col gap-4 px-4 pt-4 md:hidden">
+      <div className="flex items-center gap-3 border border-danger bg-danger-soft px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-danger">{h?.estopped ? tr("已急停", "E-stopped") : tr("全局急停", "E-stop")}</div>
+          <div className="text-xs text-danger/80">{tr("暂停全部任务并撤销镜像挂单，不平仓", "Pause all tasks, cancel mirrors; positions stay")}</div>
+        </div>
+        <Button variant="danger" disabled={h?.estopped} loading={estop.isPending} onClick={() => estop.mutate(undefined)}>
+          {tr("急停", "Stop")}
+        </Button>
+      </div>
+      <div>
+        <div className="mb-1.5 text-xs text-muted-fg">{tr("记录", "Records")}</div>
+        <div className="border border-border bg-card">
+          {link(tr("收益报表", "PnL report"), <span className={pnlClass(ov?.today_pnl)}>{tr("今日", "Today")} {signed(ov?.today_pnl)}</span>, "pnl", <BarChart3 size={16} />)}
+          {link(tr("成交记录", "Fills"), ov ? tr(`今日 ${ov.today.orders} 笔`, `${ov.today.orders} today`) : "", "fills", <ReceiptText size={16} />)}
+          {link(tr("执行日志", "Execution log"), ov && ov.today.failed > 0 ? <span className="text-danger">{tr(`${ov.today.failed} 条失败`, `${ov.today.failed} failed`)}</span> : "", "log", <ScrollText size={16} />)}
+        </div>
+      </div>
+      <button
+        className="flex h-11 items-center justify-between border border-border bg-card px-4 text-sm text-danger"
+        onClick={async () => {
+          const ok = await lock.mutateAsync(undefined);
+          if (!ok) toast(tr("请先在下方开启应用锁并设置密码", "Enable the app lock below first"), "info");
+        }}
+      >
+        <span className="flex items-center gap-3">
+          <Lock size={16} />
+          {tr("锁定界面", "Lock")}
+        </span>
+        <span className="text-xs text-muted-fg">v0.1.0</span>
+      </button>
+    </div>
+  );
+}
+
 function Row({ title, hint, children }: { title: ReactNode; hint?: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-14 items-center justify-between gap-6 border-b border-border py-3">
+    <div className="flex min-h-14 items-center justify-between gap-4 border-b border-border py-3 md:gap-6">
       <div>
         <div className="text-sm">{title}</div>
         {hint ? <div className="mt-0.5 text-xs text-muted-fg">{hint}</div> : null}

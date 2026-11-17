@@ -25,6 +25,7 @@
   --bar-src: #5e6673;
   --bar-tgt: #9aa3ae;
   --bar-act: #eaecef;
+  --chart-avg: #5b9cff;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -50,6 +51,7 @@
   --bar-src: #c4c8ce;
   --bar-tgt: #8a919c;
   --bar-act: #000000;
+  --chart-avg: #2563eb;
   color-scheme: light;
 }
 

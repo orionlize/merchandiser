@@ -1,10 +1,10 @@
 import clsx from "clsx";
-import { Copy, LayoutGrid, Link2, List, Lock, OctagonX, Radio as RadioIcon, SlidersHorizontal, Workflow } from "lucide-react";
+import { ChevronLeft, Copy, LayoutGrid, Link2, List, Lock, MoreHorizontal, OctagonX, Radio as RadioIcon, SlidersHorizontal, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { api } from "../lib/api";
-import { platformLabel } from "../lib/format";
+import { platformLabel, pnlClass, signed } from "../lib/format";
 import { useTr } from "../lib/i18n";
-import { useAction, useHealth } from "../lib/queries";
+import { useAction, useHealth, useOverview } from "../lib/queries";
 import { useUi, type Page } from "../lib/store";
 import { Dot } from "./ui";
 
@@ -12,8 +12,8 @@ const NAV: { page: Page; icon: typeof LayoutGrid; zh: string; en: string; match:
   { page: "overview", icon: LayoutGrid, zh: "总览", en: "Overview", match: ["overview"] },
   { page: "tasks", icon: Copy, zh: "跟单任务", en: "Copy tasks", match: ["tasks", "task", "wizard"] },
   { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources"] },
-  { page: "connections", icon: Link2, zh: "连接", en: "Connections", match: ["connections"] },
-  { page: "records", icon: List, zh: "记录", en: "Records", match: ["records"] },
+  { page: "connections", icon: Link2, zh: "交易账户", en: "Accounts", match: ["connections"] },
+  { page: "records", icon: List, zh: "成交与盈亏", en: "Fills & PnL", match: ["records"] },
   { page: "settings", icon: SlidersHorizontal, zh: "设置", en: "Settings", match: ["settings"] },
 ];
 
@@ -22,7 +22,7 @@ export function Sidebar() {
   const { route, go, toast } = useUi();
   const lock = useAction(api.lock, {});
   return (
-    <aside className="flex w-[220px] shrink-0 flex-col gap-1 border-r border-border bg-card px-4 pt-6 pb-4">
+    <aside className="flex w-[220px] shrink-0 flex-col gap-1 border-r border-border bg-card px-4 pt-6 pb-4 max-md:hidden">
       <div className="flex items-center gap-2 px-2 pb-6">
         <div className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-primary">
           <Workflow size={14} className="text-on-primary" strokeWidth={2.2} />
@@ -41,6 +41,7 @@ export function Sidebar() {
         );
       })}
       <div className="flex-1" />
+      <TodayCard />
       <button
         onClick={async () => {
           const ok = await lock.mutateAsync(undefined);
@@ -56,29 +57,87 @@ export function Sidebar() {
   );
 }
 
+function TodayCard() {
+  const tr = useTr();
+  const { go } = useUi();
+  const { data } = useOverview();
+  if (!data) return null;
+  const running = data.tasks.filter((t) => t.status === "running").length;
+  return (
+    <button onClick={() => go("overview")} className="mb-2 border border-border bg-bg px-3 py-2.5 text-left hover:border-input">
+      <div className="text-xs text-muted-fg">{tr("今日跟单盈亏", "Today's copy PnL")}</div>
+      <div className={clsx("num mt-0.5 text-md font-semibold", pnlClass(data.today_pnl))}>{signed(data.today_pnl)}</div>
+      <div className="mt-0.5 flex justify-between text-xs text-muted-fg">
+        <span className="num">{signed(data.today_pnl_pct, 2)}%</span>
+        <span>{tr(`${running} 个任务运行`, `${running} running`)}</span>
+      </div>
+    </button>
+  );
+}
+
+const TABS: { page: Page; icon: typeof LayoutGrid; zh: string; en: string; match: Page[] }[] = [
+  { page: "overview", icon: LayoutGrid, zh: "总览", en: "Home", match: ["overview"] },
+  { page: "tasks", icon: Copy, zh: "任务", en: "Tasks", match: ["tasks", "task", "wizard"] },
+  { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources"] },
+  { page: "connections", icon: Wallet, zh: "账户", en: "Accounts", match: ["connections"] },
+  { page: "settings", icon: MoreHorizontal, zh: "更多", en: "More", match: ["settings", "records"] },
+];
+
+/** Phone navigation: five tabs pinned to the bottom. */
+export function BottomTabs() {
+  const tr = useTr();
+  const { route, go } = useUi();
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex h-14 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
+      {TABS.map((n) => {
+        const active = n.match.includes(route.page);
+        const Icon = n.icon;
+        return (
+          <button key={n.page} onClick={() => go(n.page)} className={clsx("flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px]", active ? "text-primary" : "text-muted-fg")}>
+            <Icon size={18} strokeWidth={active ? 2 : 1.6} />
+            {tr(n.zh, n.en)}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Where the back arrow goes on phones; top-level tabs have none. */
+const PARENT: Partial<Record<Page, Page>> = { task: "tasks", wizard: "tasks", records: "settings" };
+
 export function TopBar({ title }: { title: ReactNode }) {
   const tr = useTr();
   const lang = useUi((s) => s.lang);
   const { data: h } = useHealth();
   const estop = useAction(api.estop, { invalidate: [["health"], ["overview"]] });
   const [flash, setFlash] = useState(false);
+  const { route, go } = useUi();
+  const parent = PARENT[route.page];
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
-      <h1 className="text-lg font-semibold">{title}</h1>
+    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-4 md:px-6">
+      <div className="flex min-w-0 items-center gap-1">
+        {parent ? (
+          <button className="-ml-2 p-2 text-muted-fg hover:text-fg md:hidden" onClick={() => go(parent)} aria-label={tr("返回", "Back")}>
+            <ChevronLeft size={18} />
+          </button>
+        ) : null}
+        <h1 className="truncate text-lg font-semibold">{title}</h1>
+      </div>
       <div className="flex items-center gap-4">
         {(h?.platforms ?? []).map((p) => {
           const stale = p.last_error_at && (!p.last_ok || p.last_error_at > p.last_ok);
           const slow = (p.latency_ms ?? 0) > 300;
           const color = stale ? "danger" : slow ? "warning" : p.last_ok ? "success" : "muted";
           return (
-            <span key={p.platform} className="flex items-center gap-1.5" title={p.last_error ?? undefined}>
+            <span key={p.platform} className="flex items-center gap-1.5 max-lg:hidden" title={p.last_error ?? undefined}>
               <Dot color={color} />
               <span className="text-xs">{platformLabel[p.platform][lang === "en" ? 1 : 0]}</span>
               <span className={clsx("num text-xs", slow || stale ? "text-warning" : "text-muted-fg")}>{p.latency_ms != null ? `${p.latency_ms}ms` : "—"}</span>
             </span>
           );
         })}
-        <span className="h-5 w-px bg-border" />
+        <span className="h-5 w-px bg-border max-lg:hidden" />
         <button
           onClick={() => {
             setFlash(true);
@@ -86,7 +145,7 @@ export function TopBar({ title }: { title: ReactNode }) {
             setTimeout(() => setFlash(false), 400);
           }}
           className={clsx(
-            "flex h-8 items-center gap-2 rounded-md border border-danger px-3.5 text-sm font-semibold transition-[background-color,color] duration-150",
+            "flex h-8 items-center gap-2 rounded-md border border-danger px-3.5 text-sm font-semibold whitespace-nowrap max-md:px-2.5 transition-[background-color,color] duration-150",
             h?.estopped || flash ? "bg-danger text-on-danger" : "bg-danger-soft text-danger hover:bg-danger hover:text-on-danger",
           )}
           title={tr("立即暂停全部任务并撤销镜像挂单，不平仓", "Pause every task and cancel mirrored orders; positions stay")}
@@ -102,7 +161,7 @@ export function TopBar({ title }: { title: ReactNode }) {
 export function Toasts() {
   const { toasts, dismiss } = useUi();
   return (
-    <div className="pointer-events-none fixed right-6 bottom-6 z-[60] flex flex-col gap-2">
+    <div className="pointer-events-none fixed right-4 bottom-20 left-4 z-[60] flex flex-col items-end gap-2 md:right-6 md:bottom-6 md:left-auto">
       {toasts.map((t) => (
         <div
           key={t.id}

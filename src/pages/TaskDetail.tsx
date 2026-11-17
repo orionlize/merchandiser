@@ -1,21 +1,24 @@
 import clsx from "clsx";
-import { RefreshCw } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { Button, Empty, Loading, Modal, Radio, SideTag, Tabs } from "../components/ui";
-import { api, type CompareRow, type Mirror, type Risk, type TaskDetail as TD, type TaskSummary } from "../lib/api";
-import { ago, num, pnlClass, price, qty, signed, time } from "../lib/format";
+import { RefreshCw, SlidersHorizontal } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { fillLabel, TaskChart } from "../components/TaskChart";
+import { Button, Drawer, Empty, Loading, Modal, Radio, Seg, SideTag, Tabs } from "../components/ui";
+import { api, type ChartInterval, type CompareRow, type Mirror, type Risk, type TaskDetail as TD, type TaskSummary } from "../lib/api";
+import { ago, date, num, pnlClass, price, qty, signed, time } from "../lib/format";
 import { trNow, useTr } from "../lib/i18n";
-import { useAction, useTask } from "../lib/queries";
+import { useAction, useTask, useTaskChart } from "../lib/queries";
+import { replay, type ReplayedFill } from "../lib/replay";
 import { useUi } from "../lib/store";
+import { sourceLabel } from "./Overview";
 import { sizingLabel } from "./Tasks";
 
 export function TaskDetail() {
   const tr = useTr();
   const { route, go } = useUi();
-  const lang = useUi((s) => s.lang);
   const { data: t, isLoading } = useTask(route.id);
   const [tab, setTab] = useState<"pos" | "mirror" | "log">("pos");
   const [stopping, setStopping] = useState(false);
+  const [rules, setRules] = useState(false);
   const act = useAction(({ a }: { a: "start" | "resume" | "pause" | "reconcile" }) => api.taskAction(route.id!, a), { invalidate: [["task"], ["tasks"]] });
 
   if (isLoading || !t) return <Loading />;
@@ -24,20 +27,23 @@ export function TaskDetail() {
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-6">
-        <div className="flex items-center gap-2 text-xs text-muted-fg">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-4 py-4 max-lg:pb-20 md:px-6 md:py-6">
+        <div className="flex items-center gap-2 text-xs text-muted-fg max-md:hidden">
           <button className="hover:text-fg" onClick={() => go("tasks")}>
             {tr("跟单任务", "Tasks")}
           </button>
           <span>/</span>
           <span className="text-fg">{t.name}</span>
         </div>
-        <div className="mt-4 flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 md:mt-4">
           <div className="flex min-w-0 items-center gap-3">
-            <h1 className="truncate text-3xl font-semibold tracking-[-1px]">{t.name}</h1>
+            <h1 className="truncate text-3xl font-semibold tracking-[-1px] max-md:hidden">{t.name}</h1>
             <StatusPill t={t} />
+            <span className="truncate text-xs text-muted-fg md:hidden">
+              {sourceLabel(t)} → {t.followers.length} {tr("个账户", "accounts")}
+            </span>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 max-lg:hidden">
             {t.status === "running" ? (
               <Button onClick={() => act.mutate({ a: "pause" })}>{tr("暂停任务", "Pause")}</Button>
             ) : (
@@ -59,13 +65,8 @@ export function TaskDetail() {
         {t.pause_reason && t.status === "paused" ? <div className="mt-2 text-xs text-warning">{t.pause_reason}</div> : null}
         {live?.last_error ? <div className="mt-2 text-xs text-danger">{live.last_error}</div> : null}
 
-        <div className="mt-5 flex gap-10">
-          <Kpi label={tr("累计盈亏 USDT", "Total PnL USDT")} value={signed(t.total_pnl)} cls={pnlClass(t.total_pnl)} big />
-          <Kpi label={tr("今日", "Today")} value={signed(t.today_pnl)} big />
-          <Kpi label={tr("名义偏差", "Notional gap")} value={live ? `${num(live.deviation_pct, 1)}%` : "—"} big />
-          <Kpi label={tr("延迟 P95", "Latency P95")} value={t.latency_p95 != null ? `${t.latency_p95} ms` : "—"} big />
-          <Kpi label={tr("上次对账", "Last reconcile")} value={ago(live?.last_reconcile, lang === "en")} big sans />
-        </div>
+        <PnlHero t={t} />
+        <ChartCard t={t} />
 
         <Tabs
           className="mt-6"
@@ -77,13 +78,42 @@ export function TaskDetail() {
             { value: "log", label: tr("执行日志", "Execution log") },
           ]}
         />
-        <div key={tab} className="anim-rise mt-4">
+        <div key={tab} className="anim-rise mt-4 overflow-x-auto max-md:[&_table]:min-w-[640px]">
           {tab === "pos" ? <PositionCompare rows={live?.rows ?? []} running={t.status === "running"} tolerance={t.rules.tolerance_pct} /> : null}
           {tab === "mirror" ? <Mirrors mirrors={t.mirrors} enabled={t.rules.mirror.enabled} grace={t.rules.mirror.grace_ms} /> : null}
           {tab === "log" ? <SignalLog t={t} /> : null}
         </div>
       </div>
-      <RulesPanel t={t} />
+      <aside className="w-[300px] shrink-0 overflow-y-auto border-l border-border px-6 py-6 max-lg:hidden">
+        <RulesPanel t={t} />
+      </aside>
+      <Drawer open={rules} onClose={() => setRules(false)} title={tr("规则与风控", "Rules & risk")} width={380}>
+        <RulesPanel t={t} />
+      </Drawer>
+      <div className="fixed inset-x-0 bottom-14 z-20 flex gap-2 border-t border-border bg-card px-4 py-2.5 md:bottom-0 md:left-[220px] lg:hidden">
+        <Button onClick={() => setRules(true)}>
+          <SlidersHorizontal size={14} />
+          {tr("规则", "Rules")}
+        </Button>
+        <Button disabled={t.status !== "running"} onClick={() => act.mutate({ a: "reconcile" })}>
+          <RefreshCw size={14} />
+          <span className="max-sm:hidden">{tr("对账", "Reconcile")}</span>
+        </Button>
+        {t.status !== "stopped" ? (
+          <Button variant="danger-text" onClick={() => setStopping(true)}>
+            {tr("停止", "Stop")}
+          </Button>
+        ) : null}
+        {t.status === "running" ? (
+          <Button variant="primary" className="flex-1" onClick={() => act.mutate({ a: "pause" })}>
+            {tr("暂停跟单", "Pause")}
+          </Button>
+        ) : (
+          <Button variant="primary" className="flex-1" onClick={() => act.mutate({ a: t.started_at && t.status === "paused" ? "resume" : "start" })}>
+            {t.status === "stopped" ? tr("重新启动", "Restart") : t.started_at ? tr("恢复跟单", "Resume") : tr("启动", "Start")}
+          </Button>
+        )}
+      </div>
       {stopping ? <StopDialog task={t} onClose={() => setStopping(false)} /> : null}
     </div>
   );
@@ -104,11 +134,226 @@ function StatusPill({ t }: { t: TaskSummary }) {
   );
 }
 
-function Kpi({ label, value, cls, big, sans }: { label: string; value: string; cls?: string; big?: boolean; sans?: boolean }) {
+function PnlHero({ t }: { t: TD }) {
+  const tr = useTr();
+  const lang = useUi((s) => s.lang);
+  const live = t.live;
+  const upnl = live?.followers.reduce((a, f) => a + Number(f.upnl || 0), 0);
+  const notional = live?.followers.reduce((a, f) => a + Number(f.notional || 0), 0);
   return (
-    <div>
-      <div className="text-xs text-muted-fg">{label}</div>
-      <div className={clsx("mt-1", big ? "text-xl" : "text-md", sans ? "" : "num", cls)}>{value}</div>
+    <div className="mt-4 grid grid-cols-[minmax(220px,1.4fr)_repeat(3,minmax(0,1fr))] border border-border bg-card max-lg:grid-cols-3 max-md:-mx-4 max-md:border-x-0">
+      <div className="border-r border-border px-4 py-4 max-lg:col-span-3 max-lg:border-r-0 max-lg:border-b md:px-5">
+        <div className="text-xs text-muted-fg">{tr("累计盈亏 USDT", "Total PnL USDT")}</div>
+        <div className={clsx("num mt-1 text-[32px] leading-10 font-semibold tracking-[-0.5px]", pnlClass(t.total_pnl))}>{signed(t.total_pnl)}</div>
+        <div className="mt-1 flex gap-4 text-xs">
+          <span className="text-muted-fg">
+            {tr("今日", "Today")} <span className={clsx("num", pnlClass(t.today_pnl))}>{signed(t.today_pnl)}</span>
+          </span>
+        </div>
+      </div>
+      <HeroCell label={tr("持仓浮盈", "Unrealized")} value={upnl != null ? signed(upnl) : "—"} cls={pnlClass(upnl)} sub={notional != null ? tr(`名义 ${num(notional, 0)}`, `Notional ${num(notional, 0)}`) : undefined} />
+      <HeroCell label={tr("名义偏差", "Notional gap")} value={live ? `${num(live.deviation_pct, 1)}%` : "—"} cls={live && Math.abs(Number(live.deviation_pct)) > Number(t.rules.tolerance_pct) ? "text-warning" : undefined} sub={tr(`容差 ${num(t.rules.tolerance_pct, 0)}%`, `Tolerance ${num(t.rules.tolerance_pct, 0)}%`)} />
+      <HeroCell label={tr("延迟 P95", "Latency P95")} value={t.latency_p95 != null ? `${t.latency_p95} ms` : "—"} sub={`${tr("上次对账", "Reconciled")} ${ago(live?.last_reconcile, lang === "en")}`} last />
+    </div>
+  );
+}
+
+function HeroCell({ label, value, cls, sub, last }: { label: string; value: string; cls?: string; sub?: string; last?: boolean }) {
+  return (
+    <div className={clsx("min-w-0 px-4 py-3 md:px-5 md:py-4", !last && "border-r border-border")}>
+      <div className="truncate text-xs text-muted-fg">{label}</div>
+      <div className={clsx("num mt-1 truncate text-lg md:text-xl", cls)}>{value}</div>
+      {sub ? <div className="mt-1 truncate text-xs text-muted-fg">{sub}</div> : null}
+    </div>
+  );
+}
+
+const INTERVALS: ChartInterval[] = ["15m", "1h", "4h", "1d"];
+
+function ChartCard({ t }: { t: TD }) {
+  const tr = useTr();
+  const [base, setBase] = useState<string>();
+  const [interval, setIv] = useState<ChartInterval>("4h");
+  const [selected, setSelected] = useState<number | null>(null);
+  const { data, isLoading, error } = useTaskChart(t.id, base, interval);
+  const r = useMemo(() => replay(data?.fills ?? []), [data?.fills]);
+  const alias = (id: string | null) => t.followers.find((f) => f.connection_id === id)?.alias ?? "—";
+
+  if (isLoading && !data) return <div className="mt-4 h-[520px] border border-border bg-card" />;
+  if (error) return <div className="mt-4 border border-border bg-card px-5 py-4 text-xs text-danger">{String((error as Error).message ?? error)}</div>;
+  if (!data || data.bases.length === 0)
+    return (
+      <div className="mt-4 border border-border bg-card">
+        <Empty title={tr("暂无成交", "No fills yet")} hint={tr("跟单成交后，K 线上会标出每一笔开仓、加仓与减仓。", "Once orders fill, every open, add and trim is marked on the chart.")} />
+      </div>
+    );
+
+  const cur = data.base;
+  const mark = data.candles.length ? data.candles[data.candles.length - 1].c : null;
+  const upnl = mark != null && r.pos !== 0 ? r.pos * (mark - r.avg) : 0;
+  const upnlPct = r.avg > 0 && r.pos !== 0 && mark != null ? ((mark - r.avg) / r.avg) * 100 * Math.sign(r.pos) : null;
+  const adds = r.fills.filter((f) => f.kind === "add").length;
+  const sel = r.fills.find((f) => f.id === selected) ?? null;
+
+  return (
+    <div className="mt-4 border border-border bg-card max-md:-mx-4 max-md:border-x-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
+          {data.bases.map((b) => (
+            <button
+              key={b}
+              onClick={() => {
+                setBase(b);
+                setSelected(null);
+              }}
+              className={clsx("h-7 px-2.5 text-sm transition-colors", b === cur ? "bg-muted text-fg" : "text-muted-fg hover:text-fg")}
+            >
+              {b}
+            </button>
+          ))}
+        </div>
+        <Seg size="sm" value={data.interval} onChange={setIv} options={INTERVALS.map((v) => ({ value: v, label: v }))} />
+      </div>
+
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-x-4 gap-y-3 border-b border-border px-4 py-3">
+        <Stat label={tr("持仓", "Size")} value={r.pos === 0 ? tr("空仓", "Flat") : `${r.pos > 0 ? tr("多", "Long") : tr("空", "Short")} ${qty(Math.abs(r.pos))}`} cls={r.pos > 0 ? "text-success" : r.pos < 0 ? "text-danger" : "text-muted-fg"} />
+        <Stat label={tr("持仓均价", "Avg entry")} value={r.pos !== 0 ? price(r.avg) : "—"} cls="text-[var(--chart-avg)]" />
+        <Stat label={tr("标记价", "Mark")} value={mark != null ? price(mark) : "—"} />
+        <Stat label={tr("浮动盈亏", "Unrealized")} value={
+            r.pos !== 0 ? (
+              <>
+                {signed(upnl)}
+                {upnlPct != null ? <span className="ml-1.5 text-xs">{signed(upnlPct, 2)}%</span> : null}
+              </>
+            ) : (
+              "—"
+            )
+          } cls={pnlClass(upnl)} />
+        <Stat label={tr("已实现", "Realized")} value={signed(r.realized)} cls={pnlClass(r.realized)} />
+        <Stat label={tr("加仓次数", "Adds")} value={String(adds)} />
+      </div>
+
+      {data.candle_error ? <div className="border-b border-border px-4 py-2 text-xs text-warning">{data.candle_error}</div> : null}
+      <div className="relative px-1 pt-2">
+        <TaskChart candles={data.candles} fills={r.fills} interval={data.interval} avg={r.avg} pos={r.pos} selected={selected} onSelect={setSelected} viewKey={`${cur}:${data.interval}`} height={typeof window !== "undefined" && window.innerWidth < 768 ? 300 : 420} />
+        <div className="pointer-events-none absolute top-3 left-4 flex gap-4 text-xs text-muted-fg">
+          <span className="flex items-center gap-1.5">
+            <span className="text-success">▲</span>
+            {tr("开 / 加仓", "Open / add")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-danger">▼</span>
+            {tr("减 / 平仓", "Trim / close")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-4 border-t border-dashed border-[var(--chart-avg)]" />
+            {tr("持仓均价", "Avg entry")}
+          </span>
+        </div>
+      </div>
+
+      {sel ? <FillCard f={sel} alias={alias(sel.connection_id)} onClose={() => setSelected(null)} /> : null}
+      <FillTimeline fills={r.fills} selected={selected} onSelect={setSelected} alias={alias} />
+    </div>
+  );
+}
+
+function Stat({ label, value, cls }: { label: string; value: ReactNode; cls?: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-xs whitespace-nowrap text-muted-fg">{label}</div>
+      <div className={clsx("num mt-0.5 text-sm whitespace-nowrap", cls)}>{value}</div>
+    </div>
+  );
+}
+
+function KindTag({ f }: { f: ReplayedFill }) {
+  const cls = f.kind === "open" || f.kind === "add" ? (f.buy ? "bg-success-soft text-success" : "bg-danger-soft text-danger") : "bg-muted text-muted-fg";
+  return <span className={clsx("inline-flex h-5 min-w-9 items-center justify-center px-1.5 text-xs", cls)}>{fillLabel(f)}</span>;
+}
+
+function FillCard({ f, alias, onClose }: { f: ReplayedFill; alias: string; onClose: () => void }) {
+  const tr = useTr();
+  const slip = f.slippage_bps != null ? Number(f.slippage_bps) / 100 : null;
+  return (
+    <div className="anim-rise relative flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-border bg-primary-soft py-3 pr-10 pl-4">
+      <div className="flex items-center gap-2">
+        <KindTag f={f} />
+        <div>
+          <div className="text-sm">
+            {f.buy ? tr("买入", "Buy") : tr("卖出", "Sell")} <span className="num">{qty(Math.abs(f.delta))}</span>
+          </div>
+          <div className="text-xs text-muted-fg">
+            <span className="num">
+              {date(f.ts)} {time(f.ts)}
+            </span>{" "}
+            · {alias}
+          </div>
+        </div>
+      </div>
+      <Stat label={tr("成交价", "Fill")} value={price(f.px)} />
+      <Stat label={tr("信号价", "Signal")} value={price(f.ref_px)} />
+      <Stat label={tr("滑点", "Slippage")} value={slip != null ? `${signed(slip, 2)}%` : "—"} cls={slip != null && slip > 0.1 ? "text-warning" : undefined} />
+      <Stat label={tr("延迟", "Latency")} value={f.latency_ms != null ? `${f.latency_ms} ms` : "—"} />
+      <Stat label={tr("成交后持仓", "Size after")} value={qty(f.pos)} />
+      <Stat label={tr("成交后均价", "Avg after")} value={f.pos !== 0 ? price(f.avg) : "—"} cls="text-[var(--chart-avg)]" />
+      <Stat label={tr("本笔实现盈亏", "Realized")} value={f.realized !== 0 ? signed(f.realized) : "—"} cls={pnlClass(f.realized)} />
+      <button className="absolute top-2 right-3 p-1 text-xs text-muted-fg hover:text-fg" onClick={onClose} aria-label={tr("关闭", "Close")}>
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function FillTimeline({ fills, selected, onSelect, alias }: { fills: ReplayedFill[]; selected: number | null; onSelect: (id: number) => void; alias: (id: string | null) => string }) {
+  const tr = useTr();
+  const [all, setAll] = useState(false);
+  const rows = [...fills].reverse();
+  const shown = all ? rows : rows.slice(0, 8);
+  if (rows.length === 0) return null;
+  return (
+    <div className="border-t border-border">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+        <h3 className="text-sm font-semibold">{tr("加减仓记录", "Adds and trims")}</h3>
+        <span className="text-xs text-muted-fg">{tr(`共 ${rows.length} 笔`, `${rows.length} fills`)}</span>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-xs text-muted-fg">
+            <th className="py-2 pl-4 text-left font-normal">{tr("动作", "Action")}</th>
+            <th className="text-left font-normal">{tr("时间", "Time")}</th>
+            <th className="text-left font-normal max-md:hidden">{tr("账户", "Account")}</th>
+            <th className="text-right font-normal">{tr("数量", "Qty")}</th>
+            <th className="text-right font-normal">{tr("成交价", "Fill")}</th>
+            <th className="text-right font-normal max-md:hidden">{tr("滑点", "Slip")}</th>
+            <th className="text-right font-normal">{tr("持仓", "Size")}</th>
+            <th className="text-right font-normal max-md:hidden">{tr("均价", "Avg")}</th>
+            <th className="pr-4 text-right font-normal">{tr("实现盈亏", "Realized")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {shown.map((f) => (
+            <tr key={f.id} onClick={() => onSelect(f.id)} className={clsx("cursor-pointer border-t border-border hover:bg-muted", f.id === selected && "bg-primary-soft")}>
+              <td className="py-2 pl-4">
+                <KindTag f={f} />
+              </td>
+              <td className="num text-xs whitespace-nowrap text-muted-fg">{date(f.ts)} {time(f.ts).slice(0, 5)}</td>
+              <td className="text-xs max-md:hidden">{alias(f.connection_id)}</td>
+              <td className={clsx("num text-right", f.buy ? "text-success" : "text-danger")}>{signed(f.delta, Math.abs(f.delta) >= 100 ? 0 : 4)}</td>
+              <td className="num text-right">{price(f.px)}</td>
+              <td className="num text-right text-xs text-muted-fg max-md:hidden">{f.slippage_bps != null ? `${num(Number(f.slippage_bps) / 100, 2)}%` : "—"}</td>
+              <td className="num text-right">{qty(f.pos)}</td>
+              <td className="num text-right text-[var(--chart-avg)] max-md:hidden">{f.pos !== 0 ? price(f.avg) : "—"}</td>
+              <td className={clsx("num pr-4 text-right", pnlClass(f.realized))}>{f.realized !== 0 ? signed(f.realized) : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {rows.length > 8 ? (
+        <button className="w-full border-t border-border py-2 text-xs text-muted-fg hover:text-fg" onClick={() => setAll(!all)}>
+          {all ? tr("收起", "Show less") : tr(`展开全部 ${rows.length} 笔`, `Show all ${rows.length}`)}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -304,7 +549,7 @@ function RulesPanel({ t }: { t: TD }) {
   const lev = r.leverage.mode === "follow" ? tr(`跟随信号源，上限 ${r.leverage.cap}×`, `Follow source, cap ${r.leverage.cap}×`) : tr(`固定 ${r.leverage.value}×，上限 ${r.leverage.cap}×`, `Fixed ${r.leverage.value}×, cap ${r.leverage.cap}×`);
   const syms = r.whitelist.length ? tr(`白名单 ${r.whitelist.length} 个`, `${r.whitelist.length} allowed`) : r.blacklist.length ? tr(`全部，黑名单 ${r.blacklist.length} 个`, `All, ${r.blacklist.length} blocked`) : tr("全部", "All");
   return (
-    <aside className="w-[300px] shrink-0 overflow-y-auto border-l border-border px-6 py-6">
+    <div>
       <div className="flex items-center justify-between">
         <h2 className="text-md font-semibold">{tr("规则", "Rules")}</h2>
         <Button variant="link" className="text-xs" onClick={() => go("wizard", t.id)}>
@@ -339,7 +584,7 @@ function RulesPanel({ t }: { t: TD }) {
           </div>
         ))}
       </div>
-    </aside>
+    </div>
   );
 }
 

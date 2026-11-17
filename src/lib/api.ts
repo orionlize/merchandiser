@@ -273,6 +273,8 @@ export interface TaskSummary {
   today_pnl: string | null;
   total_pnl: string | null;
   live: TaskLive | null;
+  week_adds: number;
+  week_reduces: number;
 }
 
 export interface OrderRow {
@@ -338,6 +340,62 @@ export interface TaskDetail extends TaskSummary {
   latency_p95: number | null;
   mirrors: Mirror[];
   signals: SignalWithOrders[];
+}
+
+export interface Candle {
+  t: number;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+  v: number;
+}
+
+export interface ChartFill {
+  id: number;
+  signal_id: number | null;
+  ts: number;
+  connection_id: string | null;
+  buy: boolean;
+  qty: string;
+  px: string;
+  ref_px: string | null;
+  slippage_bps: string | null;
+  latency_ms: number | null;
+  reduce_only: boolean;
+  purpose: string;
+}
+
+export type ChartInterval = "15m" | "1h" | "4h" | "1d";
+
+export interface TaskChart {
+  base: string;
+  interval: ChartInterval;
+  bases: string[];
+  candles: Candle[];
+  candle_error: string | null;
+  fills: ChartFill[];
+}
+
+export type PnlRange = "today" | "7d" | "30d" | "all";
+
+export interface TaskPnl {
+  task_id: string;
+  name: string;
+  status: TaskSummary["status"];
+  pause_reason: string | null;
+  pnl: number;
+  start_equity: number;
+  /** Last 14 days, oldest first: [day start ms, pnl]. */
+  daily: [number, number][];
+}
+
+export interface PnlCurve {
+  range: PnlRange;
+  since: number;
+  points: [number, number][];
+  start_equity: number;
+  tasks: TaskPnl[];
 }
 
 export interface Alert {
@@ -493,6 +551,9 @@ export const api = {
   logs: (filter: LogFilter) => invoke<LogPage>("query_logs", { filter }),
   exportCsv: (filter: LogFilter) => invoke<{ csv: string; rows: number }>("export_logs_csv", { filter }),
   pnl: (range: LogFilter["range"]) => invoke<PnlRow[]>("pnl_report", { range }),
+  taskChart: (args: { taskId: string; base?: string; interval: ChartInterval; connectionId?: string }) =>
+    invoke<TaskChart>("task_chart", { task_id: args.taskId, base: args.base ?? "", interval: args.interval, connection_id: args.connectionId ?? null }),
+  pnlCurve: (range: PnlRange) => invoke<PnlCurve>("pnl_curve", { range }),
   equitySeries: (args: { connectionId?: string; sourceId?: string; since?: number }) =>
     invoke<[number, string][]>("equity_series", { connection_id: args.connectionId ?? null, source_id: args.sourceId ?? null, since: args.since ?? null }),
 

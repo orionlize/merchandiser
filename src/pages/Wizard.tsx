@@ -145,7 +145,7 @@ export function Wizard() {
         }
       />
       {/* Stepper */}
-      <div className="flex h-[52px] shrink-0 items-center gap-4 border-b border-border px-6">
+      <div className="flex h-[52px] shrink-0 items-center gap-4 overflow-x-auto border-b border-border px-4 md:px-6">
         {steps.map((s, i) => (
           <div key={s} className="flex items-center gap-4">
             <button disabled={i > step && !canNext} onClick={() => i <= step && setStep(i as Step)} className="flex items-center gap-2">
@@ -156,14 +156,14 @@ export function Wizard() {
               ) : (
                 <span className={clsx("flex h-[18px] w-[18px] items-center justify-center rounded-full text-[11px]", i === step ? "bg-primary font-semibold text-on-primary" : "border border-border text-muted-fg")}>{i + 1}</span>
               )}
-              <span className={clsx("text-sm", i === step ? "font-semibold" : "text-muted-fg")}>{s}</span>
+              <span className={clsx("text-sm whitespace-nowrap", i === step ? "font-semibold" : "text-muted-fg max-md:hidden")}>{s}</span>
             </button>
-            {i < steps.length - 1 ? <span className="h-px w-10 bg-border" /> : null}
+            {i < steps.length - 1 ? <span className="h-px w-10 bg-border max-md:w-4" /> : null}
           </div>
         ))}
       </div>
-      <div className="flex min-h-0 flex-1">
-        <div key={step} className="anim-rise min-w-0 flex-1 overflow-y-auto px-12 py-7">
+      <div className="flex min-h-0 flex-1 max-lg:flex-col max-lg:overflow-y-auto">
+        <div key={step} className="anim-rise min-w-0 flex-1 px-4 py-5 md:px-12 md:py-7 lg:overflow-y-auto">
           {step === 0 ? (
             <SourceStep sourceId={sourceId} setSourceId={setSourceId} disabled={!!editId} />
           ) : step === 1 ? (
@@ -178,12 +178,12 @@ export function Wizard() {
         </div>
         <PreviewPanel loading={preview.isFetching} data={preview.data} error={preview.error ? errMsg(preview.error) : null} sourceLabel={source ? (source.kind === "hl_address" ? `HL ${shortAddr(source.address)}` : source.name) : ""} empty={!sourceId || followers.length === 0} />
       </div>
-      <div className="flex h-16 shrink-0 items-center justify-between border-t border-border px-6">
+      <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-t border-border px-4 md:px-6">
         <Button variant="ghost" onClick={() => (editId ? go("task", editId) : go("tasks"))}>
           {tr("取消", "Cancel")}
         </Button>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-fg">{canNext ? [tr("已选信号源", "Source selected"), tr(`已选 ${followers.length} 个账户`, `${followers.length} selected`), tr("规则已填完", "Rules complete"), tr("风控已填完", "Risk complete"), tr("可以创建", "Ready")][step] : tr("请完成必填项", "Complete required fields")}</span>
+          <span className="text-xs text-muted-fg max-md:hidden">{canNext ? [tr("已选信号源", "Source selected"), tr(`已选 ${followers.length} 个账户`, `${followers.length} selected`), tr("规则已填完", "Rules complete"), tr("风控已填完", "Risk complete"), tr("可以创建", "Ready")][step] : tr("请完成必填项", "Complete required fields")}</span>
           <Button disabled={step === 0} onClick={() => setStep((s) => (s - 1) as Step)}>
             {tr("上一步", "Back")}
           </Button>
@@ -562,7 +562,7 @@ function PreviewPanel({ loading, data, error, sourceLabel, empty }: { loading: b
   const tr = useTr();
   const base = data?.sample_base;
   return (
-    <aside className="flex w-[380px] shrink-0 flex-col border-l border-border bg-card px-6 py-7">
+    <aside className="flex w-[380px] shrink-0 flex-col border-l border-border bg-card px-6 py-7 max-lg:w-full max-lg:border-t max-lg:border-l-0 max-md:px-4">
       <div className="flex items-center justify-between">
         <h3 className="text-md font-semibold">{tr("按当前规则预览", "Preview with current rules")}</h3>
         {loading ? <Spinner /> : null}

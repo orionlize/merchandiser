@@ -233,7 +233,7 @@ export function Modal({ open, onClose, title, children, footer, width = 440 }: {
   if (!open) return null;
   return (
     <div className="anim-fade fixed inset-0 z-50 flex items-center justify-center bg-black/60" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="anim-modal flex max-h-[85vh] flex-col rounded-lg border border-border bg-card shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ width }}>
+      <div className="anim-modal flex max-h-[85vh] max-w-[calc(100vw-24px)] flex-col rounded-lg border border-border bg-card shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ width }}>
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h3 className="text-xl font-semibold">{title}</h3>
           <button onClick={onClose} className="text-muted-fg hover:text-fg">
@@ -252,15 +252,15 @@ export function Drawer({ open, onClose, title, children, footer, width = 440 }: 
   if (!open) return null;
   return (
     <div className="anim-fade fixed inset-0 z-40 bg-black/55" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="anim-drawer absolute top-0 right-0 bottom-0 flex flex-col border-l border-border bg-card shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ width }}>
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+      <div className="anim-drawer absolute top-0 right-0 bottom-0 flex max-w-full flex-col border-l border-border bg-card shadow-[0_12px_32px_rgba(0,0,0,0.35)]" style={{ width }}>
+        <div className="flex items-center justify-between px-4 pt-6 pb-4 md:px-6">
           <h3 className="text-xl font-semibold">{title}</h3>
           <button onClick={onClose} className="text-muted-fg hover:text-fg">
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 pb-6">{children}</div>
-        {footer ? <div className="flex justify-end gap-2 px-6 py-5">{footer}</div> : null}
+        <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-6">{children}</div>
+        {footer ? <div className="flex justify-end gap-2 px-4 py-5 md:px-6">{footer}</div> : null}
       </div>
     </div>
   );
