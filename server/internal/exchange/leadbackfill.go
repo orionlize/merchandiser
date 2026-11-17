@@ -8,9 +8,18 @@ package exchange
 // per 3 s), so the reconstruction can instead start from the oldest fill
 // still listed. Positions opened before that are still invisible.
 //
-// Paging is by page number, so a fill arriving mid-backfill shifts every
-// later page by one. The venue's `total` is checked on every page and the
-// pass restarts when it changes.
+// Measured venue quirks:
+//   - Very active traders are capped at their newest ~6000 fills: `total`
+//     says 6000 on every page, and the first page past the end comes back
+//     empty with the real count (e.g. 69974). So `total` is only a progress
+//     hint; the history ends at the first empty or short page.
+//   - Paging is by page number, so k fills arriving mid-pass shift later
+//     pages by k and repeat k fills at a page boundary. Identical fills are
+//     common (one key 19× in a page), so duplicates cannot be told apart by
+//     content. Instead page 1 is fetched again after the pass: how far its
+//     old head moved is the exact number of fills that arrived. Zero means
+//     the pass is clean; otherwise it is retried, and on the last attempt
+//     boundary repeats are dropped within that budget.
 
 import (
 	"context"
@@ -27,7 +36,7 @@ const (
 	backfillPageSize = 200
 	// 100k fills; beyond that the trader is far too active to follow anyway.
 	backfillMaxPages = 500
-	backfillAttempts = 3
+	backfillAttempts = 4
 )
 
 // Backfill is the progress of one history rebuild.
@@ -130,10 +139,10 @@ func (l *LeadTrader) backfillPage(ctx context.Context, page int) ([]Fill, int64,
 // fetchHistory returns the whole public trade history, newest first.
 func (l *LeadTrader) fetchHistory(ctx context.Context) ([]Fill, error) {
 	id := l.fills.sourceID
-	for range backfillAttempts {
-		var all []Fill
+	for attempt := 1; ; attempt++ {
+		var pages [][]Fill
 		var total int64
-		shifted := false
+		n := 0
 		for page := 1; ; page++ {
 			if page > backfillMaxPages {
 				return nil, errs.Msg("该带单员历史成交过多，无法重建")
@@ -144,22 +153,93 @@ func (l *LeadTrader) fetchHistory(ctx context.Context) ([]Fill, error) {
 			}
 			if page == 1 {
 				total = t
-			} else if t != total {
-				shifted = true
+			}
+			if len(p) == 0 {
 				break
 			}
-			all = append(all, p...)
-			n := len(all)
-			updateBackfill(id, func(b *Backfill) { b.Fetched, b.Total = n, total })
+			pages = append(pages, p)
+			n += len(p)
+			updateBackfill(id, func(b *Backfill) { b.Fetched, b.Total = n, max(total, int64(n)) })
 			if len(p) < backfillPageSize {
 				break
 			}
 		}
-		if !shifted {
-			return all, nil
+		if len(pages) <= 1 {
+			// One request sees one consistent list.
+			return flatten(pages), nil
+		}
+		head, _, err := l.backfillPage(ctx, 1)
+		if err != nil {
+			return nil, err
+		}
+		arrived := headShift(pages[0], head)
+		if arrived == 0 {
+			return flatten(pages), nil
+		}
+		if arrived >= len(head) {
+			// Too many to measure from one page.
+			if attempt >= backfillAttempts {
+				return nil, errs.Msg("带单员成交过于频繁，历史记录无法稳定读取，请稍后再试")
+			}
+			continue
+		}
+		if attempt >= backfillAttempts {
+			return dropBoundaryRepeats(pages, arrived), nil
 		}
 	}
-	return nil, errs.Msg("带单员正在频繁成交，历史记录一直在变，请稍后再试")
+}
+
+func flatten(pages [][]Fill) []Fill {
+	var out []Fill
+	for _, p := range pages {
+		out = append(out, p...)
+	}
+	return out
+}
+
+// headShift returns how many fills were added in front of `old` (an earlier
+// copy of page 1) to give `now`; len(now) when it cannot be found.
+func headShift(old, now []Fill) int {
+	for k := 0; k < len(now); k++ {
+		m := min(len(now)-k, len(old))
+		same := true
+		for i := 0; i < m; i++ {
+			if now[k+i].Key != old[i].Key {
+				same = false
+				break
+			}
+		}
+		if same {
+			return k
+		}
+	}
+	return len(now)
+}
+
+// dropBoundaryRepeats removes, at each page boundary, a leading run of the
+// next page that repeats the tail of the previous one, spending at most
+// `budget` removals in total (fills that arrived during the pass).
+func dropBoundaryRepeats(pages [][]Fill, budget int) []Fill {
+	out := append([]Fill{}, pages[0]...)
+	for _, p := range pages[1:] {
+		d := 0
+		for k := min(budget, len(p), len(out)); k > 0; k-- {
+			same := true
+			for i := 0; i < k; i++ {
+				if p[i].Key != out[len(out)-k+i].Key {
+					same = false
+					break
+				}
+			}
+			if same {
+				d = k
+				break
+			}
+		}
+		budget -= d
+		out = append(out, p[d:]...)
+	}
+	return out
 }
 
 func (l *LeadTrader) backfill(ctx context.Context) (int64, error) {
