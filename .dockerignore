@@ -1,0 +1,8 @@
+node_modules
+dist
+design
+.git
+server/data
+*.db
+*.db-*
+*.log

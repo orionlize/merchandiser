@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<!--
+  由 design-mcp 导出。本文件不包含字体文件，请先安装以下字体以获得与画布一致的效果：
+  - Noto Sans CJK SC（字重 400, 600）
+  - Liberation Mono（字重 400, 600）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>业务流程与说明</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0}
+body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.4;color:#111;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:none}
+input,textarea{font:inherit;color:inherit;border:0;outline:0;background:transparent;resize:none}
+button{appearance:none;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;text-align:inherit;border:0;background:transparent;cursor:pointer}
+a{color:inherit}
+:root{--color-primary:#F0B90B;--color-on-primary:#000000;--color-secondary:#47423F;--color-on-secondary:#FFFFFF;--color-accent:#F0B90B;--color-on-accent:#000000;--color-bg:#0B0E11;--color-fg:#EAECEF;--color-card:#181A20;--color-card-fg:#EAECEF;--color-muted:#22262D;--color-muted-fg:#9AA3AE;--color-border:#2B3139;--color-danger:#F6465D;--color-on-danger:#000000;--color-ring:#F0B90B;--color-input:#5E6673;--font-heading:'Noto Sans CJK SC', sans-serif;--font-body:'Noto Sans CJK SC', sans-serif;--font-mono:'Liberation Mono', monospace;--size-xs:12px;--size-sm:14px;--size-md:16px;--size-lg:20px;--size-xl:24px;--size-2xl:32px;--size-3xl:40px;--space-1:4px;--space-2:8px;--space-3:16px;--space-4:24px;--space-5:32px;--space-6:48px;--space-7:64px;--space-8:96px;--radius-sm:0px;--radius-md:4px;--radius-lg:8px;--radius-full:999px;--shadow-sm:none;--shadow-md:0 12px 32px rgba(0,0,0,0.12);--color-success:#2EBD85;--color-danger-soft:#2A1519;--color-success-soft:#14302A;--color-primary-soft:#3C3218;--color-warning:#F0A030}
+body{background:#fff}
+.s1{display:flex;flex-direction:column;gap:48px;position:relative;padding:64px 64px 64px 64px;font-family:var(--font-body);color:var(--color-fg);background:var(--color-bg);width:1440px;margin:0 auto}
+.s2{display:flex;flex-direction:column;gap:8px;position:relative}
+.s3{font-family:var(--font-heading);font-size:var(--size-3xl);font-weight:600;line-height:1.25;letter-spacing:-1px;white-space:pre-wrap}
+.s4{font-size:var(--size-md);line-height:1.6;color:var(--color-muted-fg);white-space:pre-wrap}
+.s5{display:flex;flex-direction:column;gap:16px;position:relative}
+.s6{font-family:var(--font-heading);font-size:var(--size-xl);font-weight:600;line-height:1.3;white-space:pre-wrap}
+.s7{display:flex;flex-direction:row;align-items:stretch;gap:8px;position:relative}
+.s8{display:flex;flex-direction:column;gap:8px;flex-grow:1;flex-basis:0px;position:relative;padding:16px;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card);cursor:pointer;color:inherit;text-decoration:inherit}
+.s9{font-family:var(--font-mono);font-size:var(--size-xs);line-height:1.5;color:var(--color-primary);white-space:pre-wrap}
+.s10{font-size:var(--size-md);font-weight:500;line-height:1.6;white-space:pre-wrap}
+.s11{font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s12{display:flex;flex-direction:row;flex-wrap:wrap;gap:16px;position:relative}
+.s13{display:flex;flex-direction:column;gap:8px;position:relative;width:648px;padding:16px;border-radius:var(--radius-lg);background:var(--color-danger-soft)}
+.s14{font-size:var(--size-md);font-weight:500;line-height:1.6;color:var(--color-danger);white-space:pre-wrap}
+.s15{font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.s16{display:flex;flex-direction:column;gap:8px;position:relative;width:648px;padding:16px;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card)}
+.s17{display:flex;flex-direction:row;gap:48px;position:relative}
+.s18{display:flex;flex-direction:column;gap:16px;flex-grow:1;flex-basis:0px;position:relative}
+.s19{font-size:var(--size-sm);line-height:1.4;color:var(--color-muted-fg);white-space:pre-wrap}
+</style>
+</head>
+<body>
+<main data-dm-frame="0"><div class="s1"><div class="s2"><div class="s3">Merchandiser 业务流程与说明</div><div class="s4">本地桌面跟单工具。模型：仓位差额同步 + 挂单镜像。卡片可点击跳到对应页面。</div></div><div class="s5"><div class="s6">主流程：首次使用到稳定运行</div><div class="s7"><a href="连接.html" class="s8"><div class="s9">01 连接</div><div class="s10">添加跟单账户 API</div><div class="s11">自动校验连通、权限、持仓模式；有提币权限红色警告</div></a><a href="信号源.html" class="s8"><div class="s9">02 信号源</div><div class="s10">添加 HL 地址 / 只读 API</div><div class="s11">地址 42 位校验；实时查看对方持仓与挂单</div></a><a href="新建任务向导.html" class="s8"><div class="s9">03 新建任务</div><div class="s10">五步向导</div><div class="s11">信号源 → 跟单账户 → 规则 → 风控 → 确认；必填项为空时下一步禁用</div></a><a href="任务详情.html" class="s8"><div class="s9">04 任务详情</div><div class="s10">启动并对账</div><div class="s11">按启动策略处理已有仓位；仓位对比、挂单镜像、执行日志</div></a><a href="总览.html" class="s8"><div class="s9">05 总览</div><div class="s10">日常监控</div><div class="s11">总权益、任务偏差刻度、告警；最小化到托盘后台运行</div></a><a href="记录.html" class="s8"><div class="s9">06 记录</div><div class="s10">复盘与导出</div><div class="s11">执行日志按 跳过 / 失败 筛选，导出 CSV</div></a></div></div><div class="s5"><div class="s6">分支与异常路径</div><div class="s12"><div class="s13"><div class="s14">全局急停（顶栏常驻，任意页面）</div><div class="s15">点击后所有任务立即暂停、撤销全部镜像挂单，不平仓。总览出现急停横幅，可选「恢复」（先对账）或「全部平仓」（二次确认）。</div></div><div class="s16"><div class="s10">信号丢失 / 断线重连</div><div class="s15">信号源断线超过阈值：任务挂起、不新开仓，顶栏健康点变黄。重连后自动全量对账，无偏差才恢复跟单；偏差超阈值时提示用户选择补齐或保持。</div></div><div class="s16"><div class="s10">风控触发</div><div class="s15">单品种 / 总名义上限：超出部分跳过并记日志。滑点超限：本次不下单。日亏损 / 累计亏损上限：任务自动暂停并通知，需手动恢复。</div></div><div class="s16"><div class="s10">下单失败与跳过</div><div class="s15">限频 / 网络错误自动重试 3 次后记失败；无对应合约、低于最小变化阈值、名单外品种记为跳过。下一次对账会再次尝试补齐差额。</div></div></div></div><div class="s17"><div class="s18"><div class="s6">业务规则</div><div class="s2"><div class="s15">· 只支持 USDT / USDC 永续合约；跟单账户须为单向持仓模式。</div><div class="s15">· 目标仓位 = 信号仓位 × 系数（权益比例 / 固定倍数 / 固定名义）；下单量 = 目标 − 实际，小于最小变化阈值不下单。</div><div class="s15">· 减仓与平仓优先、使用只减仓；加仓受风控上限约束。</div><div class="s15">· 挂单镜像：信号源挂单 2 秒宽限后镜像；镜像单先于信号成交造成的偏差属预期，由下次对账收敛。</div><div class="s15">· 杠杆：跟随信号或固定值，均受上限约束。</div><div class="s15">· 密钥存系统钥匙串，前端拿不到明文；HL 只接受 API 钱包私钥。</div><div class="s19">· 交易所带单员信号源、收益报表、Telegram / Webhook 通知为第二期。</div></div></div><div class="s18"><div class="s6">原型中的交互状态</div><div class="s2"><div class="s15">· 顶栏「全局急停」：所有页面可点，总览显示急停横幅与恢复 / 全部平仓。</div><div class="s15">· 跟单任务列表：状态分段筛选（全部 / 运行 / 暂停 / 停止）。</div><div class="s15">· 任务详情：暂停 / 恢复切换；仓位对比 / 挂单镜像 / 执行日志 tab。</div><div class="s15">· 新建任务向导：仓位模式、杠杆、启动 / 停止策略可切换；系数为空显示错误并禁用下一步。</div><div class="s15">· 信号源：添加 HL 地址弹窗，地址不足 42 位提示错误。</div><div class="s15">· 连接：添加连接抽屉，平台切换（OKX 多 Passphrase，HL 换成 API 钱包字段与警告）。</div><div class="s15">· 记录：三个 tab，日志按 全部 / 跳过 / 失败 筛选。设置：二级导航、开关、分段选择。</div></div></div></div><div class="s5"><div class="s6">动效规范</div><div class="s2"><div class="s15">· 缓动统一 cubic-bezier(0.2, 0.8, 0.2, 1)（快出慢停）；颜色类用 ease。交易工具保持克制：不弹跳、不超过 260ms。</div><div class="s15">· 状态色（tab 文字、分段选中、按钮 hover、选中描边、错误描边）：color / background / box-shadow 150ms。</div><div class="s15">· Tab 下划线：从中心 scaleX 0 → 1，220ms；切换后新面板淡入并上移 4px，200–220ms。</div><div class="s15">· 筛选 / 二级导航切换：列表行与面板只做淡入 220ms（不位移，避免表格内跳动）。</div><div class="s15">· 弹窗：遮罩淡入 200ms，弹窗体淡入 + 上移 12px + 0.98→1 缩放 220ms；关闭反向播放后再卸载（240ms）。</div><div class="s15">· 右侧抽屉：遮罩与抽屉淡入淡出 220ms；正式实现可改为从右侧滑入 translateX(100%)→0，260ms。</div><div class="s15">· 开关：圆点平移 16px + 底色变化 200ms；单选圆点从 0.3 缩放出现 200ms；急停横幅淡入淡出 220ms。</div><div class="s19">· 系统开启「减少动态效果」时，全部过渡时长降为 0。</div></div></div><div class="s5"><div class="s6">待确认</div><div class="s2"><div class="s15">· 「全部平仓」的确认方式：输入确认词，还是普通二次确认弹窗。</div><div class="s15">· 信号丢失阈值与重连后偏差处理的默认值。</div><div class="s15">· 托盘菜单内容（PRD 提及，本稿未单独绘制）。</div></div></div></div></main>
+</body>
+</html>

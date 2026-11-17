@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<!--
+  由 design-mcp 导出。本文件不包含字体文件，请先安装以下字体以获得与画布一致的效果：
+  - Noto Sans CJK SC（字重 400, 600）
+  - Liberation Mono（字重 400, 600）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>总览</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0}
+body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.4;color:#111;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:none}
+input,textarea{font:inherit;color:inherit;border:0;outline:0;background:transparent;resize:none}
+button{appearance:none;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;text-align:inherit;border:0;background:transparent;cursor:pointer}
+a{color:inherit}
+:root{--color-primary:#F0B90B;--color-on-primary:#000000;--color-secondary:#47423F;--color-on-secondary:#FFFFFF;--color-accent:#F0B90B;--color-on-accent:#000000;--color-bg:#0B0E11;--color-fg:#EAECEF;--color-card:#181A20;--color-card-fg:#EAECEF;--color-muted:#22262D;--color-muted-fg:#9AA3AE;--color-border:#2B3139;--color-danger:#F6465D;--color-on-danger:#000000;--color-ring:#F0B90B;--color-input:#5E6673;--font-heading:'Noto Sans CJK SC', sans-serif;--font-body:'Noto Sans CJK SC', sans-serif;--font-mono:'Liberation Mono', monospace;--size-xs:12px;--size-sm:14px;--size-md:16px;--size-lg:20px;--size-xl:24px;--size-2xl:32px;--size-3xl:40px;--space-1:4px;--space-2:8px;--space-3:16px;--space-4:24px;--space-5:32px;--space-6:48px;--space-7:64px;--space-8:96px;--radius-sm:0px;--radius-md:4px;--radius-lg:8px;--radius-full:999px;--shadow-sm:none;--shadow-md:0 12px 32px rgba(0,0,0,0.12);--color-success:#2EBD85;--color-danger-soft:#2A1519;--color-success-soft:#14302A;--color-primary-soft:#3C3218;--color-warning:#F0A030}
+body{background:#fff}
+[data-dm-click],[data-dm-href]{cursor:pointer}
+[data-dm-disabled],[data-dm-disabled] *{cursor:not-allowed}
+.s1{display:flex;flex-direction:row;align-items:stretch;position:relative;font-family:var(--font-body);color:var(--color-fg);background:var(--color-bg);width:1440px;min-height:900px;margin:0 auto}
+.s2{display:flex;flex-direction:column;gap:4px;flex-shrink:0;position:relative;width:220px;padding:24px 16px 16px 16px;border-style:solid;border-color:var(--color-border);border-width:0 1px 0 0;background:var(--color-card)}
+.s3{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;padding:0px 8px 24px 8px}
+.s4{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:22px;height:22px;border-radius:var(--radius-md);background:var(--color-primary)}
+.s5{width:14px;height:14px;color:var(--color-on-primary);object-fit:cover}
+.s6{font-family:var(--font-heading);font-size:var(--size-md);font-weight:600;line-height:1.2;white-space:pre-wrap}
+.s7{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;height:36px;padding:0px 12px;border-radius:var(--radius-md);cursor:pointer;color:inherit;text-decoration:inherit}
+.st8:hover{background:var(--color-muted)}
+.s9{display:flex;flex-direction:column;position:absolute;top:0px;right:0px;bottom:0px;left:0px;border-radius:var(--radius-md);background:var(--color-muted)}
+.s10{display:flex;flex-direction:column;position:absolute;top:9px;left:0px;width:3px;height:18px;background:var(--color-primary)}
+.s11{position:relative;width:16px;height:16px;color:var(--color-muted-fg);object-fit:cover}
+.s12{position:relative;font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.st13:hover{background:var(--color-muted)}
+.st14:hover{background:var(--color-muted)}
+.st15:hover{background:var(--color-muted)}
+.st16:hover{background:var(--color-muted)}
+.st17:hover{background:var(--color-muted)}
+.s18{display:flex;flex-direction:column;flex-grow:1;position:relative}
+.s19{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;padding:8px 12px}
+.s20{width:14px;height:14px;color:var(--color-muted-fg);object-fit:cover}
+.s21{font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s22{padding:0px 12px;font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s23{display:flex;flex-direction:column;flex-grow:1;position:relative;overflow:hidden;min-width:0px}
+.s24{display:flex;flex-direction:row;justify-content:space-between;align-items:center;flex-shrink:0;position:relative;height:56px;padding:0px 24px;border-style:solid;border-color:var(--color-border);border-width:0 0 1px 0}
+.s25{font-family:var(--font-heading);font-size:var(--size-lg);font-weight:600;line-height:1.3;white-space:pre-wrap}
+.s26{display:flex;flex-direction:row;align-items:center;gap:16px;position:relative}
+.s27{display:flex;flex-direction:row;align-items:center;gap:6px;position:relative}
+.s28{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:var(--radius-full);background:var(--color-success)}
+.s29{font-size:var(--size-xs);line-height:1.5;white-space:pre-wrap}
+.s30{font-family:var(--font-mono);font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s31{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:var(--radius-full);background:var(--color-warning)}
+.s32{font-family:var(--font-mono);font-size:var(--size-xs);line-height:1.5;color:var(--color-warning);white-space:pre-wrap}
+.s33{display:flex;flex-direction:column;position:relative;width:1px;height:20px;background:var(--color-border)}
+.s34{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:32px;padding:0px 14px;border:1px solid var(--color-danger);border-radius:var(--radius-md);background:var(--color-danger-soft);cursor:pointer;transition:background-color 150ms ease, box-shadow 150ms ease}
+.st35:hover{background:var(--color-danger)}
+.s36{width:14px;height:14px;color:var(--color-danger);object-fit:cover}
+.s37{font-size:var(--size-sm);font-weight:600;line-height:1.2;white-space:nowrap;color:var(--color-danger)}
+.s38{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:12px 24px;background:var(--color-danger-soft);transition:opacity 220ms ease}
+.s39{font-size:var(--size-sm);line-height:1.4;color:var(--color-danger);white-space:pre-wrap}
+.s40{display:flex;flex-direction:row;gap:8px;position:relative}
+.s41{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:32px;padding:0px 16px;border:1px solid var(--color-danger);border-radius:var(--radius-md);cursor:pointer}
+.s42{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:32px;padding:0px 16px;border-radius:var(--radius-md);background:var(--color-fg);cursor:pointer}
+.s43{font-size:var(--size-sm);font-weight:600;line-height:1.2;white-space:nowrap;color:var(--color-bg)}
+.s44{display:flex;flex-direction:row;gap:24px;flex-grow:1;position:relative;padding:24px}
+.s45{display:flex;flex-direction:column;gap:32px;flex-grow:1;position:relative}
+.s46{display:flex;flex-direction:column;gap:8px;position:relative}
+.s47{font-family:var(--font-mono);font-size:56px;font-weight:600;line-height:1.05;letter-spacing:-2px;white-space:pre-wrap}
+.s48{display:flex;flex-direction:row;align-items:baseline;gap:8px;position:relative}
+.s49{font-family:var(--font-mono);font-size:var(--size-lg);line-height:1.4;color:var(--color-success);white-space:pre-wrap}
+.s50{font-size:var(--size-sm);line-height:1.4;color:var(--color-success);white-space:pre-wrap}
+.s51{display:flex;flex-direction:row;gap:32px;position:relative;margin:16px 0px 0px 0px}
+.s52{display:flex;flex-direction:column;gap:4px;position:relative}
+.s53{font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;color:var(--color-success);white-space:pre-wrap}
+.s54{font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.s55{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:0px 0px 8px 0px}
+.s56{font-family:var(--font-heading);font-size:var(--size-md);font-weight:600;line-height:1.3;white-space:pre-wrap}
+.s57{display:flex;flex-direction:column;position:relative;width:10px;height:4px;background:var(--color-input)}
+.s58{display:flex;flex-direction:column;position:relative;width:10px;height:4px;background:var(--color-muted-fg)}
+.s59{display:flex;flex-direction:column;position:relative;width:10px;height:4px;background:var(--color-fg)}
+.s60{display:flex;flex-direction:column;position:relative;width:10px;height:4px;background:var(--color-primary)}
+.s61{margin:0px 0px 0px 16px;font-size:var(--size-xs);line-height:1.5;text-decoration:underline;color:var(--color-fg);cursor:pointer;color:inherit;text-decoration:inherit;white-space:pre-wrap}
+.s62{display:flex;flex-direction:column;position:relative;overflow:hidden;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card)}
+.s63{display:flex;flex-direction:row;align-items:center;gap:24px;position:relative;padding:16px 16px;border-style:solid;border-color:var(--color-border);border-width:0 0 1px 0;cursor:pointer;color:inherit;text-decoration:inherit}
+.st64:hover{background:var(--color-muted)}
+.s65{display:flex;flex-direction:column;gap:4px;position:relative;width:200px}
+.s66{font-size:var(--size-sm);font-weight:500;line-height:1.4;white-space:pre-wrap}
+.s67{font-family:var(--font-body);font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s68{display:flex;flex-direction:column;gap:3px;flex-grow:1;position:relative}
+.s69{display:flex;flex-direction:row;position:relative;height:4px;background:var(--color-muted)}
+.s70{display:flex;flex-direction:column;position:relative;width:72%;background:var(--color-input)}
+.s71{display:flex;flex-direction:column;position:relative;width:72%;background:var(--color-muted-fg)}
+.s72{display:flex;flex-direction:column;position:relative;width:70%;background:var(--color-fg)}
+.s73{display:flex;flex-direction:column;position:relative;width:2%;background:var(--color-primary)}
+.s74{width:72px;font-family:var(--font-body);font-size:var(--size-xs);line-height:1.5;text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s75{width:88px;font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;text-align:right;color:var(--color-success);white-space:pre-wrap}
+.s76{display:flex;flex-direction:row;align-items:center;gap:6px;position:relative;width:64px}
+.s77{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:28px;height:28px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer}
+.s78{width:14px;height:14px;object-fit:cover}
+.st79:hover{background:var(--color-muted)}
+.s80{display:flex;flex-direction:column;position:relative;width:45%;background:var(--color-input)}
+.s81{display:flex;flex-direction:column;position:relative;width:45%;background:var(--color-muted-fg)}
+.s82{display:flex;flex-direction:column;position:relative;width:45%;background:var(--color-fg)}
+.s83{width:88px;font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;text-align:right;color:var(--color-danger);white-space:pre-wrap}
+.st84:hover{background:var(--color-muted)}
+.s85{display:flex;flex-direction:column;position:relative;width:58%;background:var(--color-input)}
+.s86{display:flex;flex-direction:column;position:relative;width:58%;background:var(--color-muted-fg)}
+.s87{display:flex;flex-direction:column;position:relative;width:49%;background:var(--color-fg)}
+.s88{display:flex;flex-direction:column;position:relative;width:9%;background:var(--color-primary)}
+.s89{width:72px;font-family:var(--font-body);font-size:var(--size-xs);line-height:1.5;text-align:right;color:var(--color-primary);white-space:pre-wrap}
+.s90{font-size:var(--size-xs);line-height:1.5;color:var(--color-warning);white-space:pre-wrap}
+.s91{display:flex;flex-direction:row;align-items:center;gap:24px;position:relative;padding:16px 16px;cursor:pointer;color:inherit;text-decoration:inherit}
+.st92:hover{background:var(--color-muted)}
+.s93{font-size:var(--size-sm);font-weight:500;line-height:1.4;color:var(--color-muted-fg);white-space:pre-wrap}
+.s94{width:72px;font-size:var(--size-xs);line-height:1.5;text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s95{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:var(--radius-full);background:var(--color-muted-fg)}
+.s96{display:flex;flex-direction:row;position:relative;border-style:solid;border-color:var(--color-border);border-width:1px 0 1px 0}
+.s97{display:flex;flex-direction:column;gap:4px;flex-grow:1;flex-basis:0px;position:relative;padding:16px 16px 16px 0px}
+.s98{font-family:var(--font-mono);font-size:var(--size-xl);line-height:1.3;white-space:pre-wrap}
+.s99{display:flex;flex-direction:column;gap:4px;flex-grow:1;flex-basis:0px;position:relative;padding:16px;border-style:solid;border-color:var(--color-border);border-width:0 0 0 1px}
+.s100{font-family:var(--font-mono);font-size:var(--size-xl);line-height:1.3;color:var(--color-danger);white-space:pre-wrap}
+.s101{display:flex;flex-direction:column;gap:32px;flex-shrink:0;position:relative;width:380px}
+.s102{display:flex;flex-direction:column;position:relative}
+.s103{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:40px;border-style:solid;border-color:var(--color-border);border-width:0 0 1px 0}
+.s104{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:28px;height:18px;border-radius:var(--radius-sm);background:var(--color-muted)}
+.s105{font-size:var(--size-xs);line-height:1.2;color:var(--color-muted-fg);white-space:pre-wrap}
+.s106{flex-grow:1;font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.s107{width:80px;font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;text-align:right;color:var(--color-success);white-space:pre-wrap}
+.s108{width:80px;font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;text-align:right;color:var(--color-danger);white-space:pre-wrap}
+.s109{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:40px}
+.s110{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:28px;height:18px;border-radius:var(--radius-sm);background:var(--color-primary-soft)}
+.s111{font-size:var(--size-xs);line-height:1.2;color:var(--color-primary);white-space:pre-wrap}
+.s112{flex-grow:1;font-size:var(--size-sm);line-height:1.4;color:var(--color-muted-fg);white-space:pre-wrap}
+.s113{font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;color:var(--color-muted-fg);white-space:pre-wrap}
+.s114{font-size:var(--size-xs);line-height:1.5;text-decoration:underline;cursor:pointer;color:inherit;text-decoration:inherit;white-space:pre-wrap}
+.s115{display:flex;flex-direction:row;gap:8px;position:relative;padding:8px 8px;border-radius:var(--radius-md);background:var(--color-danger-soft)}
+.s116{width:14px;height:14px;margin:3px 0px 0px 0px;object-fit:cover}
+.s117{display:flex;flex-direction:column;gap:2px;flex-grow:1;position:relative}
+.s118{display:flex;flex-direction:row;gap:8px;position:relative;padding:8px 8px}
+.s119{font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<main data-dm-frame="0"><div data-dm-p="0-0" class="s1"><div class="s2"><div class="s3"><div class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iNiIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSIxOCIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjE4IiByPSIzIi8+PHBhdGggZD0iTTYgOXYxYTIgMiAwIDAgMCAyIDJoOGEyIDIgMCAwIDAgMi0yVjlNMTIgMTJ2MyIvPjwvc3ZnPg==" alt class="s5"></div><div class="s6">Merchandiser</div></div><a href="总览.html" class="s7 st8"><div class="s9"></div><div class="s10"></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjciIGhlaWdodD0iOSIgcng9IjEiLz48cmVjdCB4PSIxNCIgeT0iMyIgd2lkdGg9IjciIGhlaWdodD0iNSIgcng9IjEiLz48cmVjdCB4PSIxNCIgeT0iMTIiIHdpZHRoPSI3IiBoZWlnaHQ9IjkiIHJ4PSIxIi8+PHJlY3QgeD0iMyIgeT0iMTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjUiIHJ4PSIxIi8+PC9zdmc+" alt class="s11"><div class="s12">总览</div></a><a href="跟单任务列表.html" class="s7 st13"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iOCIgeT0iOCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiByeD0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s11"><div class="s12">跟单任务</div></a><a href="信号源.html" class="s7 st14"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjxwYXRoIGQ9Ik0xNi4yNCA3Ljc2YTYgNiAwIDAgMSAwIDguNDltLTguNDgtLjAxYTYgNiAwIDAgMSAwLTguNDltMTEuMzEtMi44MmExMCAxMCAwIDAgMSAwIDE0LjE0bS0xNC4xNCAwYTEwIDEwIDAgMCAxIDAtMTQuMTQiLz48L3N2Zz4=" alt class="s11"><div class="s12">信号源</div></a><a href="连接.html" class="s7 st15"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEwIDEzYTUgNSAwIDAgMCA3LjU0LjU0bDMtM2E1IDUgMCAwIDAtNy4wNy03LjA3bC0xLjcyIDEuNzEiLz48cGF0aCBkPSJNMTQgMTFhNSA1IDAgMCAwLTcuNTQtLjU0bC0zIDNhNSA1IDAgMCAwIDcuMDcgNy4wN2wxLjcxLTEuNzEiLz48L3N2Zz4=" alt class="s11"><div class="s12">连接</div></a><a href="记录.html" class="s7 st16"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTggNmgxM004IDEyaDEzTTggMThoMTNNMyA2aC4wMU0zIDEyaC4wMU0zIDE4aC4wMSIvPjwvc3ZnPg==" alt class="s11"><div class="s12">记录</div></a><a href="设置.html" class="s7 st17"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTQgMjF2LTdNNCAxMFYzTTEyIDIxdi05TTEyIDhWM00yMCAyMXYtNU0yMCAxMlYzTTEgMTRoNk05IDhoNk0xNyAxNmg2Ii8+PC9zdmc+" alt class="s11"><div class="s12">设置</div></a><div class="s18"></div><div class="s19"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iMyIgeT0iMTEiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxMSIgcng9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4=" alt class="s20"><div class="s21">锁定界面</div></div><div class="s22">v0.1.0 本地构建</div></div><div class="s23"><div class="s24"><div class="s25">总览</div><div class="s26"><div class="s26"><div class="s27"><div class="s28"></div><div class="s29">OKX</div><div class="s30">86ms</div></div><div class="s27"><div class="s28"></div><div class="s29">币安</div><div class="s30">41ms</div></div><div class="s27"><div class="s31"></div><div class="s29">Gate</div><div class="s32">412ms</div></div><div class="s27"><div class="s28"></div><div class="s29">Hyperliquid</div><div class="s30">120ms</div></div></div><div class="s33"></div><button data-dm-p="0-1" type="button" class="s34 st35"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjY0NjVEIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBvbHlnb24gcG9pbnRzPSI3Ljg2IDIgMTYuMTQgMiAyMiA3Ljg2IDIyIDE2LjE0IDE2LjE0IDIyIDcuODYgMjIgMiAxNi4xNCAyIDcuODYiLz48cGF0aCBkPSJNMTAgMTVWOU0xNCAxNVY5Ii8+PC9zdmc+" alt class="s36"><div class="s37">全局急停</div></button></div></div><div data-dm-p="0-2" class="s38"><div class="s39">已急停：3 个任务全部暂停，已跟仓位保留不动。信号源仍在监听。</div><div class="s40"><button type="button" class="s41"><div class="s37">全部平仓…</div></button><button data-dm-p="0-3" type="button" class="s42"><div class="s43">恢复全部任务</div></button></div></div><div class="s44"><div class="s45"><div class="s46"><div class="s21">总权益（USDT，6 个跟单账户合计）</div><div class="s47">248,316.52</div><div class="s48"><div class="s49">+1,284.30</div><div class="s50">+0.52% 今日</div></div><div class="s51"><div class="s52"><div class="s21">浮动盈亏</div><div class="s53">+3,912.06</div></div><div class="s52"><div class="s21">可用保证金</div><div class="s54">171,204.88</div></div><div class="s52"><div class="s21">名义仓位</div><div class="s54">412,880.00</div></div><div class="s52"><div class="s21">信号→下单 P95</div><div class="s54">312 ms</div></div></div></div><div class="s46"><div class="s55"><div class="s56">运行中的任务</div><div class="s26"><div class="s27"><div class="s57"></div><div class="s21">信号源</div></div><div class="s27"><div class="s58"></div><div class="s21">目标</div></div><div class="s27"><div class="s59"></div><div class="s21">实际</div></div><div class="s27"><div class="s60"></div><div class="s21">偏差</div></div><a href="跟单任务列表.html" class="s61">全部任务</a></div></div><div class="s62"><a href="任务详情.html" class="s63 st64"><div class="s65"><div class="s66">HL 聪明钱 #1</div><div class="s67">0x7a3f…c21e → 3 个账户</div></div><div class="s68"><div class="s69"><div class="s70"></div></div><div class="s69"><div class="s71"></div></div><div class="s69"><div class="s72"></div><div class="s73"></div></div></div><div class="s74">偏差 0.6%</div><div class="s75">+842.17</div><div class="s76"><div class="s28"></div><div class="s29">运行中</div></div><button type="button" class="s77"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkgNXYxNE0xNSA1djE0Ii8+PC9zdmc+" alt="暂停" class="s78"></button></a><a href="任务详情.html" class="s63 st79"><div class="s65"><div class="s66">币安主账户同步</div><div class="s21">币安 main-ro → 2 个账户</div></div><div class="s68"><div class="s69"><div class="s80"></div></div><div class="s69"><div class="s81"></div></div><div class="s69"><div class="s82"></div></div></div><div class="s74">偏差 0.0%</div><div class="s83">−213.40</div><div class="s76"><div class="s28"></div><div class="s29">运行中</div></div><button type="button" class="s77"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkgNXYxNE0xNSA1djE0Ii8+PC9zdmc+" alt="暂停" class="s78"></button></a><a href="任务详情.html" class="s63 st84"><div class="s65"><div class="s66">OKX 交易员 → 团队</div><div class="s21">OKX trader-ro → 1 个账户</div></div><div class="s68"><div class="s69"><div class="s85"></div></div><div class="s69"><div class="s86"></div></div><div class="s69"><div class="s87"></div><div class="s88"></div></div></div><div class="s89">偏差 15.5%</div><div class="s75">+655.53</div><div class="s76"><div class="s31"></div><div class="s90">对账中</div></div><button type="button" class="s77"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkgNXYxNE0xNSA1djE0Ii8+PC9zdmc+" alt="暂停" class="s78"></button></a><a href="任务详情.html" class="s91 st92"><div class="s65"><div class="s93">HL 金库试跟</div><div class="s67">0xd41b…9e07 → 模拟账户</div></div><div class="s18"><div class="s21">日亏损触及上限，已自动暂停</div></div><div class="s94">—</div><div class="s83">−1,002.41</div><div class="s76"><div class="s95"></div><div class="s21">已暂停</div></div><button type="button" class="s77"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBvbHlnb24gcG9pbnRzPSI3IDQgMTkgMTIgNyAyMCA3IDQiLz48L3N2Zz4=" alt="恢复" class="s78"></button></a></div></div><div class="s46"><div class="s55"><div class="s56">今日执行</div><div class="s21">自 00:00 起</div></div><div class="s96"><div class="s97"><div class="s21">收到信号</div><div class="s98">128</div></div><div class="s99"><div class="s21">发出订单</div><div class="s98">342</div></div><div class="s99"><div class="s21">平均滑点</div><div class="s98">0.04%</div></div><div class="s99"><div class="s21">风控跳过</div><div class="s98">6</div></div><div class="s99"><div class="s21">下单失败</div><div class="s100">3</div></div></div></div></div><div class="s101"><div class="s46"><div class="s55"><div class="s56">账户权益</div><div class="s21">今日盈亏</div></div><div class="s102"><div class="s103"><div class="s104"><div class="s105">OKX</div></div><div class="s106">okx-follow-01</div><div class="s54">62,410.08</div><div class="s107">+412.30</div></div><div class="s103"><div class="s104"><div class="s105">BN</div></div><div class="s106">bn-sub-a</div><div class="s54">54,980.12</div><div class="s107">+388.04</div></div><div class="s103"><div class="s104"><div class="s105">BN</div></div><div class="s106">bn-sub-b</div><div class="s54">31,204.77</div><div class="s108">−213.40</div></div><div class="s103"><div class="s104"><div class="s105">Gate</div></div><div class="s106">gate-follow-02</div><div class="s54">28,775.30</div><div class="s107">+243.23</div></div><div class="s103"><div class="s104"><div class="s105">HL</div></div><div class="s106">hl-api-wallet</div><div class="s54">70,946.25</div><div class="s107">+454.13</div></div><div class="s109"><div class="s110"><div class="s111">模拟</div></div><div class="s112">paper-01</div><div class="s113">10,000.00</div><div class="s108">−1,002.41</div></div></div></div><div class="s46"><div class="s55"><div class="s56">最近告警</div><a href="记录.html" class="s114">查看记录</a></div><div class="s115"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjY0NjVEIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zWiIvPjxwYXRoIGQ9Ik0xMiA5djRNMTIgMTdoLjAxIi8+PC9zdmc+" alt class="s116"><div class="s117"><div class="s39">gate-follow-02 下单失败 3 次，等待对账补单</div><div class="s21">14:02:17  OKX 交易员 → 团队</div></div></div><div class="s118"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjBBMDMwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zWiIvPjxwYXRoIGQ9Ik0xMiA5djRNMTIgMTdoLjAxIi8+PC9zdmc+" alt class="s116"><div class="s117"><div class="s119">Gate 延迟 412 ms，高于阈值 300 ms</div><div class="s21">13:58:40  连接 gate-follow-02</div></div></div><div class="s118"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjBBMDMwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zWiIvPjxwYXRoIGQ9Ik0xMiA5djRNMTIgMTdoLjAxIi8+PC9zdmc+" alt class="s116"><div class="s117"><div class="s119">日亏损触及上限，任务已暂停</div><div class="s21">11:20:05  HL 金库试跟</div></div></div><div class="s118"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkVCRDg1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIwIDYgOSAxN2wtNS01Ii8+PC9zdmc+" alt class="s116"><div class="s117"><div class="s119">币安 WS 断线 6 秒后重连，对账无偏差</div><div class="s21">09:41:12  币安主账户同步</div></div></div></div></div></div></div></div></main>
+<script>
+// design-mcp 原型交互运行时
+(function () {
+var __name = function (f) { return f; };
+var createProtoEngine = function createProtoEngine() {
+    const FNS = {
+        len: (x) => String(x ?? '').length,
+        pad: (x, n) => String(x ?? '').padStart(Number(n) || 2, '0'),
+        floor: (x) => Math.floor(Number(x) || 0),
+        min: (a, b) => Math.min(Number(a), Number(b)),
+        max: (a, b) => Math.max(Number(a), Number(b)),
+    };
+    const LEVELS = [['||'], ['&&'], ['==', '!='], ['<', '>', '<=', '>='], ['+', '-'], ['*', '/', '%']];
+    const TEMPLATE_RE = /\{\{([\s\S]+?)\}\}/g;
+    class ExprError extends Error {
+    }
+    function tokenize(src) {
+        const out = [];
+        const re = /\s*(?:(\d+(?:\.\d+)?)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|([a-zA-Z_][a-zA-Z0-9_]*)|(==|!=|<=|>=|&&|\|\||[-+*/%!<>?:(),]))/y;
+        let i = 0;
+        while (i < src.length) {
+            if (/^\s*$/.test(src.slice(i)))
+                break;
+            re.lastIndex = i;
+            const m = re.exec(src);
+            if (!m)
+                throw new ExprError(`无法识别 “${src.slice(i).trim().slice(0, 12)}”`);
+            out.push(m[1] ?? m[2] ?? m[3] ?? m[4]);
+            i = re.lastIndex;
+        }
+        return out;
+    }
+    const cache = new Map();
+    function parseExpr(src) {
+        const hit = cache.get(src);
+        if (hit)
+            return hit;
+        if (src.length > 500)
+            throw new ExprError('表达式过长');
+        const t = tokenize(src);
+        let p = 0;
+        const peek = () => t[p];
+        const eat = (s) => {
+            const v = t[p];
+            if (s !== undefined && v !== s)
+                throw new ExprError(`缺少 “${s}”`);
+            if (v === undefined)
+                throw new ExprError('表达式不完整');
+            p++;
+            return v;
+        };
+        const bin = (lvl) => {
+            if (lvl === LEVELS.length)
+                return unary();
+            let a = bin(lvl + 1);
+            while (LEVELS[lvl].includes(peek())) {
+                const op = eat();
+                a = { k: 'bin', op, a, b: bin(lvl + 1) };
+            }
+            return a;
+        };
+        const unary = () => {
+            if (peek() === '!' || peek() === '-') {
+                const op = eat();
+                return { k: 'un', op, a: unary() };
+            }
+            return primary();
+        };
+        const primary = () => {
+            const v = eat();
+            if (v === '(') {
+                const e = expr();
+                eat(')');
+                return e;
+            }
+            if (/^\d/.test(v))
+                return { k: 'lit', v: Number(v) };
+            if (v[0] === "'" || v[0] === '"')
+                return { k: 'lit', v: v.slice(1, -1).replace(/\\(.)/g, '$1') };
+            if (v === 'true' || v === 'false')
+                return { k: 'lit', v: v === 'true' };
+            if (/^[a-zA-Z_]/.test(v)) {
+                if (peek() !== '(')
+                    return { k: 'var', n: v };
+                if (!FNS[v])
+                    throw new ExprError(`未知函数 ${v}()`);
+                eat('(');
+                const args = [];
+                if (peek() !== ')') {
+                    args.push(expr());
+                    while (peek() === ',') {
+                        eat(',');
+                        args.push(expr());
+                    }
+                }
+                eat(')');
+                return { k: 'call', f: v, args };
+            }
+            throw new ExprError(`意外的 “${v}”`);
+        };
+        const expr = () => {
+            const c = bin(0);
+            if (peek() !== '?')
+                return c;
+            eat('?');
+            const a = expr();
+            eat(':');
+            return { k: 'cond', c, a, b: expr() };
+        };
+        const ast = expr();
+        if (p < t.length)
+            throw new ExprError(`多余的 “${t[p]}”`);
+        if (cache.size > 2000)
+            cache.clear();
+        cache.set(src, ast);
+        return ast;
+    }
+    const eq = (a, b) => (typeof a === typeof b ? a === b : String(a) === String(b));
+    function run(a, vars) {
+        switch (a.k) {
+            case 'lit':
+                return a.v;
+            case 'var':
+                return vars[a.n] ?? '';
+            case 'un': {
+                const v = run(a.a, vars);
+                return a.op === '!' ? !v : -Number(v);
+            }
+            case 'cond':
+                return run(a.c, vars) ? run(a.a, vars) : run(a.b, vars);
+            case 'call':
+                return FNS[a.f](...a.args.map((x) => run(x, vars)));
+            case 'bin': {
+                if (a.op === '&&')
+                    return run(a.a, vars) && run(a.b, vars);
+                if (a.op === '||')
+                    return run(a.a, vars) || run(a.b, vars);
+                const l = run(a.a, vars);
+                const r = run(a.b, vars);
+                switch (a.op) {
+                    case '==':
+                        return eq(l, r);
+                    case '!=':
+                        return !eq(l, r);
+                    case '+':
+                        return typeof l === 'number' && typeof r === 'number' ? l + r : `${l}${r}`;
+                    case '-':
+                        return Number(l) - Number(r);
+                    case '*':
+                        return Number(l) * Number(r);
+                    case '/':
+                        return Number(l) / Number(r);
+                    case '%':
+                        return Number(l) % Number(r);
+                    case '<':
+                        return Number(l) < Number(r);
+                    case '>':
+                        return Number(l) > Number(r);
+                    case '<=':
+                        return Number(l) <= Number(r);
+                    case '>=':
+                        return Number(l) >= Number(r);
+                }
+            }
+        }
+        return '';
+    }
+    /** 求值；语法错误返回 undefined。 */
+    function evalExpr(src, vars) {
+        try {
+            return run(parseExpr(src), vars);
+        }
+        catch {
+            return undefined;
+        }
+    }
+    const truthy = (src, vars) => (src === undefined ? true : !!evalExpr(src, vars));
+    /** 文本插值：{{表达式}}。 */
+    function renderTemplate(text, vars) {
+        return text.replace(TEMPLATE_RE, (_, e) => {
+            const v = evalExpr(e.trim(), vars);
+            return v === undefined ? '' : typeof v === 'number' ? String(Math.round(v * 1000) / 1000) : String(v);
+        });
+    }
+    /** 一个画板的运行时：维护状态变量，执行动作，按状态刷新显隐、条件样式、文本与禁用。 */
+    class ProtoRuntime {
+        win;
+        nav;
+        vars = {};
+        entries = new Map();
+        els = [];
+        countdowns = new Map();
+        timeouts = new Set();
+        /** 进入画板或停止时递增：之前排队的动作不再执行。 */
+        gen = 0;
+        constructor(win, nav) {
+            this.win = win;
+            this.nav = nav;
+        }
+        /** 进入画板：重置状态。 */
+        reset(initial) {
+            this.stopAll();
+            this.vars = { ...initial };
+        }
+        /** 文档变化后同一画板重绘：保留当前状态，只补充新声明的变量。 */
+        merge(initial) {
+            for (const [k, v] of Object.entries(initial))
+                if (!(k in this.vars))
+                    this.vars[k] = v;
+        }
+        /** 绑定渲染结果：root 内 data-dm-p="<prefix><序号>" 的元素对应 entries[序号]。 */
+        mount(root, entries, prefix = '') {
+            this.entries = new Map(entries.map((e, i) => [prefix + i, e]));
+            this.els = [];
+            for (const [id, e] of this.entries) {
+                const el = root.querySelector(`[data-dm-p="${id}"]`);
+                if (!el)
+                    continue;
+                if (e.proto.onClick)
+                    el.setAttribute('data-dm-click', '');
+                // 内联样式模式下元素自带样式：条件样式叠加在其后
+                this.els.push([el, e, el.getAttribute('style') ?? '']);
+            }
+            this.apply();
+        }
+        owns(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id !== null && this.entries.has(id);
+        }
+        runLoad() {
+            for (const e of this.entries.values())
+                if (e.proto.onLoad)
+                    this.run(e.proto.onLoad);
+        }
+        stopAll() {
+            this.gen++;
+            for (const t of this.countdowns.values())
+                this.win.clearInterval(t);
+            for (const t of this.timeouts)
+                this.win.clearTimeout(t);
+            this.countdowns.clear();
+            this.timeouts.clear();
+        }
+        apply() {
+            const v = this.vars;
+            for (const [el, e, base] of this.els) {
+                const css = base ? [base] : [];
+                for (const s of e.styles)
+                    if (truthy(s.when, v))
+                        css.push(...s.css);
+                if (!truthy(e.proto.show, v))
+                    css.push('display:none');
+                const text = css.join(';');
+                if (el.style.cssText !== text)
+                    el.style.cssText = text;
+                el.toggleAttribute('data-dm-disabled', e.proto.disabled !== undefined && truthy(e.proto.disabled, v));
+                if (e.template && !el.firstElementChild) {
+                    const t = renderTemplate(e.template, v);
+                    if (el.textContent !== t)
+                        el.textContent = t;
+                }
+                if (e.proto.bind && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+                    const field = el;
+                    const val = String(v[e.proto.bind] ?? '');
+                    if (field.value !== val && el.ownerDocument.activeElement !== el)
+                        field.value = val;
+                }
+            }
+        }
+        entryOf(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id === null ? undefined : this.entries.get(id);
+        }
+        /** 处理点击：返回是否命中了可交互元素（含被禁用的元素）。 */
+        click(target) {
+            let el = target.closest('[data-dm-click],[data-dm-href]');
+            while (el) {
+                if (el.hasAttribute('data-dm-disabled'))
+                    return true;
+                const e = this.entryOf(el);
+                const href = el.getAttribute('data-dm-href');
+                if (e?.proto.onClick || href) {
+                    const gen = this.gen;
+                    if (e?.proto.onClick)
+                        this.run(e.proto.onClick);
+                    if (href && gen === this.gen)
+                        this.nav.follow(href);
+                    return true;
+                }
+                el = el.parentElement?.closest('[data-dm-click],[data-dm-href]') ?? null;
+            }
+            return !!target.closest('[data-dm-disabled]');
+        }
+        input(target) {
+            const e = this.entryOf(target);
+            if (!e?.proto.bind || !('value' in target))
+                return;
+            this.vars[e.proto.bind] = String(target.value);
+            this.apply();
+        }
+        run(actions) {
+            const gen = this.gen;
+            for (const a of actions) {
+                if (gen !== this.gen)
+                    return;
+                switch (a.do) {
+                    case 'set': {
+                        const v = a.expr !== undefined ? evalExpr(a.expr, this.vars) : a.value;
+                        if (v !== undefined)
+                            this.vars[a.var] = v;
+                        break;
+                    }
+                    case 'toggle':
+                        this.vars[a.var] = !this.vars[a.var];
+                        break;
+                    case 'countdown': {
+                        this.clearCountdown(a.var);
+                        this.vars[a.var] = a.from;
+                        const t = this.win.setInterval(() => {
+                            const n = Number(this.vars[a.var]) - 1;
+                            this.vars[a.var] = Math.max(0, n);
+                            if (n <= 0) {
+                                this.clearCountdown(a.var);
+                                if (a.then)
+                                    this.run(a.then);
+                            }
+                            this.apply();
+                        }, a.interval ?? 1000);
+                        this.countdowns.set(a.var, t);
+                        break;
+                    }
+                    case 'stop':
+                        this.clearCountdown(a.var);
+                        break;
+                    case 'delay': {
+                        const t = this.win.setTimeout(() => {
+                            this.timeouts.delete(t);
+                            if (gen === this.gen)
+                                this.run(a.then);
+                        }, a.ms);
+                        this.timeouts.add(t);
+                        break;
+                    }
+                    case 'if':
+                        this.run((truthy(a.when, this.vars) ? a.then : a.else) ?? []);
+                        break;
+                    case 'navigate':
+                        return this.nav.go(a.frame);
+                    case 'back':
+                        return this.nav.back();
+                    case 'open':
+                        this.nav.open(a.url);
+                        break;
+                }
+            }
+            if (gen === this.gen)
+                this.apply();
+        }
+        clearCountdown(name) {
+            const t = this.countdowns.get(name);
+            if (t !== undefined)
+                this.win.clearInterval(t);
+            this.countdowns.delete(name);
+        }
+    }
+    return { ExprError, parseExpr, evalExpr, truthy, renderTemplate, ProtoRuntime };
+};
+var D = {"ids":["f_lidejm68"],"files":{"f_3gkt3952":"业务流程与说明.html","f_lidejm68":"总览.html","f_0v3ux7m0":"跟单任务列表.html","f_sc201re3":"任务详情.html","f_ezsf3g50":"新建任务向导.html","f_07a01ye5":"信号源.html","f_xysubxhe":"连接.html","f_43gmjj6j":"记录.html","f_x8uhqd1w":"设置.html"},"frames":[{"vars":{"estop":false,"estopIn":false},"entries":[{"proto":{"vars":{"estop":false,"estopIn":false}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"estop","value":true},{"do":"delay","ms":20,"then":[{"do":"set","var":"estopIn","value":true}]}]},"styles":[]},{"proto":{"show":"estop","styles":[{"when":"!estopIn","style":{"opacity":0}}]},"styles":[{"when":"!estopIn","css":["opacity:0"]}]},{"proto":{"onClick":[{"do":"set","var":"estopIn","value":false},{"do":"delay","ms":240,"then":[{"do":"set","var":"estop","value":false}]}]},"styles":[]}]}]};
+var E = createProtoEngine();
+var radios = Array.prototype.slice.call(document.querySelectorAll('input.dm-r'));
+var cur = 0, hist = [0];
+var nav = {
+  go: function (id) {
+    var i = D.ids.indexOf(id);
+    if (i >= 0) { if (radios[i]) radios[i].checked = true; enter(i, true); }
+    else if (D.files[id]) location.href = D.files[id];
+  },
+  back: function () {
+    if (hist.length > 1) { hist.pop(); var i = hist[hist.length - 1]; if (radios[i]) radios[i].checked = true; enter(i, false); }
+    else history.back();
+  },
+  open: function (url) { if (/^(https?:|mailto:|tel:)/i.test(url)) window.open(url, '_blank', 'noopener'); },
+  follow: function (href) {
+    if (href === '#back') return nav.back();
+    if (href.charAt(0) === '#') return nav.go(href.slice(1));
+    nav.open(href);
+  }
+};
+var rts = D.frames.map(function (f, i) {
+  var rt = new E.ProtoRuntime(window, nav);
+  rt.reset(f.vars);
+  rt.mount(document.querySelector('[data-dm-frame="' + i + '"]') || document, f.entries, i + '-');
+  return rt;
+});
+function enter(i, push) {
+  if (push && i === cur) return;
+  rts[cur].stopAll();
+  cur = i;
+  if (push) hist.push(i);
+  rts[i].reset(D.frames[i].vars);
+  rts[i].apply();
+  rts[i].runLoad();
+  window.scrollTo(0, 0);
+}
+radios.forEach(function (r, i) { r.addEventListener('change', function () { if (r.checked) enter(i, true); }); });
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  if (!t || !t.closest) return;
+  if (rts[cur].click(t) && t.closest('[data-dm-disabled],[data-dm-href]')) e.preventDefault();
+});
+document.addEventListener('input', function (e) { if (e.target && e.target.getAttribute) rts[cur].input(e.target); });
+rts[0].runLoad();
+})();
+</script>
+</body>
+</html>

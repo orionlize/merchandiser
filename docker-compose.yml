@@ -1,0 +1,55 @@
+services:
+  merchandiser:
+    build: .
+    image: merchandiser:latest
+    restart: unless-stopped
+    ports:
+      # Default: reachable only from this host (http://127.0.0.1:8686).
+      # External access, either:
+      #   - HTTPS (recommended): set DOMAIN in .env and run `docker compose --profile https up -d`
+      #   - plain HTTP on all interfaces: set MERCHANDISER_BIND=0.0.0.0 in .env (token travels unencrypted)
+      - "${MERCHANDISER_BIND:-127.0.0.1}:${MERCHANDISER_PORT:-8686}:8686"
+    volumes:
+      - merchandiser-data:/data
+    environment:
+      # "Today" statistics and daily loss limits use this timezone's midnight.
+      TZ: ${TZ:-Asia/Shanghai}
+      # Access token the web UI asks for. Leave empty to generate one into /data/api_token.
+      MERCHANDISER_TOKEN: ${MERCHANDISER_TOKEN:-}
+      # Optional: unlock secrets.enc at boot so tasks resume unattended after a restart.
+      # Otherwise unlock from the web UI after each restart.
+      # MERCHANDISER_MASTER_PASSWORD_FILE: /run/secrets/master_password
+    # secrets:
+    #   - master_password
+    # Explicit resolvers. Rootless Docker forwards the host's resolv.conf, which breaks
+    # when the host resolves via a loopback address (127.0.0.53, a local DNS server):
+    # every exchange lookup then times out and copy tasks report "source lost".
+    dns:
+      - ${MERCHANDISER_DNS1:-223.5.5.5}
+      - ${MERCHANDISER_DNS2:-119.29.29.29}
+
+  # Automatic HTTPS (Let's Encrypt) in front of the server. Needs a domain whose
+  # DNS A record points at this host, and ports 80 + 443 open to the internet.
+  caddy:
+    profiles: ["https"]
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on: [merchandiser]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env for the https profile}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+# secrets:
+#   master_password:
+#     file: ./master_password.txt
+
+volumes:
+  merchandiser-data:
+  caddy-data:
+  caddy-config:

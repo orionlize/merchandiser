@@ -1,0 +1,5 @@
+{$DOMAIN} {
+	encode gzip
+	# SSE (/api/events) is streamed unbuffered by reverse_proxy automatically.
+	reverse_proxy merchandiser:8686
+}

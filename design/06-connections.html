@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<!--
+  由 design-mcp 导出。本文件不包含字体文件，请先安装以下字体以获得与画布一致的效果：
+  - Noto Sans CJK SC（字重 400, 600）
+  - Liberation Mono（字重 400, 600）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>连接</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0}
+body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.4;color:#111;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:none}
+input,textarea{font:inherit;color:inherit;border:0;outline:0;background:transparent;resize:none}
+button{appearance:none;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;text-align:inherit;border:0;background:transparent;cursor:pointer}
+a{color:inherit}
+:root{--color-primary:#F0B90B;--color-on-primary:#000000;--color-secondary:#47423F;--color-on-secondary:#FFFFFF;--color-accent:#F0B90B;--color-on-accent:#000000;--color-bg:#0B0E11;--color-fg:#EAECEF;--color-card:#181A20;--color-card-fg:#EAECEF;--color-muted:#22262D;--color-muted-fg:#9AA3AE;--color-border:#2B3139;--color-danger:#F6465D;--color-on-danger:#000000;--color-ring:#F0B90B;--color-input:#5E6673;--font-heading:'Noto Sans CJK SC', sans-serif;--font-body:'Noto Sans CJK SC', sans-serif;--font-mono:'Liberation Mono', monospace;--size-xs:12px;--size-sm:14px;--size-md:16px;--size-lg:20px;--size-xl:24px;--size-2xl:32px;--size-3xl:40px;--space-1:4px;--space-2:8px;--space-3:16px;--space-4:24px;--space-5:32px;--space-6:48px;--space-7:64px;--space-8:96px;--radius-sm:0px;--radius-md:4px;--radius-lg:8px;--radius-full:999px;--shadow-sm:none;--shadow-md:0 12px 32px rgba(0,0,0,0.12);--color-success:#2EBD85;--color-danger-soft:#2A1519;--color-success-soft:#14302A;--color-primary-soft:#3C3218;--color-warning:#F0A030}
+body{background:#fff}
+[data-dm-click],[data-dm-href]{cursor:pointer}
+[data-dm-disabled],[data-dm-disabled] *{cursor:not-allowed}
+.s1{display:flex;flex-direction:row;align-items:stretch;position:relative;font-family:var(--font-body);color:var(--color-fg);background:var(--color-bg);width:1440px;min-height:900px;margin:0 auto}
+.s2{display:flex;flex-direction:column;gap:4px;flex-shrink:0;position:relative;width:220px;padding:24px 16px 16px 16px;border-style:solid;border-color:var(--color-border);border-width:0 1px 0 0;background:var(--color-card)}
+.s3{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;padding:0px 8px 24px 8px}
+.s4{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:22px;height:22px;border-radius:var(--radius-md);background:var(--color-primary)}
+.s5{width:14px;height:14px;color:var(--color-on-primary);object-fit:cover}
+.s6{font-family:var(--font-heading);font-size:var(--size-md);font-weight:600;line-height:1.2;white-space:pre-wrap}
+.s7{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;height:36px;padding:0px 12px;border-radius:var(--radius-md);cursor:pointer;color:inherit;text-decoration:inherit}
+.st8:hover{background:var(--color-muted)}
+.s9{position:relative;width:16px;height:16px;color:var(--color-muted-fg);object-fit:cover}
+.s10{position:relative;font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.st11:hover{background:var(--color-muted)}
+.st12:hover{background:var(--color-muted)}
+.st13:hover{background:var(--color-muted)}
+.s14{display:flex;flex-direction:column;position:absolute;top:0px;right:0px;bottom:0px;left:0px;border-radius:var(--radius-md);background:var(--color-muted)}
+.s15{display:flex;flex-direction:column;position:absolute;top:9px;left:0px;width:3px;height:18px;background:var(--color-primary)}
+.st16:hover{background:var(--color-muted)}
+.st17:hover{background:var(--color-muted)}
+.s18{display:flex;flex-direction:column;flex-grow:1;position:relative}
+.s19{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;padding:8px 12px}
+.s20{width:14px;height:14px;color:var(--color-muted-fg);object-fit:cover}
+.s21{font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s22{padding:0px 12px;font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s23{display:flex;flex-direction:column;flex-grow:1;position:relative;overflow:hidden;min-width:0px}
+.s24{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:56px;padding:0px 24px;border-style:solid;border-color:var(--color-border);border-width:0 0 1px 0}
+.s25{font-family:var(--font-heading);font-size:var(--size-lg);font-weight:600;line-height:1.3;white-space:pre-wrap}
+.s26{display:flex;flex-direction:row;align-items:center;gap:16px;position:relative}
+.s27{display:flex;flex-direction:row;align-items:center;gap:6px;position:relative}
+.s28{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:var(--radius-full);background:var(--color-success)}
+.s29{font-size:var(--size-xs);line-height:1.5;white-space:pre-wrap}
+.s30{font-family:var(--font-mono);font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s31{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:var(--radius-full);background:var(--color-warning)}
+.s32{font-family:var(--font-mono);font-size:var(--size-xs);line-height:1.5;color:var(--color-warning);white-space:pre-wrap}
+.s33{display:flex;flex-direction:column;position:relative;width:1px;height:20px;background:var(--color-border)}
+.s34{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:32px;padding:0px 14px;border:1px solid var(--color-danger);border-radius:var(--radius-md);background:var(--color-danger-soft);cursor:pointer;transition:background-color 150ms ease, box-shadow 150ms ease}
+.st35:hover{background:var(--color-danger)}
+.s36{width:14px;height:14px;color:var(--color-danger);object-fit:cover}
+.s37{font-size:var(--size-sm);font-weight:600;line-height:1.2;white-space:nowrap;color:var(--color-danger)}
+.s38{display:flex;flex-direction:column;gap:16px;position:relative;padding:24px}
+.s39{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative}
+.s40{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:32px;padding:0px 16px;border-radius:var(--radius-md);background:var(--color-primary);cursor:pointer}
+.s41{width:14px;height:14px;object-fit:cover}
+.s42{font-size:var(--size-sm);font-weight:600;line-height:1.2;white-space:nowrap;color:var(--color-on-primary)}
+.s43{display:flex;flex-direction:column;position:relative;overflow:hidden;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card)}
+.s44{display:flex;flex-direction:row;align-items:center;position:relative;height:36px;padding:0px 16px;border-style:solid;border-color:var(--color-border);border-width:0 0 1px 0;color:var(--color-muted-fg)}
+.s45{width:200px;font-size:var(--size-xs);line-height:1.5;white-space:pre-wrap}
+.s46{width:180px;font-size:var(--size-xs);line-height:1.5;white-space:pre-wrap}
+.s47{width:100px;font-size:var(--size-xs);line-height:1.5;white-space:pre-wrap}
+.s48{width:120px;font-size:var(--size-xs);line-height:1.5;text-align:right;white-space:pre-wrap}
+.s49{width:80px;font-size:var(--size-xs);line-height:1.5;text-align:right;white-space:pre-wrap}
+.s50{flex-grow:1;font-size:var(--size-xs);line-height:1.5;text-align:right;white-space:pre-wrap}
+.s51{display:flex;flex-direction:row;align-items:center;position:relative;height:56px;padding:0px 16px;border-style:solid;border-color:var(--color-border);border-width:0 0 1px 0}
+.s52{display:flex;flex-direction:column;gap:2px;position:relative;width:200px}
+.s53{font-size:var(--size-sm);font-weight:500;line-height:1.4;white-space:pre-wrap}
+.s54{width:180px;font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.s55{width:100px;font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.s56{width:120px;font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;text-align:right;white-space:pre-wrap}
+.s57{width:80px;font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;text-align:right;white-space:pre-wrap}
+.s58{display:flex;flex-direction:row;justify-content:flex-end;gap:16px;flex-grow:1;position:relative}
+.s59{font-size:var(--size-sm);line-height:1.4;white-space:nowrap;cursor:pointer}
+.s60{font-size:var(--size-sm);line-height:1.4;white-space:nowrap;color:var(--color-muted-fg);cursor:pointer}
+.s61{width:120px;font-size:var(--size-sm);line-height:1.4;text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s62{width:80px;font-size:var(--size-sm);line-height:1.4;text-align:right;color:var(--color-warning);white-space:pre-wrap}
+.s63{display:flex;flex-direction:row;align-items:center;gap:6px;position:relative;width:180px}
+.s64{font-size:var(--size-sm);line-height:1.4;white-space:nowrap;color:var(--color-danger)}
+.s65{width:80px;font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;text-align:right;color:var(--color-warning);white-space:pre-wrap}
+.s66{display:flex;flex-direction:row;align-items:center;position:relative;height:56px;padding:0px 16px}
+.s67{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative}
+.s68{display:flex;flex-direction:column;position:relative;padding:0px 4px;border-radius:var(--radius-sm);background:var(--color-primary-soft)}
+.s69{font-size:var(--size-xs);line-height:1.5;white-space:nowrap;color:var(--color-primary)}
+.s70{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;padding:12px 16px;border-radius:var(--radius-md);background:var(--color-danger-soft)}
+.s71{flex-shrink:0;width:14px;height:14px;object-fit:cover}
+.s72{font-size:var(--size-sm);line-height:1.4;color:var(--color-danger);white-space:pre-wrap}
+.s73{display:flex;flex-direction:row;justify-content:flex-end;position:absolute;top:0px;right:0px;bottom:0px;left:0px;z-index:10;background:rgba(0,0,0,0.5);transition:opacity 200ms ease}
+.s74{display:flex;flex-direction:column;gap:20px;position:relative;width:460px;padding:24px;border-style:solid;border-color:var(--color-border);border-width:0 0 0 1px;background:var(--color-card);box-shadow:var(--shadow-md);transition:opacity 220ms ease}
+.s75{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:28px;height:28px;border-radius:var(--radius-md);cursor:pointer}
+.s76{width:16px;height:16px;object-fit:cover}
+.s77{display:flex;flex-direction:column;gap:6px;position:relative}
+.s78{display:flex;flex-direction:row;position:relative;padding:2px;border-radius:var(--radius-md);background:var(--color-muted)}
+.s79{display:flex;flex-direction:column;justify-content:center;align-items:center;flex-grow:1;flex-basis:0px;position:relative;height:30px;border-radius:var(--radius-md);color:var(--color-muted-fg);cursor:pointer;transition:color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1)}
+.s80{font-size:var(--size-sm);line-height:1.4;white-space:nowrap}
+.s81{display:flex;flex-direction:row;gap:12px;position:relative}
+.s82{display:flex;flex-direction:column;gap:6px;flex-grow:1;flex-basis:0px;position:relative}
+.s83{height:36px;padding:0px 12px;border:1px solid var(--color-input);border-radius:var(--radius-md);font-size:var(--size-sm);line-height:1.4;color:var(--color-fg);background:var(--color-bg)}
+.s84{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:36px}
+.s85{display:flex;flex-direction:row;align-items:center;position:relative;width:36px;height:20px;padding:2px;border-radius:var(--radius-full);background:var(--color-muted)}
+.s86{display:flex;flex-direction:column;position:relative;width:16px;height:16px;border-radius:var(--radius-full);background:var(--color-muted-fg)}
+.s87{display:flex;flex-direction:column;gap:12px;position:relative;transition:opacity 200ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)}
+.s88{height:36px;padding:0px 12px;border:1px solid var(--color-input);border-radius:var(--radius-md);font-family:var(--font-mono);font-size:var(--size-sm);line-height:1.4;color:var(--color-fg);background:var(--color-bg)}
+.s89{display:flex;flex-direction:column;gap:6px;position:relative;transition:opacity 200ms ease}
+.s90{display:flex;flex-direction:row;gap:8px;position:relative;padding:8px 12px;border-radius:var(--radius-md);background:var(--color-danger-soft)}
+.s91{flex-shrink:0;width:14px;height:14px;margin:2px 0px 0px 0px;object-fit:cover}
+.s92{font-size:var(--size-xs);line-height:1.5;color:var(--color-danger);white-space:pre-wrap}
+.s93{display:flex;flex-direction:column;gap:8px;position:relative;padding:16px 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0 0 0}
+.s94{font-family:var(--font-heading);font-size:var(--size-sm);font-weight:600;line-height:1.4;white-space:pre-wrap}
+.s95{flex-grow:1;font-size:var(--size-xs);line-height:1.5;color:var(--color-warning);white-space:pre-wrap}
+.s96{font-size:var(--size-xs);line-height:1.5;text-decoration:underline;white-space:nowrap;cursor:pointer}
+.s97{display:flex;flex-direction:row;justify-content:flex-end;gap:8px;position:relative}
+.s98{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:36px;padding:0px 16px;border:1px solid var(--color-input);border-radius:var(--radius-md);cursor:pointer}
+.s99{font-size:var(--size-sm);font-weight:600;line-height:1.2;white-space:nowrap}
+.s100{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:36px;padding:0px 20px;border-radius:var(--radius-md);background:var(--color-fg);cursor:pointer}
+.s101{font-size:var(--size-sm);font-weight:600;line-height:1.2;white-space:nowrap;color:var(--color-bg)}
+</style>
+</head>
+<body>
+<main data-dm-frame="0"><div data-dm-p="0-0" class="s1"><div class="s2"><div class="s3"><div class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iNiIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSIxOCIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjE4IiByPSIzIi8+PHBhdGggZD0iTTYgOXYxYTIgMiAwIDAgMCAyIDJoOGEyIDIgMCAwIDAgMi0yVjlNMTIgMTJ2MyIvPjwvc3ZnPg==" alt class="s5"></div><div class="s6">Merchandiser</div></div><a href="总览.html" class="s7 st8"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjciIGhlaWdodD0iOSIgcng9IjEiLz48cmVjdCB4PSIxNCIgeT0iMyIgd2lkdGg9IjciIGhlaWdodD0iNSIgcng9IjEiLz48cmVjdCB4PSIxNCIgeT0iMTIiIHdpZHRoPSI3IiBoZWlnaHQ9IjkiIHJ4PSIxIi8+PHJlY3QgeD0iMyIgeT0iMTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjUiIHJ4PSIxIi8+PC9zdmc+" alt class="s9"><div class="s10">总览</div></a><a href="跟单任务列表.html" class="s7 st11"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iOCIgeT0iOCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjE0IiByeD0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s9"><div class="s10">跟单任务</div></a><a href="信号源.html" class="s7 st12"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjxwYXRoIGQ9Ik0xNi4yNCA3Ljc2YTYgNiAwIDAgMSAwIDguNDltLTguNDgtLjAxYTYgNiAwIDAgMSAwLTguNDltMTEuMzEtMi44MmExMCAxMCAwIDAgMSAwIDE0LjE0bS0xNC4xNCAwYTEwIDEwIDAgMCAxIDAtMTQuMTQiLz48L3N2Zz4=" alt class="s9"><div class="s10">信号源</div></a><a href="连接.html" class="s7 st13"><div class="s14"></div><div class="s15"></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEwIDEzYTUgNSAwIDAgMCA3LjU0LjU0bDMtM2E1IDUgMCAwIDAtNy4wNy03LjA3bC0xLjcyIDEuNzEiLz48cGF0aCBkPSJNMTQgMTFhNSA1IDAgMCAwLTcuNTQtLjU0bC0zIDNhNSA1IDAgMCAwIDcuMDcgNy4wN2wxLjcxLTEuNzEiLz48L3N2Zz4=" alt class="s9"><div class="s10">连接</div></a><a href="记录.html" class="s7 st16"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTggNmgxM004IDEyaDEzTTggMThoMTNNMyA2aC4wMU0zIDEyaC4wMU0zIDE4aC4wMSIvPjwvc3ZnPg==" alt class="s9"><div class="s10">记录</div></a><a href="设置.html" class="s7 st17"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTQgMjF2LTdNNCAxMFYzTTEyIDIxdi05TTEyIDhWM00yMCAyMXYtNU0yMCAxMlYzTTEgMTRoNk05IDhoNk0xNyAxNmg2Ii8+PC9zdmc+" alt class="s9"><div class="s10">设置</div></a><div class="s18"></div><div class="s19"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iMyIgeT0iMTEiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxMSIgcng9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4=" alt class="s20"><div class="s21">锁定界面</div></div><div class="s22">v0.1.0 本地构建</div></div><div class="s23"><div class="s24"><div class="s25">连接</div><div class="s26"><div class="s26"><div class="s27"><div class="s28"></div><div class="s29">OKX</div><div class="s30">86ms</div></div><div class="s27"><div class="s28"></div><div class="s29">币安</div><div class="s30">41ms</div></div><div class="s27"><div class="s31"></div><div class="s29">Gate</div><div class="s32">412ms</div></div><div class="s27"><div class="s28"></div><div class="s29">Hyperliquid</div><div class="s30">120ms</div></div></div><div class="s33"></div><button data-dm-p="0-1" type="button" class="s34 st35"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjY0NjVEIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBvbHlnb24gcG9pbnRzPSI3Ljg2IDIgMTYuMTQgMiAyMiA3Ljg2IDIyIDE2LjE0IDE2LjE0IDIyIDcuODYgMjIgMiAxNi4xNCAyIDcuODYiLz48cGF0aCBkPSJNMTAgMTVWOU0xNCAxNVY5Ii8+PC9zdmc+" alt class="s36"><div class="s37">全局急停</div></button></div></div><div class="s38"><div class="s39"><div class="s21">7 个连接，密钥存于系统钥匙串，只在本机核心进程内解密</div><button data-dm-p="0-2" type="button" class="s40"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDV2MTRNNSAxMmgxNCIvPjwvc3ZnPg==" alt class="s41"><div class="s42">添加连接</div></button></div><div class="s43"><div class="s44"><div class="s45">连接</div><div class="s46">权限</div><div class="s47">持仓模式</div><div class="s48">权益</div><div class="s48">可用保证金</div><div class="s49">延迟</div><div class="s50">操作</div></div><div class="s51"><div class="s52"><div class="s53">okx-follow-01</div><div class="s21">OKX 实盘</div></div><div class="s54">合约交易</div><div class="s55">单向，全仓</div><div class="s56">62,410.08</div><div class="s56">41,880.20</div><div class="s57">86 ms</div><div class="s58"><div class="s59">测试</div><div class="s60">编辑</div></div></div><div class="s51"><div class="s52"><div class="s53">trader-ro</div><div class="s21">OKX 实盘，信号源</div></div><div class="s54">只读</div><div class="s55">双向</div><div class="s56">1,204,550.00</div><div class="s61">—</div><div class="s62">重连中</div><div class="s58"><div class="s59">测试</div><div class="s60">编辑</div></div></div><div class="s51"><div class="s52"><div class="s53">bn-sub-a</div><div class="s21">币安子账户，实盘</div></div><div class="s63"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjY0NjVEIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zWiIvPjxwYXRoIGQ9Ik0xMiA5djRNMTIgMTdoLjAxIi8+PC9zdmc+" alt class="s41"><div class="s64">合约交易 + 提币</div></div><div class="s55">单向，全仓</div><div class="s56">54,980.12</div><div class="s56">38,104.66</div><div class="s57">41 ms</div><div class="s58"><div class="s59">测试</div><div class="s60">编辑</div></div></div><div class="s51"><div class="s52"><div class="s53">gate-follow-02</div><div class="s21">Gate 实盘，代理 SOCKS5</div></div><div class="s54">合约交易</div><div class="s55">单向，逐仓</div><div class="s56">28,775.30</div><div class="s56">19,320.01</div><div class="s65">412 ms</div><div class="s58"><div class="s59">测试</div><div class="s60">编辑</div></div></div><div class="s51"><div class="s52"><div class="s53">hl-api-wallet</div><div class="s21">Hyperliquid 实盘</div></div><div class="s54">API 钱包签名（不可提款）</div><div class="s55">仅单向</div><div class="s56">70,946.25</div><div class="s56">51,002.90</div><div class="s57">120 ms</div><div class="s58"><div class="s59">测试</div><div class="s60">编辑</div></div></div><div class="s66"><div class="s52"><div class="s67"><div class="s53">bn-testnet</div><div class="s68"><div class="s69">测试网</div></div></div><div class="s21">币安合约测试网</div></div><div class="s54">合约交易</div><div class="s55">单向，全仓</div><div class="s56">15,000.00</div><div class="s56">15,000.00</div><div class="s57">52 ms</div><div class="s58"><div class="s59">测试</div><div class="s60">编辑</div></div></div></div><div class="s70"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjY0NjVEIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zWiIvPjxwYXRoIGQ9Ik0xMiA5djRNMTIgMTdoLjAxIi8+PC9zdmc+" alt class="s71"><div class="s72">bn-sub-a 开启了提币权限。跟单只需合约交易权限，请到币安关闭提币并绑定 IP 白名单。</div></div></div></div><div data-dm-p="0-3" class="s73"><div data-dm-p="0-4" class="s74"><div class="s39"><div class="s25">添加连接</div><button data-dm-p="0-5" type="button" class="s75"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTI5QUE1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE4IDYgNiAxOE02IDZsMTIgMTIiLz48L3N2Zz4=" alt class="s76"></button></div><div class="s77"><div class="s21">平台</div><div class="s78"><div data-dm-p="0-6" class="s79"><div class="s80">OKX</div></div><div data-dm-p="0-7" class="s79"><div class="s80">币安</div></div><div data-dm-p="0-8" class="s79"><div class="s80">Gate</div></div><div data-dm-p="0-9" class="s79"><div class="s80">Hyperliquid</div></div></div></div><div class="s81"><div class="s82"><div class="s21">别名</div><input placeholder="如：okx-follow-02" type="text" class="s83"></div><div class="s77"><div class="s21">环境</div><div class="s84"><div class="s85"><div class="s86"></div></div><div class="s80">测试网</div></div></div></div><div data-dm-p="0-10" class="s87"><div class="s77"><div class="s21">API Key</div><input type="text" value="a3f9c2e1-77b0-4d1c-9e4a-5b2f0c8d61aa" class="s88"></div><div class="s77"><div class="s21">Secret</div><input type="password" value="secretsecretsecret" class="s88"></div><div data-dm-p="0-11" class="s89"><div class="s21">Passphrase</div><input type="password" value="passphrase" class="s88"></div></div><div data-dm-p="0-12" class="s87"><div class="s90"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjY0NjVEIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zWiIvPjxwYXRoIGQ9Ik0xMiA5djRNMTIgMTdoLjAxIi8+PC9zdmc+" alt class="s91"><div class="s92">只填 API 钱包（代理钱包）私钥，它无法提款。不要输入主钱包私钥。</div></div><div class="s77"><div class="s21">API 钱包私钥</div><input type="password" value="privatekeyprivatekey" class="s88"></div><div class="s77"><div class="s21">主账户地址</div><input placeholder="0x… 共 42 位" type="text" class="s88"></div></div><div class="s93"><div class="s94">校验结果</div><div class="s67"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkVCRDg1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIwIDYgOSAxN2wtNS01Ii8+PC9zdmc+" alt class="s41"><div class="s29">连通正常，延迟 88 ms，时钟偏差 12 ms</div></div><div class="s67"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkVCRDg1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIwIDYgOSAxN2wtNS01Ii8+PC9zdmc+" alt class="s41"><div class="s29">权限：合约交易，未开启提币与划转</div></div><div class="s67"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjBBMDMwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zWiIvPjxwYXRoIGQ9Ik0xMiA5djRNMTIgMTdoLjAxIi8+PC9zdmc+" alt class="s41"><div class="s95">持仓模式为双向，跟单账户需切换为单向</div><div class="s96">一键切换</div></div></div><div class="s18"></div><div class="s97"><button type="button" class="s98"><div class="s99">重新校验</div></button><button data-dm-p="0-13" type="submit" class="s100"><div class="s101">保存连接</div></button></div></div></div></div></main>
+<script>
+// design-mcp 原型交互运行时
+(function () {
+var __name = function (f) { return f; };
+var createProtoEngine = function createProtoEngine() {
+    const FNS = {
+        len: (x) => String(x ?? '').length,
+        pad: (x, n) => String(x ?? '').padStart(Number(n) || 2, '0'),
+        floor: (x) => Math.floor(Number(x) || 0),
+        min: (a, b) => Math.min(Number(a), Number(b)),
+        max: (a, b) => Math.max(Number(a), Number(b)),
+    };
+    const LEVELS = [['||'], ['&&'], ['==', '!='], ['<', '>', '<=', '>='], ['+', '-'], ['*', '/', '%']];
+    const TEMPLATE_RE = /\{\{([\s\S]+?)\}\}/g;
+    class ExprError extends Error {
+    }
+    function tokenize(src) {
+        const out = [];
+        const re = /\s*(?:(\d+(?:\.\d+)?)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|([a-zA-Z_][a-zA-Z0-9_]*)|(==|!=|<=|>=|&&|\|\||[-+*/%!<>?:(),]))/y;
+        let i = 0;
+        while (i < src.length) {
+            if (/^\s*$/.test(src.slice(i)))
+                break;
+            re.lastIndex = i;
+            const m = re.exec(src);
+            if (!m)
+                throw new ExprError(`无法识别 “${src.slice(i).trim().slice(0, 12)}”`);
+            out.push(m[1] ?? m[2] ?? m[3] ?? m[4]);
+            i = re.lastIndex;
+        }
+        return out;
+    }
+    const cache = new Map();
+    function parseExpr(src) {
+        const hit = cache.get(src);
+        if (hit)
+            return hit;
+        if (src.length > 500)
+            throw new ExprError('表达式过长');
+        const t = tokenize(src);
+        let p = 0;
+        const peek = () => t[p];
+        const eat = (s) => {
+            const v = t[p];
+            if (s !== undefined && v !== s)
+                throw new ExprError(`缺少 “${s}”`);
+            if (v === undefined)
+                throw new ExprError('表达式不完整');
+            p++;
+            return v;
+        };
+        const bin = (lvl) => {
+            if (lvl === LEVELS.length)
+                return unary();
+            let a = bin(lvl + 1);
+            while (LEVELS[lvl].includes(peek())) {
+                const op = eat();
+                a = { k: 'bin', op, a, b: bin(lvl + 1) };
+            }
+            return a;
+        };
+        const unary = () => {
+            if (peek() === '!' || peek() === '-') {
+                const op = eat();
+                return { k: 'un', op, a: unary() };
+            }
+            return primary();
+        };
+        const primary = () => {
+            const v = eat();
+            if (v === '(') {
+                const e = expr();
+                eat(')');
+                return e;
+            }
+            if (/^\d/.test(v))
+                return { k: 'lit', v: Number(v) };
+            if (v[0] === "'" || v[0] === '"')
+                return { k: 'lit', v: v.slice(1, -1).replace(/\\(.)/g, '$1') };
+            if (v === 'true' || v === 'false')
+                return { k: 'lit', v: v === 'true' };
+            if (/^[a-zA-Z_]/.test(v)) {
+                if (peek() !== '(')
+                    return { k: 'var', n: v };
+                if (!FNS[v])
+                    throw new ExprError(`未知函数 ${v}()`);
+                eat('(');
+                const args = [];
+                if (peek() !== ')') {
+                    args.push(expr());
+                    while (peek() === ',') {
+                        eat(',');
+                        args.push(expr());
+                    }
+                }
+                eat(')');
+                return { k: 'call', f: v, args };
+            }
+            throw new ExprError(`意外的 “${v}”`);
+        };
+        const expr = () => {
+            const c = bin(0);
+            if (peek() !== '?')
+                return c;
+            eat('?');
+            const a = expr();
+            eat(':');
+            return { k: 'cond', c, a, b: expr() };
+        };
+        const ast = expr();
+        if (p < t.length)
+            throw new ExprError(`多余的 “${t[p]}”`);
+        if (cache.size > 2000)
+            cache.clear();
+        cache.set(src, ast);
+        return ast;
+    }
+    const eq = (a, b) => (typeof a === typeof b ? a === b : String(a) === String(b));
+    function run(a, vars) {
+        switch (a.k) {
+            case 'lit':
+                return a.v;
+            case 'var':
+                return vars[a.n] ?? '';
+            case 'un': {
+                const v = run(a.a, vars);
+                return a.op === '!' ? !v : -Number(v);
+            }
+            case 'cond':
+                return run(a.c, vars) ? run(a.a, vars) : run(a.b, vars);
+            case 'call':
+                return FNS[a.f](...a.args.map((x) => run(x, vars)));
+            case 'bin': {
+                if (a.op === '&&')
+                    return run(a.a, vars) && run(a.b, vars);
+                if (a.op === '||')
+                    return run(a.a, vars) || run(a.b, vars);
+                const l = run(a.a, vars);
+                const r = run(a.b, vars);
+                switch (a.op) {
+                    case '==':
+                        return eq(l, r);
+                    case '!=':
+                        return !eq(l, r);
+                    case '+':
+                        return typeof l === 'number' && typeof r === 'number' ? l + r : `${l}${r}`;
+                    case '-':
+                        return Number(l) - Number(r);
+                    case '*':
+                        return Number(l) * Number(r);
+                    case '/':
+                        return Number(l) / Number(r);
+                    case '%':
+                        return Number(l) % Number(r);
+                    case '<':
+                        return Number(l) < Number(r);
+                    case '>':
+                        return Number(l) > Number(r);
+                    case '<=':
+                        return Number(l) <= Number(r);
+                    case '>=':
+                        return Number(l) >= Number(r);
+                }
+            }
+        }
+        return '';
+    }
+    /** 求值；语法错误返回 undefined。 */
+    function evalExpr(src, vars) {
+        try {
+            return run(parseExpr(src), vars);
+        }
+        catch {
+            return undefined;
+        }
+    }
+    const truthy = (src, vars) => (src === undefined ? true : !!evalExpr(src, vars));
+    /** 文本插值：{{表达式}}。 */
+    function renderTemplate(text, vars) {
+        return text.replace(TEMPLATE_RE, (_, e) => {
+            const v = evalExpr(e.trim(), vars);
+            return v === undefined ? '' : typeof v === 'number' ? String(Math.round(v * 1000) / 1000) : String(v);
+        });
+    }
+    /** 一个画板的运行时：维护状态变量，执行动作，按状态刷新显隐、条件样式、文本与禁用。 */
+    class ProtoRuntime {
+        win;
+        nav;
+        vars = {};
+        entries = new Map();
+        els = [];
+        countdowns = new Map();
+        timeouts = new Set();
+        /** 进入画板或停止时递增：之前排队的动作不再执行。 */
+        gen = 0;
+        constructor(win, nav) {
+            this.win = win;
+            this.nav = nav;
+        }
+        /** 进入画板：重置状态。 */
+        reset(initial) {
+            this.stopAll();
+            this.vars = { ...initial };
+        }
+        /** 文档变化后同一画板重绘：保留当前状态，只补充新声明的变量。 */
+        merge(initial) {
+            for (const [k, v] of Object.entries(initial))
+                if (!(k in this.vars))
+                    this.vars[k] = v;
+        }
+        /** 绑定渲染结果：root 内 data-dm-p="<prefix><序号>" 的元素对应 entries[序号]。 */
+        mount(root, entries, prefix = '') {
+            this.entries = new Map(entries.map((e, i) => [prefix + i, e]));
+            this.els = [];
+            for (const [id, e] of this.entries) {
+                const el = root.querySelector(`[data-dm-p="${id}"]`);
+                if (!el)
+                    continue;
+                if (e.proto.onClick)
+                    el.setAttribute('data-dm-click', '');
+                // 内联样式模式下元素自带样式：条件样式叠加在其后
+                this.els.push([el, e, el.getAttribute('style') ?? '']);
+            }
+            this.apply();
+        }
+        owns(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id !== null && this.entries.has(id);
+        }
+        runLoad() {
+            for (const e of this.entries.values())
+                if (e.proto.onLoad)
+                    this.run(e.proto.onLoad);
+        }
+        stopAll() {
+            this.gen++;
+            for (const t of this.countdowns.values())
+                this.win.clearInterval(t);
+            for (const t of this.timeouts)
+                this.win.clearTimeout(t);
+            this.countdowns.clear();
+            this.timeouts.clear();
+        }
+        apply() {
+            const v = this.vars;
+            for (const [el, e, base] of this.els) {
+                const css = base ? [base] : [];
+                for (const s of e.styles)
+                    if (truthy(s.when, v))
+                        css.push(...s.css);
+                if (!truthy(e.proto.show, v))
+                    css.push('display:none');
+                const text = css.join(';');
+                if (el.style.cssText !== text)
+                    el.style.cssText = text;
+                el.toggleAttribute('data-dm-disabled', e.proto.disabled !== undefined && truthy(e.proto.disabled, v));
+                if (e.template && !el.firstElementChild) {
+                    const t = renderTemplate(e.template, v);
+                    if (el.textContent !== t)
+                        el.textContent = t;
+                }
+                if (e.proto.bind && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+                    const field = el;
+                    const val = String(v[e.proto.bind] ?? '');
+                    if (field.value !== val && el.ownerDocument.activeElement !== el)
+                        field.value = val;
+                }
+            }
+        }
+        entryOf(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id === null ? undefined : this.entries.get(id);
+        }
+        /** 处理点击：返回是否命中了可交互元素（含被禁用的元素）。 */
+        click(target) {
+            let el = target.closest('[data-dm-click],[data-dm-href]');
+            while (el) {
+                if (el.hasAttribute('data-dm-disabled'))
+                    return true;
+                const e = this.entryOf(el);
+                const href = el.getAttribute('data-dm-href');
+                if (e?.proto.onClick || href) {
+                    const gen = this.gen;
+                    if (e?.proto.onClick)
+                        this.run(e.proto.onClick);
+                    if (href && gen === this.gen)
+                        this.nav.follow(href);
+                    return true;
+                }
+                el = el.parentElement?.closest('[data-dm-click],[data-dm-href]') ?? null;
+            }
+            return !!target.closest('[data-dm-disabled]');
+        }
+        input(target) {
+            const e = this.entryOf(target);
+            if (!e?.proto.bind || !('value' in target))
+                return;
+            this.vars[e.proto.bind] = String(target.value);
+            this.apply();
+        }
+        run(actions) {
+            const gen = this.gen;
+            for (const a of actions) {
+                if (gen !== this.gen)
+                    return;
+                switch (a.do) {
+                    case 'set': {
+                        const v = a.expr !== undefined ? evalExpr(a.expr, this.vars) : a.value;
+                        if (v !== undefined)
+                            this.vars[a.var] = v;
+                        break;
+                    }
+                    case 'toggle':
+                        this.vars[a.var] = !this.vars[a.var];
+                        break;
+                    case 'countdown': {
+                        this.clearCountdown(a.var);
+                        this.vars[a.var] = a.from;
+                        const t = this.win.setInterval(() => {
+                            const n = Number(this.vars[a.var]) - 1;
+                            this.vars[a.var] = Math.max(0, n);
+                            if (n <= 0) {
+                                this.clearCountdown(a.var);
+                                if (a.then)
+                                    this.run(a.then);
+                            }
+                            this.apply();
+                        }, a.interval ?? 1000);
+                        this.countdowns.set(a.var, t);
+                        break;
+                    }
+                    case 'stop':
+                        this.clearCountdown(a.var);
+                        break;
+                    case 'delay': {
+                        const t = this.win.setTimeout(() => {
+                            this.timeouts.delete(t);
+                            if (gen === this.gen)
+                                this.run(a.then);
+                        }, a.ms);
+                        this.timeouts.add(t);
+                        break;
+                    }
+                    case 'if':
+                        this.run((truthy(a.when, this.vars) ? a.then : a.else) ?? []);
+                        break;
+                    case 'navigate':
+                        return this.nav.go(a.frame);
+                    case 'back':
+                        return this.nav.back();
+                    case 'open':
+                        this.nav.open(a.url);
+                        break;
+                }
+            }
+            if (gen === this.gen)
+                this.apply();
+        }
+        clearCountdown(name) {
+            const t = this.countdowns.get(name);
+            if (t !== undefined)
+                this.win.clearInterval(t);
+            this.countdowns.delete(name);
+        }
+    }
+    return { ExprError, parseExpr, evalExpr, truthy, renderTemplate, ProtoRuntime };
+};
+var D = {"ids":["f_xysubxhe"],"files":{"f_3gkt3952":"业务流程与说明.html","f_lidejm68":"总览.html","f_0v3ux7m0":"跟单任务列表.html","f_sc201re3":"任务详情.html","f_ezsf3g50":"新建任务向导.html","f_07a01ye5":"信号源.html","f_xysubxhe":"连接.html","f_43gmjj6j":"记录.html","f_x8uhqd1w":"设置.html"},"frames":[{"vars":{"add":true,"pf":"okx","estop":false,"addIn":true,"pfIn":true,"estopIn":false},"entries":[{"proto":{"vars":{"add":true,"pf":"okx","estop":false,"addIn":true,"pfIn":true,"estopIn":false}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"estop","value":true},{"do":"delay","ms":20,"then":[{"do":"set","var":"estopIn","value":true}]}]},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"add","value":true},{"do":"delay","ms":20,"then":[{"do":"set","var":"addIn","value":true}]}]},"styles":[]},{"proto":{"show":"add","styles":[{"when":"!addIn","style":{"opacity":0}}]},"styles":[{"when":"!addIn","css":["opacity:0"]}]},{"proto":{"styles":[{"when":"!addIn","style":{"opacity":0}}]},"styles":[{"when":"!addIn","css":["opacity:0"]}]},{"proto":{"onClick":[{"do":"set","var":"addIn","value":false},{"do":"delay","ms":240,"then":[{"do":"set","var":"add","value":false}]}]},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"pfIn","value":false},{"do":"set","var":"pf","value":"okx"},{"do":"delay","ms":20,"then":[{"do":"set","var":"pfIn","value":true}]}],"styles":[{"when":"pf=='okx'","style":{"color":"{color.fg}","background":"{color.card}"}}]},"styles":[{"when":"pf=='okx'","css":["color:var(--color-fg)","background:var(--color-card)"]}]},{"proto":{"onClick":[{"do":"set","var":"pfIn","value":false},{"do":"set","var":"pf","value":"bn"},{"do":"delay","ms":20,"then":[{"do":"set","var":"pfIn","value":true}]}],"styles":[{"when":"pf=='bn'","style":{"color":"{color.fg}","background":"{color.card}"}}]},"styles":[{"when":"pf=='bn'","css":["color:var(--color-fg)","background:var(--color-card)"]}]},{"proto":{"onClick":[{"do":"set","var":"pfIn","value":false},{"do":"set","var":"pf","value":"gate"},{"do":"delay","ms":20,"then":[{"do":"set","var":"pfIn","value":true}]}],"styles":[{"when":"pf=='gate'","style":{"color":"{color.fg}","background":"{color.card}"}}]},"styles":[{"when":"pf=='gate'","css":["color:var(--color-fg)","background:var(--color-card)"]}]},{"proto":{"onClick":[{"do":"set","var":"pfIn","value":false},{"do":"set","var":"pf","value":"hl"},{"do":"delay","ms":20,"then":[{"do":"set","var":"pfIn","value":true}]}],"styles":[{"when":"pf=='hl'","style":{"color":"{color.fg}","background":"{color.card}"}}]},"styles":[{"when":"pf=='hl'","css":["color:var(--color-fg)","background:var(--color-card)"]}]},{"proto":{"show":"pf != 'hl'","styles":[{"when":"!pfIn","style":{"opacity":0,"transform":"translateY(4px)"}}]},"styles":[{"when":"!pfIn","css":["opacity:0","transform:translateY(4px)"]}]},{"proto":{"show":"pf == 'okx'","styles":[{"when":"!pfIn","style":{"opacity":0}}]},"styles":[{"when":"!pfIn","css":["opacity:0"]}]},{"proto":{"show":"pf == 'hl'","styles":[{"when":"!pfIn","style":{"opacity":0,"transform":"translateY(4px)"}}]},"styles":[{"when":"!pfIn","css":["opacity:0","transform:translateY(4px)"]}]},{"proto":{"onClick":[{"do":"set","var":"addIn","value":false},{"do":"delay","ms":240,"then":[{"do":"set","var":"add","value":false}]}]},"styles":[]}]}]};
+var E = createProtoEngine();
+var radios = Array.prototype.slice.call(document.querySelectorAll('input.dm-r'));
+var cur = 0, hist = [0];
+var nav = {
+  go: function (id) {
+    var i = D.ids.indexOf(id);
+    if (i >= 0) { if (radios[i]) radios[i].checked = true; enter(i, true); }
+    else if (D.files[id]) location.href = D.files[id];
+  },
+  back: function () {
+    if (hist.length > 1) { hist.pop(); var i = hist[hist.length - 1]; if (radios[i]) radios[i].checked = true; enter(i, false); }
+    else history.back();
+  },
+  open: function (url) { if (/^(https?:|mailto:|tel:)/i.test(url)) window.open(url, '_blank', 'noopener'); },
+  follow: function (href) {
+    if (href === '#back') return nav.back();
+    if (href.charAt(0) === '#') return nav.go(href.slice(1));
+    nav.open(href);
+  }
+};
+var rts = D.frames.map(function (f, i) {
+  var rt = new E.ProtoRuntime(window, nav);
+  rt.reset(f.vars);
+  rt.mount(document.querySelector('[data-dm-frame="' + i + '"]') || document, f.entries, i + '-');
+  return rt;
+});
+function enter(i, push) {
+  if (push && i === cur) return;
+  rts[cur].stopAll();
+  cur = i;
+  if (push) hist.push(i);
+  rts[i].reset(D.frames[i].vars);
+  rts[i].apply();
+  rts[i].runLoad();
+  window.scrollTo(0, 0);
+}
+radios.forEach(function (r, i) { r.addEventListener('change', function () { if (r.checked) enter(i, true); }); });
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  if (!t || !t.closest) return;
+  if (rts[cur].click(t) && t.closest('[data-dm-disabled],[data-dm-href]')) e.preventDefault();
+});
+document.addEventListener('input', function (e) { if (e.target && e.target.getAttribute) rts[cur].input(e.target); });
+rts[0].runLoad();
+})();
+</script>
+</body>
+</html>
