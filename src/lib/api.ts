@@ -152,6 +152,18 @@ export interface OpenOrder {
   mirrored_to: number;
 }
 
+/** History rebuild of a "fills" lead trader. */
+export interface Backfill {
+  running: boolean;
+  /** Fills fetched so far / fills the venue lists. */
+  fetched: number;
+  total: number;
+  error: string | null;
+  finished_at: number | null;
+  /** Oldest fill counted, once finished. */
+  from: number | null;
+}
+
 export interface SourceDetail {
   equity: string;
   notional: string;
@@ -159,7 +171,7 @@ export interface SourceDetail {
   orders: OpenOrder[];
   ts: number;
   /** Fill reconstruction progress ("fills" lead traders). */
-  fills: { anchor: number; last_fill_at: number | null; applied: number } | null;
+  fills: { anchor: number; last_fill_at: number | null; applied: number; backfill: Backfill | null } | null;
 }
 
 export type SizingMode = "equity_ratio" | "fixed_multiple" | "fixed_notional";
@@ -462,6 +474,8 @@ export const api = {
   searchLeadTraders: (platform: Platform, query: string, page?: number) => invoke<LeadSummary[]>("search_lead_traders", { platform, query, page: page ?? null }),
   deleteSource: (id: string) => invoke<void>("delete_source", { id }),
   sourceDetail: (id: string) => invoke<SourceDetail>("source_detail", { id }),
+  /** Rebuild a "fills" lead trader from its whole public trade history (runs in the background). */
+  backfillSource: (id: string) => invoke<void>("backfill_source", { id }),
   paperTrade: (input: { connection_id: string; base: string; action: "open" | "close" | "cancel"; buy?: boolean; notional?: string | null; price?: string | null; leverage?: number | null; order_id?: string | null }) =>
     invoke<void>("paper_trade", { input }),
 

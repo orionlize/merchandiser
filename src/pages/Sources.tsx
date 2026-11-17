@@ -91,6 +91,9 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
   const equityHidden = lead && s.platform === "okx";
   const fillsMode = s.lead_mode === "fills";
   const trade = useAction(api.paperTrade, { ok: tr("已提交", "Submitted"), invalidate: [["source", s.id], ["connections"]] });
+  const [rebuild, setRebuild] = useState(false);
+  const backfillMut = useAction(api.backfillSource, { ok: tr("开始重建", "Rebuild started"), invalidate: [["source", s.id]] });
+  const bf = data?.fills?.backfill ?? null;
   return (
     <div className="anim-fade px-8 py-6">
       <div className="flex items-start justify-between">
@@ -133,12 +136,25 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
               <div className="font-semibold">{tr("该带单员未公开持仓，以下仓位由公开成交记录推算", "Positions are hidden; the positions below are reconstructed from public fills")}</div>
               <div className="mt-1">
                 {tr(
-                  `只计入 ${new Date(s.created_at).toLocaleString()} 添加之后的成交，之前已有的仓位看不到；比带单员实际成交晚约 2 分钟；杠杆未知，「跟随信号源杠杆」会改用任务里的固定值。`,
-                  `Only fills after ${new Date(s.created_at).toLocaleString()} (when added) count; earlier positions are invisible. About 2 minutes behind the trader. Leverage is unknown, so "follow source leverage" falls back to the task's fixed value.`,
+                  `只计入 ${new Date(data.fills?.anchor ?? s.created_at).toLocaleString()} 之后的成交，之前已有的仓位看不到；比带单员实际成交晚约 2 分钟；杠杆未知，「跟随信号源杠杆」会改用任务里的固定值。`,
+                  `Only fills after ${new Date(data.fills?.anchor ?? s.created_at).toLocaleString()} count; earlier positions are invisible. About 2 minutes behind the trader. Leverage is unknown, so "follow source leverage" falls back to the task's fixed value.`,
                 )}
               </div>
               <div className="mt-1">
-                {tr("已计入成交", "Fills applied")} {data.fills?.applied ?? 0} · {tr("最近一笔", "latest")} {data.fills?.last_fill_at ? ago(data.fills.last_fill_at, lang === "en") : tr("添加后暂无", "none since added")}
+                {tr("已计入成交", "Fills applied")} {data.fills?.applied ?? 0} · {tr("最近一笔", "latest")} {data.fills?.last_fill_at ? ago(data.fills.last_fill_at, lang === "en") : tr("暂无", "none yet")}
+              </div>
+              <div className="mt-2 flex items-center gap-3">
+                {bf?.running ? (
+                  <span className="text-warning">
+                    {tr("正在从历史成交重建", "Rebuilding from history")} {bf.fetched}/{bf.total || "?"}
+                    {tr("（每 3 秒一页，期间不能启动任务）", " (one page per 3 s; tasks cannot start meanwhile)")}
+                  </span>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={() => setRebuild(true)}>
+                    {tr("从历史成交重建", "Rebuild from history")}
+                  </Button>
+                )}
+                {!bf?.running && bf?.error ? <span className="text-danger">{tr("重建失败：", "Rebuild failed: ")}{bf.error}</span> : null}
               </div>
             </div>
           ) : null}
@@ -219,6 +235,23 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
           )}
         </>
       ) : null}
+      <Confirm
+        open={rebuild}
+        onClose={() => setRebuild(false)}
+        title={tr("从历史成交重建推算持仓？", "Rebuild positions from history?")}
+        confirmLabel={tr("重建", "Rebuild")}
+        busy={backfillMut.isPending}
+        onConfirm={() => backfillMut.mutate(s.id, { onSuccess: () => setRebuild(false) })}
+        body={
+          <div className="flex flex-col gap-2 text-sm">
+            <p>{tr("清空当前推算结果，改用币安公开的全部成交记录（约最近 2 个月）重新推算。", "Discards the current reconstruction and replays every fill Binance still lists (about the last 2 months).")}</p>
+            <ul className="list-disc pl-5 text-muted-fg">
+              <li>{tr("比这更早开的仓位依然看不到；在那之前开、之后加仓的仓位只会算到加仓部分。", "Positions opened before that stay invisible; ones opened earlier and added to later only count the added part.")}</li>
+              <li>{tr("使用该信号源的任务需先停止。重建后再启动，任务会按启动策略处理这些仓位。", "Tasks using this source must be stopped first. When started again, they treat these positions per their start policy.")}</li>
+            </ul>
+          </div>
+        }
+      />
       <Confirm
         open={del}
         onClose={() => setDel(false)}
@@ -367,8 +400,8 @@ function AddLeadModal({ open, onClose, onAdded }: { open: boolean; onClose: () =
             <p>{tr(`「${hidden?.nickname ?? ""}」没有公开持仓，只能用他公开的成交记录推算仓位：`, `"${hidden?.nickname ?? ""}" hides positions; they can only be reconstructed from public fills:`)}</p>
             <ul className="list-disc pl-5 text-muted-fg">
               <li>{tr("比带单员实际成交晚约 2 分钟（实测 122–135 秒），进出频繁的带单员不适合跟。", "About 2 minutes behind the trader (measured 122–135 s); a poor fit for fast in-and-out traders.")}</li>
-              <li>{tr("只跟添加之后新开的仓位；添加前已有的仓位看不到，也不会跟。", "Only positions opened after adding are followed; earlier ones are invisible.")}</li>
-              <li>{tr("推算可能与真实持仓不同（例如他平掉添加前的仓位时）；杠杆未知。", "The reconstruction can differ from the real positions (e.g. when closing positions opened before adding); leverage is unknown.")}</li>
+              <li>{tr("添加后会用公开的历史成交（约最近 2 个月）推算当前仓位；更早开的仓位看不到。", "After adding, current positions are rebuilt from the public history (about the last 2 months); older positions are invisible.")}</li>
+              <li>{tr("推算可能与真实持仓不同（例如他平掉历史之前开的仓位时）；杠杆未知。", "The reconstruction can differ from the real positions (e.g. when closing positions older than the history); leverage is unknown.")}</li>
               <li>{tr("数据来自币安网页接口，可能随时失效。", "Data comes from Binance's website API and may stop working.")}</li>
             </ul>
             <p className="text-xs text-muted-fg">

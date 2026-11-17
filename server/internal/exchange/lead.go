@@ -12,8 +12,9 @@ package exchange
 //     are in venue units; `marginBalance` is the trader's equity. Traders can
 //     hide positions, which we treat as an error, never as "flat". Their
 //     fills stay public, so a source may instead run in `fills` mode, which
-//     reconstructs positions opened after the source was added (see
-//     leadfills.go); that feed is ~2 minutes behind the trader.
+//     reconstructs positions from the public trade history, about the last
+//     two months (see leadfills.go, leadbackfill.go); that feed is ~2 minutes
+//     behind the trader.
 //   - Gate: its web endpoints sit behind a bot wall, so it is not supported.
 //
 // Snapshots are cached per trader for a few seconds and shared by every task
@@ -84,6 +85,8 @@ type leadCache struct {
 	bnFillsBucket *TokenBucket
 	booksMu       sync.Mutex
 	books         map[string]*fillBook
+	// Source id → history backfill job (see leadbackfill.go).
+	backfills map[string]*Backfill
 }
 
 var lc = &leadCache{
@@ -97,12 +100,14 @@ var lc = &leadCache{
 	// Strictly one request per 3 s (measured: faster gets "system busy").
 	bnFillsBucket: NewBucket(1, 3*time.Second),
 	books:         map[string]*fillBook{},
+	backfills:     map[string]*Backfill{},
 }
 
 // ForgetFills drops a source's in-memory fill book (after it is deleted).
 func ForgetFills(sourceID string) {
 	lc.booksMu.Lock()
 	delete(lc.books, sourceID)
+	delete(lc.backfills, sourceID)
 	lc.booksMu.Unlock()
 }
 
@@ -420,29 +425,36 @@ func (l *LeadTrader) bnFillsPage(ctx context.Context, page int) ([]Fill, error) 
 }
 
 func (l *LeadTrader) bnFillsPageOnce(ctx context.Context, page int) ([]Fill, error) {
+	f, _, err := l.bnFillsPageSized(ctx, page, 50)
+	return f, err
+}
+
+// bnFillsPageSized returns one page and the venue's total fill count.
+// The venue caps pageSize at 200.
+func (l *LeadTrader) bnFillsPageSized(ctx context.Context, page, size int) ([]Fill, int64, error) {
 	// High priority = no reserve: a 1-token bucket would otherwise never fill.
 	if err := lc.bnFillsBucket.Acquire(ctx, 1, true); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	body, _ := json.Marshal(map[string]any{"pageNumber": page, "pageSize": 50, "portfolioId": l.id})
+	body, _ := json.Marshal(map[string]any{"pageNumber": page, "pageSize": size, "portfolioId": l.id})
 	req, err := newReq(ctx, http.MethodPost, bnCopy+"/lead-portfolio/trade-history", string(body))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	v, err := SendJSON(l.client, model.Binance, req)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if !v.Get("success").BoolOr(false) {
 		if v.JStr("code") == "11012005" {
-			return nil, &errs.RateLimited{Msg: "币安成交记录接口繁忙"}
+			return nil, 0, &errs.RateLimited{Msg: "币安成交记录接口繁忙"}
 		}
 		msg, ok := v.Get("message").AsStr()
 		if !ok {
 			msg = "请求失败"
 		}
-		return nil, &errs.Exchange{Code: v.JStr("code"), Msg: "币安带单：" + msg}
+		return nil, 0, &errs.Exchange{Code: v.JStr("code"), Msg: "币安带单：" + msg}
 	}
 	var out []Fill
 	for _, x := range v.Get("data").Get("list").Arr() {
@@ -450,23 +462,21 @@ func (l *LeadTrader) bnFillsPageOnce(ctx context.Context, page int) ([]Fill, err
 			out = append(out, *f)
 		}
 	}
-	return out, nil
+	total, _ := v.Get("data").Get("total").Int()
+	return out, total, nil
 }
 
 func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 	fs := l.fills
-	lc.booksMu.Lock()
-	b, ok := lc.books[fs.sourceID]
-	if !ok {
-		b = &fillBook{}
-		lc.books[fs.sourceID] = b
-	}
-	lc.booksMu.Unlock()
+	b := bookOf(fs.sourceID)
 	// One poll per source at a time; others reuse the result.
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.cached != nil && time.Since(b.cached.at) < 6*time.Second {
 		return b.cached.raw, nil
+	}
+	if bf := backfillOf(fs.sourceID); bf != nil && bf.Running {
+		return rawSnap{}, errs.Msg("正在从历史成交重建仓位，请稍候")
 	}
 	if b.state == nil {
 		var j string
