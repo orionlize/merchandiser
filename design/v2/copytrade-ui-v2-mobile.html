@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<!--
+  由 penhold-mcp 导出。本文件不包含字体文件，请先安装以下字体以获得与画布一致的效果：
+  - Liberation Mono（字重 400, 500, 600, 700）
+  - Noto Sans CJK SC（字重 400）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>移动端 / 总览 / 移动端 / 任务列表 / 移动端 / 任务详情 / 移动端 / 信号源 / 移动端 / 信号源详情 / 移动端 / 账户 / 移动端 / 更多 / 移动端 / 记录与报表</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0}
+body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.4;color:#111;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:none}
+input,textarea{font:inherit;color:inherit;border:0;outline:0;background:transparent;resize:none}
+button{appearance:none;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;text-align:inherit;border:0;background:transparent;cursor:pointer}
+a{color:inherit}
+:root{--color-primary:#F0B90B;--color-on-primary:#000000;--color-secondary:#47423F;--color-on-secondary:#FFFFFF;--color-bg:#0B0E11;--color-fg:#EAECEF;--color-card:#181A20;--color-muted:#22262D;--color-muted-fg:#9AA3AE;--color-border:#2B3139;--color-danger:#F6465D;--color-on-danger:#000000;--color-ring:#F0B90B;--color-input:#5E6673;--color-success:#2EBD85;--color-danger-soft:#2A1519;--color-success-soft:#14302A;--color-primary-soft:#3C3218;--color-warning:#F0A030;--color-bar-src:#5E6673;--color-bar-tgt:#9AA3AE;--color-bar-act:#EAECEF;--font-heading:'Noto Sans CJK SC', sans-serif;--font-body:'Noto Sans CJK SC', sans-serif;--font-mono:'Liberation Mono', sans-serif;--size-xs:12px;--size-sm:14px;--size-md:16px;--size-lg:20px;--size-xl:24px;--size-2xl:32px;--size-3xl:40px;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:64px;--radius-sm:0px;--radius-md:4px;--radius-lg:8px;--color-info:#4C8DFF;--color-info-soft:#16233A}
+body{background:#fff}
+.dm-r{position:absolute;opacity:0;pointer-events:none}
+.dm-tabs{position:sticky;top:0;z-index:2147483647;display:flex;gap:4px;padding:8px 12px;background:#111827;font:13px/1.4 system-ui,sans-serif}
+.dm-tabs label{color:#d1d5db;padding:4px 10px;border-radius:6px;cursor:pointer}
+.dm-frame{display:none}
+#dm-f0:checked~main .dm-s0{display:block}#dm-f0:checked~nav label[for=dm-f0]{background:#374151;color:#fff}
+#dm-f1:checked~main .dm-s1{display:block}#dm-f1:checked~nav label[for=dm-f1]{background:#374151;color:#fff}
+#dm-f2:checked~main .dm-s2{display:block}#dm-f2:checked~nav label[for=dm-f2]{background:#374151;color:#fff}
+#dm-f3:checked~main .dm-s3{display:block}#dm-f3:checked~nav label[for=dm-f3]{background:#374151;color:#fff}
+#dm-f4:checked~main .dm-s4{display:block}#dm-f4:checked~nav label[for=dm-f4]{background:#374151;color:#fff}
+#dm-f5:checked~main .dm-s5{display:block}#dm-f5:checked~nav label[for=dm-f5]{background:#374151;color:#fff}
+#dm-f6:checked~main .dm-s6{display:block}#dm-f6:checked~nav label[for=dm-f6]{background:#374151;color:#fff}
+#dm-f7:checked~main .dm-s7{display:block}#dm-f7:checked~nav label[for=dm-f7]{background:#374151;color:#fff}
+[data-dm-click],[data-dm-href]{cursor:pointer}
+[data-dm-disabled],[data-dm-disabled] *{cursor:not-allowed}
+.s1{display:flex;flex-direction:column;position:relative;color:var(--color-fg);background:var(--color-bg);width:390px;margin:0 auto}
+.s2{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:52px;padding:0px 4px 0px 16px}
+.s3{font-size:var(--size-lg);font-weight:700;white-space:pre-wrap}
+.s4{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:44px;height:44px;cursor:pointer}
+.s5{width:20px;height:20px;object-fit:cover}
+.s6{display:flex;flex-direction:column;position:absolute;top:11px;right:11px;width:8px;height:8px;border-radius:999px;background:var(--color-danger)}
+.s7{display:flex;flex-direction:row;gap:4px;position:relative;margin:0px 16px;padding:4px 4px;border-radius:var(--radius-md);background:var(--color-card)}
+.s8{display:flex;flex-direction:column;justify-content:center;align-items:center;flex-grow:1;position:relative;height:32px;border-radius:var(--radius-md);color:var(--color-muted-fg);cursor:pointer}
+.s9{font-size:var(--size-xs);font-weight:500;white-space:pre-wrap}
+.s10{display:flex;flex-direction:column;gap:4px;position:relative;padding:20px 16px 16px 16px}
+.s11{font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s12{display:flex;flex-direction:row;align-items:center;gap:10px;position:relative}
+.s13{font-family:var(--font-mono);font-size:var(--size-2xl);font-weight:700;white-space:nowrap;color:var(--color-success)}
+.s14{flex-shrink:0;padding:2px 6px;font-family:var(--font-mono);font-size:var(--size-xs);font-weight:600;white-space:nowrap;color:var(--color-success);background:var(--color-success-soft)}
+.s15{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap:12px;row-gap:12px;position:relative;margin:12px 0px 0px 0px;padding:12px 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s16{display:flex;flex-direction:column;position:relative}
+.s17{font-family:var(--font-mono);font-size:var(--size-md);font-weight:500;white-space:pre-wrap}
+.s18{font-family:var(--font-mono);font-size:var(--size-md);font-weight:500;color:var(--color-success);white-space:pre-wrap}
+.s19{font-family:var(--font-mono);font-size:var(--size-md);font-weight:500;color:var(--color-primary);white-space:pre-wrap}
+.s20{display:flex;flex-direction:column;gap:8px;position:relative;padding:12px 16px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 1px 0px;background:var(--color-card)}
+.s21{display:flex;flex-direction:row;flex-wrap:wrap;gap:12px;position:relative}
+.s22{display:flex;flex-direction:row;align-items:center;gap:4px;position:relative}
+.s23{display:flex;flex-direction:column;position:relative;width:8px;height:8px;background:var(--color-success)}
+.s24{display:flex;flex-direction:column;position:relative;width:8px;height:8px;background:var(--color-info)}
+.s25{display:flex;flex-direction:column;position:relative;width:8px;height:8px;background:var(--color-danger)}
+.s26{width:100%;height:150px;object-fit:fill}
+.s27{display:flex;flex-direction:row;justify-content:space-between;position:relative}
+.s28{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s29{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-danger);white-space:pre-wrap}
+.s30{display:flex;flex-direction:column;gap:8px;position:relative;padding:20px 16px 0px 16px}
+.s31{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative}
+.s32{font-size:var(--size-sm);font-weight:600;white-space:pre-wrap}
+.s33{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-warning);white-space:pre-wrap}
+.s34{display:flex;flex-direction:row;align-items:center;gap:10px;position:relative;padding:10px 12px;border-style:solid;border-color:var(--color-danger);border-width:1px 1px 1px 3px;border-radius:var(--radius-md);background:var(--color-card);cursor:pointer;color:inherit;text-decoration:inherit}
+.s35{display:flex;flex-direction:column;gap:2px;flex-grow:1;position:relative}
+.s36{font-size:var(--size-sm);font-weight:500;white-space:pre-wrap}
+.s37{width:16px;height:16px;object-fit:cover}
+.s38{display:flex;flex-direction:row;align-items:center;gap:10px;position:relative;padding:10px 12px;border-style:solid;border-color:var(--color-warning);border-width:1px 1px 1px 3px;border-radius:var(--radius-md);background:var(--color-card);cursor:pointer;color:inherit;text-decoration:inherit}
+.s39{display:flex;flex-direction:column;position:relative;padding:20px 16px 16px 16px}
+.s40{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:0px 0px 4px 0px}
+.s41{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;padding:12px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;cursor:pointer;color:inherit;text-decoration:inherit}
+.s42{display:flex;flex-direction:column;gap:2px;flex-grow:1;flex-basis:0px;position:relative}
+.s43{width:64px;height:24px;object-fit:cover}
+.s44{display:flex;flex-direction:column;align-items:flex-end;gap:4px;position:relative;width:96px}
+.s45{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s46{display:flex;flex-direction:row;justify-content:flex-end;position:relative;width:96px;height:4px;background:var(--color-muted)}
+.s47{display:flex;flex-direction:column;position:relative;width:100%;height:4px;background:var(--color-success)}
+.s48{display:flex;flex-direction:column;position:relative;width:17%;height:4px;background:var(--color-success)}
+.s49{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:600;color:var(--color-danger);white-space:pre-wrap}
+.s50{display:flex;flex-direction:column;position:relative;width:5%;height:4px;background:var(--color-danger)}
+.s51{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;padding:12px 0px;cursor:pointer;color:inherit;text-decoration:inherit}
+.s52{font-size:var(--size-xs);color:var(--color-danger);white-space:pre-wrap}
+.s53{display:flex;flex-direction:column;position:relative;width:10%;height:4px;background:var(--color-danger)}
+.s54{display:flex;flex-direction:row;position:sticky;bottom:0px;margin:auto 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;background:var(--color-card)}
+.s55{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;flex-grow:1;position:relative;height:56px;cursor:pointer;color:inherit;text-decoration:inherit}
+.s56{font-size:11px;font-weight:600;color:var(--color-primary);white-space:pre-wrap}
+.s57{font-size:11px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s58{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:32px;height:32px;border-radius:var(--radius-md);background:var(--color-primary)}
+.s59{width:18px;height:18px;object-fit:cover}
+.s60{display:flex;flex-direction:column;gap:12px;position:relative;margin:0px 16px;padding:12px 12px;border-radius:var(--radius-lg);background:var(--color-card)}
+.s61{display:flex;flex-direction:row;justify-content:space-between;align-items:flex-end;position:relative}
+.s62{display:flex;flex-direction:column;gap:2px;position:relative}
+.s63{font-family:var(--font-mono);font-size:var(--size-xl);font-weight:700;color:var(--color-success);white-space:pre-wrap}
+.s64{display:flex;flex-direction:column;align-items:flex-end;gap:4px;position:relative}
+.s65{display:flex;flex-direction:row;gap:2px;position:relative;width:80px;height:4px}
+.s66{display:flex;flex-direction:column;position:relative;width:60%;height:4px;background:var(--color-success)}
+.s67{display:flex;flex-direction:column;position:relative;width:40%;height:4px;background:var(--color-danger)}
+.s68{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px;position:relative;padding:12px 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s69{font-family:var(--font-mono);font-size:var(--size-sm);white-space:pre-wrap}
+.s70{display:flex;flex-direction:row;gap:4px;position:relative;padding:16px 16px 8px 16px}
+.s71{display:flex;flex-direction:row;justify-content:center;align-items:center;gap:4px;position:relative;height:32px;padding:0px 12px;border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-muted-fg);cursor:pointer}
+.s72{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:40px;margin:0px 16px 8px 16px;padding:0px 12px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-card)}
+.s73{flex-grow:1;height:38px;font-size:var(--size-sm);color:var(--color-fg);background:var(--color-card)}
+.s74{display:flex;flex-direction:column;gap:8px;position:relative;padding:0px 16px 16px 16px}
+.s75{display:flex;flex-direction:column;gap:10px;position:relative;padding:12px 12px;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card);cursor:pointer;color:inherit;text-decoration:inherit}
+.s76{display:flex;flex-direction:row;justify-content:space-between;align-items:flex-start;position:relative}
+.s77{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:999px;background:var(--color-success)}
+.s78{font-size:var(--size-xs);color:var(--color-success);white-space:pre-wrap}
+.s79{display:flex;flex-direction:row;align-items:baseline;gap:8px;position:relative}
+.s80{font-family:var(--font-mono);font-size:var(--size-lg);font-weight:700;color:var(--color-success);white-space:pre-wrap}
+.s81{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-success);white-space:pre-wrap}
+.s82{width:72px;height:28px;object-fit:cover}
+.s83{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:10px 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s84{display:flex;flex-direction:row;gap:6px;position:relative}
+.s85{display:flex;flex-direction:row;align-items:center;gap:4px;position:relative;height:22px;padding:0px 6px;border-style:solid;border-color:var(--color-border);border-width:1px 1px 1px 2px}
+.s86{font-size:var(--size-xs);white-space:pre-wrap}
+.s87{display:flex;flex-direction:column;gap:10px;position:relative;padding:12px 12px;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card);cursor:pointer}
+.s88{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:999px;background:var(--color-warning)}
+.s89{font-size:var(--size-xs);color:var(--color-warning);white-space:pre-wrap}
+.s90{font-family:var(--font-mono);font-size:var(--size-lg);font-weight:700;color:var(--color-danger);white-space:pre-wrap}
+.s91{display:flex;flex-direction:column;gap:10px;position:relative;padding:12px 12px;border:1px solid var(--color-danger);border-radius:var(--radius-lg);background:var(--color-card);cursor:pointer}
+.s92{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:999px;background:var(--color-danger)}
+.s93{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:28px;padding:0px 12px;border:1px solid var(--color-input);border-radius:var(--radius-md);cursor:pointer}
+.s94{display:flex;flex-direction:column;gap:10px;position:relative;padding:12px 12px;border:1px solid var(--color-border);border-radius:var(--radius-lg);cursor:pointer}
+.s95{font-size:var(--size-sm);font-weight:500;color:var(--color-muted-fg);white-space:pre-wrap}
+.s96{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:999px;background:var(--color-input)}
+.s97{font-family:var(--font-mono);font-size:var(--size-lg);font-weight:700;color:var(--color-muted-fg);white-space:pre-wrap}
+.s98{width:72px;height:28px;opacity:0.5;object-fit:cover}
+.s99{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;flex-grow:1;position:relative;height:56px;cursor:pointer}
+.s100{display:flex;flex-direction:column;position:relative;padding:0px;font-family:var(--font-body);color:var(--color-fg);background:var(--color-bg);width:390px;margin:0 auto}
+.s101{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:48px;padding:0px 8px}
+.s102{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:44px;height:44px;cursor:pointer;color:inherit;text-decoration:inherit}
+.s103{width:22px;height:22px;object-fit:cover}
+.s104{display:flex;flex-direction:column;align-items:center;gap:0px;position:relative}
+.s105{font-size:var(--size-md);font-weight:600;white-space:pre-wrap}
+.s106{display:flex;flex-direction:column;gap:12px;position:relative;padding:8px 16px 16px 16px}
+.s107{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative}
+.s108{font-family:var(--font-mono);font-size:var(--size-2xl);font-weight:600;line-height:1.15;letter-spacing:-1px;color:var(--color-success);white-space:pre-wrap}
+.s109{padding:2px 6px;font-family:var(--font-mono);font-size:var(--size-xs);font-weight:600;white-space:nowrap;color:var(--color-success);background:var(--color-success-soft)}
+.s110{display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:8px;position:relative;padding:12px 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s111{display:flex;flex-direction:column;gap:0px;position:relative}
+.s112{font-family:var(--font-mono);font-size:var(--size-sm);color:var(--color-success);white-space:pre-wrap}
+.s113{font-family:var(--font-mono);font-size:var(--size-sm);color:var(--color-primary);white-space:pre-wrap}
+.s114{display:flex;flex-direction:column;position:relative;padding:12px 16px 12px 16px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 1px 0px;background:var(--color-card)}
+.s115{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:0px 0px 8px 0px}
+.s116{display:flex;flex-direction:row;gap:0px;position:relative;overflow:hidden}
+.s117{display:flex;flex-direction:row;align-items:center;gap:4px;flex-shrink:0;position:relative;height:28px;padding:0px 8px;border-radius:var(--radius-md);background:var(--color-muted);cursor:pointer}
+.s118{display:flex;flex-direction:row;align-items:center;gap:4px;flex-shrink:0;position:relative;height:28px;padding:0px 8px;border-radius:var(--radius-md);cursor:pointer}
+.s119{font-size:var(--size-sm);font-weight:400;color:var(--color-muted-fg);white-space:pre-wrap}
+.s120{display:flex;flex-direction:row;position:relative;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s121{display:flex;flex-direction:column;justify-content:center;position:relative;height:28px;padding:0px 8px;cursor:pointer}
+.s122{font-family:var(--font-mono);font-size:var(--size-xs);font-weight:400;color:var(--color-muted-fg);white-space:pre-wrap}
+.s123{display:flex;flex-direction:column;justify-content:center;position:relative;height:28px;padding:0px 8px;background:var(--color-muted);cursor:pointer}
+.s124{font-family:var(--font-mono);font-size:var(--size-xs);font-weight:600;color:var(--color-primary);white-space:pre-wrap}
+.s125{display:flex;flex-direction:row;position:relative}
+.s126{display:flex;flex-direction:column;position:relative;overflow:hidden;width:312px;height:220px}
+.s127{display:flex;flex-direction:column;position:absolute;top:16.9px;left:0px;width:312px;height:1px;background:var(--color-border);opacity:0.6}
+.s128{display:flex;flex-direction:column;position:absolute;top:73.3px;left:0px;width:312px;height:1px;background:var(--color-border);opacity:0.6}
+.s129{display:flex;flex-direction:column;position:absolute;top:129.7px;left:0px;width:312px;height:1px;background:var(--color-border);opacity:0.6}
+.s130{display:flex;flex-direction:column;position:absolute;top:186.2px;left:0px;width:312px;height:1px;background:var(--color-border);opacity:0.6}
+.s131{display:flex;flex-direction:column;position:absolute;top:32.4px;left:132px;width:180px;height:125px;background:var(--color-success-soft);opacity:0.55}
+.s132{display:flex;flex-direction:column;gap:0px;position:absolute;top:96px;left:262px}
+.s133{font-size:11px;color:var(--color-success);white-space:pre-wrap}
+.s134{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s135{display:flex;flex-direction:row;position:absolute;top:0px;left:0px}
+.s136{display:flex;flex-direction:column;flex-shrink:0;position:relative;width:8px;height:220px}
+.s137{display:flex;flex-direction:column;position:absolute;top:83.9px;left:3.5px;width:1px;height:15.9px;background:var(--color-danger)}
+.s138{display:flex;flex-direction:column;position:absolute;top:90.3px;left:1.5px;width:5px;height:5.6px;background:var(--color-danger)}
+.s139{display:flex;flex-direction:column;position:absolute;top:88.5px;left:3.5px;width:1px;height:15.4px;background:var(--color-danger)}
+.s140{display:flex;flex-direction:column;position:absolute;top:95.9px;left:1.5px;width:5px;height:5.6px;background:var(--color-danger)}
+.s141{display:flex;flex-direction:column;position:absolute;top:98.8px;left:3.5px;width:1px;height:17.1px;background:var(--color-danger)}
+.s142{display:flex;flex-direction:column;position:absolute;top:101.5px;left:1.5px;width:5px;height:11.3px;background:var(--color-danger)}
+.s143{display:flex;flex-direction:column;position:absolute;top:105.9px;left:3.5px;width:1px;height:20.7px;background:var(--color-danger)}
+.s144{display:flex;flex-direction:column;position:absolute;top:112.8px;left:1.5px;width:5px;height:11.3px;background:var(--color-danger)}
+.s145{display:flex;flex-direction:column;position:absolute;top:110.9px;left:3.5px;width:1px;height:18px;background:var(--color-success)}
+.s146{display:flex;flex-direction:column;position:absolute;top:119.9px;left:1.5px;width:5px;height:4.2px;background:var(--color-success)}
+.s147{display:flex;flex-direction:column;position:absolute;top:117.6px;left:3.5px;width:1px;height:17.9px;background:var(--color-danger)}
+.s148{display:flex;flex-direction:column;position:absolute;top:119.9px;left:1.5px;width:5px;height:12.7px;background:var(--color-danger)}
+.s149{display:flex;flex-direction:column;position:absolute;top:124.6px;left:3.5px;width:1px;height:27px;background:var(--color-danger)}
+.s150{display:flex;flex-direction:column;position:absolute;top:132.6px;left:1.5px;width:5px;height:11.2px;background:var(--color-danger)}
+.s151{display:flex;flex-direction:column;position:absolute;top:141.2px;left:3.5px;width:1px;height:19.1px;background:var(--color-danger)}
+.s152{display:flex;flex-direction:column;position:absolute;top:143.8px;left:1.5px;width:5px;height:11.3px;background:var(--color-danger)}
+.s153{display:flex;flex-direction:column;position:absolute;top:146.5px;left:3.5px;width:1px;height:16.4px;background:var(--color-success)}
+.s154{display:flex;flex-direction:column;position:absolute;top:149.5px;left:1.5px;width:5px;height:5.6px;background:var(--color-success)}
+.s155{display:flex;flex-direction:column;position:absolute;top:146.9px;left:3.5px;width:1px;height:17.3px;background:var(--color-danger)}
+.s156{display:flex;flex-direction:column;position:absolute;top:149.5px;left:1.5px;width:5px;height:11.3px;background:var(--color-danger)}
+.s157{display:flex;flex-direction:column;position:absolute;top:155.9px;left:3.5px;width:1px;height:15.9px;background:var(--color-danger)}
+.s158{display:flex;flex-direction:column;position:absolute;top:160.8px;left:1.5px;width:5px;height:8.4px;background:var(--color-danger)}
+.s159{display:flex;flex-direction:column;position:absolute;top:161.8px;left:3.5px;width:1px;height:15.5px;background:var(--color-danger)}
+.s160{display:flex;flex-direction:column;position:absolute;top:169.2px;left:1.5px;width:5px;height:5.7px;background:var(--color-danger)}
+.s161{display:flex;flex-direction:column;position:absolute;top:161.5px;left:3.5px;width:1px;height:15.7px;background:var(--color-success)}
+.s162{display:flex;flex-direction:column;position:absolute;top:166.4px;left:1.5px;width:5px;height:8.5px;background:var(--color-success)}
+.s163{display:flex;flex-direction:column;position:absolute;top:148.7px;left:3.5px;width:1px;height:23.6px;background:var(--color-success)}
+.s164{display:flex;flex-direction:column;position:absolute;top:152.3px;left:1.5px;width:5px;height:14.1px;background:var(--color-success)}
+.s165{display:flex;flex-direction:column;position:absolute;top:144.6px;left:3.5px;width:1px;height:17.1px;background:var(--color-danger)}
+.s166{display:flex;flex-direction:column;position:absolute;top:152.3px;left:1.5px;width:5px;height:5.6px;background:var(--color-danger)}
+.s167{display:flex;flex-direction:column;position:absolute;top:137.6px;left:3.5px;width:1px;height:26.5px;background:var(--color-success)}
+.s168{display:flex;flex-direction:column;position:absolute;top:141px;left:1.5px;width:5px;height:16.9px;background:var(--color-success)}
+.s169{display:flex;flex-direction:column;position:absolute;top:122.6px;left:3.5px;width:1px;height:21.6px;background:var(--color-success)}
+.s170{display:flex;flex-direction:column;position:absolute;top:126.9px;left:1.5px;width:5px;height:14.1px;background:var(--color-success)}
+.s171{display:flex;flex-direction:column;position:absolute;top:122.5px;left:3.5px;width:1px;height:17.1px;background:var(--color-danger)}
+.s172{display:flex;flex-direction:column;position:absolute;top:126.9px;left:1.5px;width:5px;height:5.7px;background:var(--color-danger)}
+.s173{display:flex;flex-direction:column;position:absolute;top:112.6px;left:3.5px;width:1px;height:22.6px;background:var(--color-success)}
+.s174{display:flex;flex-direction:column;position:absolute;top:115.6px;left:1.5px;width:5px;height:17px;background:var(--color-success)}
+.s175{display:flex;flex-direction:column;position:absolute;top:96.2px;left:3.5px;width:1px;height:24.1px;background:var(--color-success)}
+.s176{display:flex;flex-direction:column;position:absolute;top:98.7px;left:1.5px;width:5px;height:16.9px;background:var(--color-success)}
+.s177{display:flex;flex-direction:column;position:absolute;top:89.9px;left:3.5px;width:1px;height:22.3px;background:var(--color-danger)}
+.s178{display:flex;flex-direction:column;position:absolute;top:98.7px;left:1.5px;width:5px;height:5.7px;background:var(--color-danger)}
+.s179{display:flex;flex-direction:column;position:absolute;top:78.4px;left:3.5px;width:1px;height:34.4px;background:var(--color-success)}
+.s180{display:flex;flex-direction:column;position:absolute;top:84.6px;left:1.5px;width:5px;height:19.8px;background:var(--color-success)}
+.s181{display:flex;flex-direction:column;position:absolute;top:59.5px;left:3.5px;width:1px;height:32px;background:var(--color-success)}
+.s182{display:flex;flex-direction:column;position:absolute;top:67.7px;left:1.5px;width:5px;height:16.9px;background:var(--color-success)}
+.s183{display:flex;flex-direction:column;position:absolute;top:61.7px;left:3.5px;width:1px;height:16.9px;background:var(--color-danger)}
+.s184{display:flex;flex-direction:column;position:absolute;top:67.7px;left:1.5px;width:5px;height:5.6px;background:var(--color-danger)}
+.s185{display:flex;flex-direction:column;position:absolute;top:46.5px;left:3.5px;width:1px;height:32px;background:var(--color-success)}
+.s186{display:flex;flex-direction:column;position:absolute;top:50.8px;left:1.5px;width:5px;height:22.5px;background:var(--color-success)}
+.s187{display:flex;flex-direction:column;position:absolute;top:47.9px;left:3.5px;width:1px;height:17.3px;background:var(--color-danger)}
+.s188{display:flex;flex-direction:column;position:absolute;top:50.8px;left:1.5px;width:5px;height:8.4px;background:var(--color-danger)}
+.s189{display:flex;flex-direction:column;position:absolute;top:39.1px;left:3.5px;width:1px;height:26.8px;background:var(--color-success)}
+.s190{display:flex;flex-direction:column;position:absolute;top:47.9px;left:1.5px;width:5px;height:11.3px;background:var(--color-success)}
+.s191{display:flex;flex-direction:column;position:absolute;top:28.5px;left:3.5px;width:1px;height:25.3px;background:var(--color-success)}
+.s192{display:flex;flex-direction:column;position:absolute;top:36.7px;left:1.5px;width:5px;height:11.2px;background:var(--color-success)}
+.s193{display:flex;flex-direction:column;position:absolute;top:33.9px;left:3.5px;width:1px;height:17.4px;background:var(--color-danger)}
+.s194{display:flex;flex-direction:column;position:absolute;top:36.7px;left:1.5px;width:5px;height:11.2px;background:var(--color-danger)}
+.s195{display:flex;flex-direction:column;position:absolute;top:40.2px;left:3.5px;width:1px;height:20.3px;background:var(--color-danger)}
+.s196{display:flex;flex-direction:column;position:absolute;top:47.9px;left:1.5px;width:5px;height:8.5px;background:var(--color-danger)}
+.s197{display:flex;flex-direction:column;position:absolute;top:41.3px;left:3.5px;width:1px;height:19px;background:var(--color-success)}
+.s198{display:flex;flex-direction:column;position:absolute;top:47.9px;left:1.5px;width:5px;height:8.5px;background:var(--color-success)}
+.s199{display:flex;flex-direction:column;position:absolute;top:25.1px;left:3.5px;width:1px;height:30.6px;background:var(--color-success)}
+.s200{display:flex;flex-direction:column;position:absolute;top:33.8px;left:1.5px;width:5px;height:14.1px;background:var(--color-success)}
+.s201{display:flex;flex-direction:column;position:absolute;top:31.6px;left:3.5px;width:1px;height:13.5px;background:var(--color-danger)}
+.s202{display:flex;flex-direction:column;position:absolute;top:33.8px;left:1.5px;width:5px;height:8.5px;background:var(--color-danger)}
+.s203{display:flex;flex-direction:column;position:absolute;top:22px;left:3.5px;width:1px;height:26.9px;background:var(--color-success)}
+.s204{display:flex;flex-direction:column;position:absolute;top:28.2px;left:1.5px;width:5px;height:14.1px;background:var(--color-success)}
+.s205{display:flex;flex-direction:column;position:absolute;top:13px;left:3.5px;width:1px;height:24.1px;background:var(--color-success)}
+.s206{display:flex;flex-direction:column;position:absolute;top:19.7px;left:1.5px;width:5px;height:8.5px;background:var(--color-success)}
+.s207{display:flex;flex-direction:column;position:absolute;top:11.5px;left:3.5px;width:1px;height:22.2px;background:var(--color-danger)}
+.s208{display:flex;flex-direction:column;position:absolute;top:19.7px;left:1.5px;width:5px;height:11.3px;background:var(--color-danger)}
+.s209{display:flex;flex-direction:column;position:absolute;top:19.5px;left:3.5px;width:1px;height:17.1px;background:var(--color-success)}
+.s210{display:flex;flex-direction:column;position:absolute;top:22.6px;left:1.5px;width:5px;height:8.4px;background:var(--color-success)}
+.s211{display:flex;flex-direction:column;position:absolute;top:8.4px;left:3.5px;width:1px;height:16.8px;background:var(--color-success)}
+.s212{display:flex;flex-direction:column;position:absolute;top:16.9px;left:1.5px;width:5px;height:5.7px;background:var(--color-success)}
+.s213{display:flex;flex-direction:column;position:absolute;top:14.4px;left:3.5px;width:1px;height:20px;background:var(--color-danger)}
+.s214{display:flex;flex-direction:column;position:absolute;top:16.9px;left:1.5px;width:5px;height:11.3px;background:var(--color-danger)}
+.s215{display:flex;flex-direction:column;position:absolute;top:157.4px;left:0px;width:312px;height:0px;border-style:dashed;border-color:var(--color-info);border-width:1px 0px 0px 0px}
+.s216{display:flex;flex-direction:column;position:absolute;top:32.4px;left:0px;width:312px;height:0px;border-style:dotted;border-color:var(--color-primary);border-width:1px 0px 0px 0px}
+.s217{display:flex;flex-direction:column;position:absolute;top:0px;left:92px;width:0px;height:220px;border-style:dashed;border-color:var(--color-muted-fg);border-width:0px 0px 0px 1px;opacity:0.7}
+.s218{display:flex;flex-direction:column;position:absolute;top:119.8px;left:24.5px;width:7px;height:7px;border:1.5px solid var(--color-bg);border-radius:999px;background:var(--color-success)}
+.s219{display:flex;flex-direction:column;align-items:center;gap:0px;position:absolute;top:129.6px;left:12px;width:32px;cursor:pointer}
+.s220{display:flex;flex-direction:column;position:relative;width:8px;height:5px;background:var(--color-success);clip-path:polygon(50% 0, 100% 100%, 0 100%)}
+.s221{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:16px;padding:0px 4px;border:1.5px solid var(--color-success);border-radius:var(--radius-sm);background:var(--color-success)}
+.s222{font-size:11px;font-weight:700;line-height:1;white-space:nowrap;color:var(--color-bg)}
+.s223{display:flex;flex-direction:column;position:absolute;top:150.8px;left:56.5px;width:7px;height:7px;border:1.5px solid var(--color-bg);border-radius:999px;background:var(--color-success)}
+.s224{display:flex;flex-direction:column;align-items:center;gap:0px;position:absolute;top:163.3px;left:44px;width:32px;cursor:pointer}
+.s225{display:flex;flex-direction:column;position:absolute;top:170.4px;left:88.5px;width:7px;height:7px;border:1.5px solid var(--color-bg);border-radius:999px;background:var(--color-success)}
+.s226{display:flex;flex-direction:column;align-items:center;gap:0px;position:absolute;top:180.3px;left:76px;width:32px;cursor:pointer}
+.s227{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:16px;padding:0px 4px;border:1.5px solid var(--color-primary);border-radius:var(--radius-sm);background:var(--color-success)}
+.s228{display:flex;flex-direction:column;position:absolute;top:122.6px;left:128.5px;width:7px;height:7px;border:1.5px solid var(--color-bg);border-radius:999px;background:var(--color-success)}
+.s229{display:flex;flex-direction:column;align-items:center;gap:0px;position:absolute;top:147.2px;left:116px;width:32px;cursor:pointer}
+.s230{display:flex;flex-direction:column;position:absolute;top:34px;left:216.5px;width:7px;height:7px;border:1.5px solid var(--color-bg);border-radius:999px;background:var(--color-danger)}
+.s231{display:flex;flex-direction:column;align-items:center;gap:0px;position:absolute;top:4.5px;left:204px;width:32px;cursor:pointer}
+.s232{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:16px;padding:0px 4px;border:1.5px solid var(--color-danger);border-radius:var(--radius-sm);background:var(--color-danger)}
+.s233{font-size:11px;font-weight:700;line-height:1;white-space:nowrap;color:var(--color-on-danger)}
+.s234{display:flex;flex-direction:column;position:relative;width:8px;height:5px;background:var(--color-danger);clip-path:polygon(0 0, 100% 0, 50% 100%)}
+.s235{display:flex;flex-direction:column;position:absolute;top:14.3px;left:296.5px;width:7px;height:7px;border:1.5px solid var(--color-bg);border-radius:999px;background:var(--color-danger)}
+.s236{display:flex;flex-direction:column;align-items:center;gap:0px;position:absolute;top:0px;left:284px;width:32px;cursor:pointer}
+.s237{display:flex;flex-direction:column;position:relative;width:46px;height:220px}
+.s238{position:absolute;top:9.9px;left:4px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s239{position:absolute;top:66.3px;left:4px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s240{position:absolute;top:122.7px;left:4px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s241{position:absolute;top:179.2px;left:4px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s242{display:flex;flex-direction:column;justify-content:center;align-items:center;position:absolute;top:24.4px;left:0px;width:46px;height:16px;background:var(--color-primary)}
+.s243{font-family:var(--font-mono);font-size:10px;font-weight:600;line-height:1;color:var(--color-on-primary);white-space:pre-wrap}
+.s244{display:flex;flex-direction:column;justify-content:center;align-items:center;position:absolute;top:149.4px;left:0px;width:46px;height:16px;background:var(--color-info)}
+.s245{font-family:var(--font-mono);font-size:10px;font-weight:600;line-height:1;color:var(--color-bg);white-space:pre-wrap}
+.s246{display:flex;flex-direction:column;justify-content:center;align-items:center;position:absolute;top:166.9px;left:0px;width:46px;height:16px;background:var(--color-muted)}
+.s247{font-family:var(--font-mono);font-size:10px;font-weight:600;line-height:1;color:var(--color-fg);white-space:pre-wrap}
+.s248{display:flex;flex-direction:column;position:relative;width:312px;height:18px}
+.s249{position:absolute;top:3px;left:2px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s250{position:absolute;top:3px;left:82px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s251{position:absolute;top:3px;left:178px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s252{position:absolute;top:3px;left:270px;font-family:var(--font-mono);font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s253{display:flex;flex-direction:row;position:relative;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s254{display:flex;flex-direction:column;position:relative;overflow:hidden;width:312px;height:36px}
+.s255{display:flex;flex-direction:column;position:absolute;top:28.5px;left:28px;width:32px;height:7.5px;border-style:solid;border-color:var(--color-primary);border-width:1px 0px 0px 0px;background:var(--color-primary-soft)}
+.s256{display:flex;flex-direction:column;position:absolute;top:21px;left:60px;width:32px;height:15px;border-style:solid;border-color:var(--color-primary);border-width:1px 0px 0px 0px;background:var(--color-primary-soft)}
+.s257{display:flex;flex-direction:column;position:absolute;top:9.8px;left:92px;width:40px;height:26.2px;border-style:solid;border-color:var(--color-primary);border-width:1px 0px 0px 0px;background:var(--color-primary-soft)}
+.s258{display:flex;flex-direction:column;position:absolute;top:6px;left:132px;width:88px;height:30px;border-style:solid;border-color:var(--color-primary);border-width:1px 0px 0px 0px;background:var(--color-primary-soft)}
+.s259{display:flex;flex-direction:column;position:absolute;top:17.2px;left:220px;width:80px;height:18.8px;border-style:solid;border-color:var(--color-primary);border-width:1px 0px 0px 0px;background:var(--color-primary-soft)}
+.s260{display:flex;flex-direction:column;position:absolute;top:21px;left:300px;width:12px;height:15px;border-style:solid;border-color:var(--color-primary);border-width:1px 0px 0px 0px;background:var(--color-primary-soft)}
+.s261{position:absolute;top:2px;left:2px;font-size:10px;color:var(--color-muted-fg);white-space:pre-wrap}
+.s262{display:flex;flex-direction:column;justify-content:center;position:relative;width:46px;height:36px;padding:0px 0px 0px 4px}
+.s263{font-family:var(--font-mono);font-size:10px;font-weight:600;white-space:nowrap;color:var(--color-primary)}
+.s264{display:flex;flex-direction:row;flex-wrap:wrap;gap:12px;position:relative;padding:8px 0px 0px 0px}
+.s265{display:flex;flex-direction:column;position:relative;width:8px;height:8px;background:var(--color-primary)}
+.s266{display:flex;flex-direction:column;gap:10px;position:relative;margin:12px 16px 0px 16px;padding:12px 12px;border-style:solid;border-color:var(--color-border);border-width:1px 1px 1px 3px;border-radius:var(--radius-lg);background:var(--color-card)}
+.s267{padding:0px 6px;font-size:var(--size-xs);font-weight:700;color:var(--color-bg);background:var(--color-success);white-space:pre-wrap}
+.s268{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px;position:relative}
+.s269{font-family:var(--font-mono);font-size:var(--size-xs);white-space:pre-wrap}
+.s270{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-info);white-space:pre-wrap}
+.s271{font-family:var(--font-mono);font-size:var(--size-xs);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s272{display:flex;flex-direction:row;position:relative;margin:16px 16px 0px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s273{display:flex;flex-direction:row;justify-content:center;align-items:center;gap:6px;flex-grow:1;position:relative;height:40px;cursor:pointer}
+.s274{display:flex;flex-direction:column;position:absolute;bottom:0px;left:0px;width:100%;height:2px;background:var(--color-primary)}
+.s275{display:flex;flex-direction:column;gap:8px;position:relative;padding:12px 16px 16px 16px}
+.s276{display:flex;flex-direction:column;gap:10px;position:relative;padding:12px 12px;border:1px solid var(--color-primary);border-radius:var(--radius-lg);background:var(--color-card)}
+.s277{padding:0px 6px;font-size:var(--size-xs);color:var(--color-success);background:var(--color-success-soft);white-space:pre-wrap}
+.s278{display:flex;flex-direction:row;align-items:baseline;gap:6px;position:relative}
+.s279{font-family:var(--font-mono);font-size:var(--size-md);font-weight:700;color:var(--color-success);white-space:pre-wrap}
+.s280{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px;position:relative}
+.s281{display:flex;flex-direction:column;align-items:flex-end;position:relative}
+.s282{display:flex;flex-direction:row;gap:3px;position:relative}
+.s283{display:flex;flex-direction:column;position:relative;width:14px;height:8px;background:var(--color-success)}
+.s284{display:flex;flex-direction:column;position:relative;width:14px;height:8px;background:var(--color-danger)}
+.s285{padding:0px 6px;font-size:var(--size-xs);color:var(--color-danger);background:var(--color-danger-soft);white-space:pre-wrap}
+.s286{display:flex;flex-direction:column;position:relative;width:14px;height:8px;background:var(--color-muted)}
+.s287{display:flex;flex-direction:column;position:relative;padding:4px 16px 16px 16px}
+.s288{display:flex;flex-direction:row;align-items:center;gap:10px;position:relative;padding:10px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s289{width:28px;padding:0px 0px;font-size:var(--size-xs);font-weight:700;text-align:center;color:var(--color-on-danger);background:var(--color-danger);white-space:pre-wrap}
+.s290{display:flex;flex-direction:column;gap:0px;flex-grow:1;position:relative}
+.s291{width:28px;padding:0px 0px;font-size:var(--size-xs);font-weight:700;text-align:center;color:var(--color-bg);background:var(--color-success);white-space:pre-wrap}
+.s292{display:flex;flex-direction:row;align-items:center;gap:10px;position:relative;padding:10px 8px;border-style:solid;border-color:var(--color-primary);border-width:0px 0px 1px 2px;background:var(--color-muted)}
+.s293{display:flex;flex-direction:row;align-items:center;gap:10px;position:relative;padding:10px 0px}
+.s294{display:flex;flex-direction:row;align-items:center;gap:8px;position:sticky;bottom:0px;padding:10px 16px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;background:var(--color-card)}
+.s295{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;position:relative;width:56px;height:44px;cursor:pointer}
+.s296{font-size:11px;color:var(--color-danger);white-space:pre-wrap}
+.s297{display:flex;flex-direction:row;justify-content:center;align-items:center;gap:6px;flex-grow:1;position:relative;height:44px;border-radius:var(--radius-md);background:var(--color-primary);cursor:pointer}
+.s298{font-size:var(--size-sm);font-weight:600;color:var(--color-on-primary);white-space:pre-wrap}
+.s299{display:flex;flex-direction:row;align-items:center;gap:16px;position:relative;padding:0px 16px 12px 16px}
+.s300{padding:8px 16px;font-size:var(--size-xs);color:var(--color-muted-fg);background:var(--color-card);white-space:pre-wrap}
+.s301{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;min-height:64px;padding:12px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;cursor:pointer;color:inherit;text-decoration:inherit}
+.s302{display:flex;flex-direction:row;align-items:center;gap:6px;position:relative}
+.s303{display:flex;flex-direction:column;align-items:flex-end;gap:2px;position:relative}
+.s304{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:500;white-space:pre-wrap}
+.s305{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;min-height:64px;padding:12px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;cursor:pointer}
+.s306{padding:0px 4px;font-size:var(--size-xs);color:var(--color-muted-fg);background:var(--color-muted);white-space:pre-wrap}
+.s307{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;min-height:64px;padding:12px 16px;cursor:pointer}
+.s308{padding:0px 4px;font-size:var(--size-xs);color:var(--color-info);background:var(--color-info-soft);white-space:pre-wrap}
+.s309{display:flex;flex-direction:column;justify-content:flex-end;position:absolute;top:0px;left:0px;z-index:10;width:100%;height:100%}
+.s310{display:flex;flex-direction:column;flex-grow:1;position:relative;background:var(--color-bg);opacity:0.7}
+.s311{display:flex;flex-direction:column;gap:4px;position:relative;padding:8px 16px 24px 16px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;border-radius:12px 12px 0px 0px;background:var(--color-card)}
+.s312{display:flex;flex-direction:column;gap:2px;position:relative;padding:12px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;cursor:pointer}
+.s313{display:flex;flex-direction:column;gap:2px;position:relative;padding:12px 0px;cursor:pointer}
+.s314{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:52px;padding:0px 4px}
+.s315{display:flex;flex-direction:column;gap:4px;position:relative;padding:12px 16px 16px 16px}
+.s316{font-family:var(--font-mono);font-size:var(--size-2xl);font-weight:700;white-space:pre-wrap}
+.s317{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px;position:relative;margin:12px 0px 0px 0px}
+.s318{display:flex;flex-direction:column;position:relative;padding:0px 16px}
+.s319{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:12px 0px 4px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s320{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;padding:10px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s321{padding:0px 4px;font-size:var(--size-xs);color:var(--color-success);background:var(--color-success-soft);white-space:pre-wrap}
+.s322{padding:0px 4px;font-size:var(--size-xs);color:var(--color-danger);background:var(--color-danger-soft);white-space:pre-wrap}
+.s323{font-family:var(--font-mono);font-size:var(--size-sm);color:var(--color-danger);white-space:pre-wrap}
+.s324{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;padding:10px 0px}
+.s325{display:flex;flex-direction:column;position:relative;padding:8px 16px 0px 16px}
+.s326{width:28px;font-size:var(--size-xs);font-weight:700;text-align:center;color:var(--color-on-danger);background:var(--color-danger);white-space:pre-wrap}
+.s327{width:28px;font-size:var(--size-xs);font-weight:700;text-align:center;color:var(--color-bg);background:var(--color-success);white-space:pre-wrap}
+.s328{display:flex;flex-direction:column;position:relative;padding:8px 16px 16px 16px}
+.s329{display:flex;flex-direction:column;position:relative;padding:12px 0px 8px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s330{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;padding:12px 12px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;color:inherit;text-decoration:inherit}
+.s331{display:flex;flex-direction:row;position:sticky;bottom:0px;margin:auto 0px 0px 0px;padding:10px 16px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;background:var(--color-card)}
+.s332{display:flex;flex-direction:column;justify-content:center;align-items:center;flex-grow:1;position:relative;height:44px;border-radius:var(--radius-md);background:var(--color-primary);cursor:pointer;color:inherit;text-decoration:inherit}
+.s333{display:flex;flex-direction:column;gap:4px;position:relative;padding:4px 16px 16px 16px}
+.s334{display:flex;flex-direction:row;gap:2px;position:relative;height:6px;margin:8px 0px 0px 0px}
+.s335{display:flex;flex-direction:column;position:relative;width:57.5%;height:6px;background:var(--color-primary)}
+.s336{display:flex;flex-direction:column;position:relative;width:29.1%;height:6px;background:var(--color-info)}
+.s337{display:flex;flex-direction:column;position:relative;width:13.4%;height:6px;background:var(--color-input)}
+.s338{display:flex;flex-direction:column;position:relative;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s339{display:flex;flex-direction:column;gap:8px;position:relative;padding:12px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;cursor:pointer}
+.s340{display:flex;flex-direction:row;justify-content:space-between;position:relative;padding:0px 0px 0px 16px}
+.s341{display:flex;flex-direction:column;position:relative;width:8px;height:8px;background:var(--color-input)}
+.s342{display:flex;flex-direction:row;align-items:flex-start;gap:8px;position:relative;margin:0px 0px 0px 16px;padding:8px 8px;border:1px solid var(--color-warning);border-radius:var(--radius-md)}
+.s343{display:flex;flex-direction:column;gap:4px;flex-grow:1;position:relative}
+.s344{font-size:var(--size-xs);color:var(--color-fg);white-space:pre-wrap}
+.s345{display:flex;flex-direction:column;justify-content:center;align-self:flex-start;position:relative;height:28px;cursor:pointer}
+.s346{font-size:var(--size-xs);font-weight:500;color:var(--color-primary);white-space:pre-wrap}
+.s347{display:flex;flex-direction:column;gap:8px;position:relative;padding:12px 16px;cursor:pointer}
+.s348{display:flex;flex-direction:column;position:relative;width:8px;height:8px;background:var(--color-muted)}
+.s349{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:500;color:var(--color-muted-fg);white-space:pre-wrap}
+.s350{display:flex;flex-direction:column;gap:12px;position:relative;height:500px;padding:8px 16px 16px 16px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;border-radius:12px 12px 0px 0px;background:var(--color-card)}
+.s351{display:flex;flex-direction:column;gap:6px;position:relative}
+.s352{display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:4px;position:relative}
+.s353{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:36px;border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-muted-fg);cursor:pointer}
+.s354{display:flex;flex-direction:column;gap:12px;position:relative}
+.s355{height:40px;padding:0px 12px;border:1px solid var(--color-input);border-radius:var(--radius-md);font-size:var(--size-sm);color:var(--color-fg);background:var(--color-bg)}
+.s356{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:32px;padding:0px 16px;color:var(--color-muted-fg);cursor:pointer}
+.s357{display:flex;flex-direction:column;position:relative;padding:12px 12px;border-radius:var(--radius-md);background:var(--color-info-soft)}
+.s358{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:44px;margin:auto 0px 0px 0px;border-radius:var(--radius-md);background:var(--color-primary);cursor:pointer}
+.s359{display:flex;flex-direction:row;align-items:center;position:relative;height:52px;padding:0px 16px}
+.s360{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;margin:0px 16px 8px 16px;padding:12px 12px;border:1px solid var(--color-danger);border-radius:var(--radius-lg);background:var(--color-danger-soft)}
+.s361{font-size:var(--size-sm);font-weight:600;color:var(--color-danger);white-space:pre-wrap}
+.s362{display:flex;flex-direction:row;justify-content:center;align-items:center;gap:6px;flex-shrink:0;position:relative;height:40px;padding:0px 12px;border-radius:var(--radius-md);background:var(--color-danger);cursor:pointer}
+.s363{font-size:var(--size-sm);font-weight:600;color:var(--color-on-danger);white-space:pre-wrap}
+.s364{display:flex;flex-direction:column;position:relative;padding:8px 0px 0px 0px}
+.s365{padding:8px 16px 4px 16px;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s366{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;height:52px;padding:0px 16px;cursor:pointer;color:inherit;text-decoration:inherit}
+.s367{flex-grow:1;font-size:var(--size-sm);font-weight:400;white-space:pre-wrap}
+.s368{display:flex;flex-direction:column;position:relative;padding:8px 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s369{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;height:52px;padding:0px 16px;cursor:pointer}
+.s370{font-size:var(--size-sm);font-weight:400;white-space:pre-wrap}
+.s371{display:flex;flex-direction:row;align-items:center;flex-shrink:0;position:relative;width:40px;height:24px;padding:0px 3px;border-radius:999px;background:var(--color-input)}
+.s372{display:flex;flex-direction:column;position:relative;width:18px;height:18px;border-radius:999px;background:var(--color-fg)}
+.s373{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;height:52px;padding:0px 16px}
+.s374{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:8px 16px 16px 16px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s375{display:flex;flex-direction:column;justify-content:center;position:relative;height:44px;cursor:pointer}
+.s376{font-size:var(--size-sm);color:var(--color-danger);white-space:pre-wrap}
+.s377{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:64px;height:44px;cursor:pointer}
+.s378{font-size:var(--size-sm);color:var(--color-primary);white-space:pre-wrap}
+.s379{display:flex;flex-direction:row;position:relative;padding:0px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s380{display:flex;flex-direction:column;justify-content:center;align-items:center;flex-grow:1;position:relative;height:44px;cursor:pointer}
+.s381{display:flex;flex-direction:column;position:relative;padding:16px 16px}
+.s382{font-family:var(--font-mono);font-size:var(--size-2xl);font-weight:700;color:var(--color-success);white-space:pre-wrap}
+.s383{display:flex;flex-direction:row;flex-shrink:0;position:relative;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s384{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:52px;height:44px;padding:0px;color:var(--color-muted-fg);cursor:pointer}
+.s385{margin:4px 0px 0px 0px;font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s386{display:flex;flex-direction:row;gap:3px;position:relative;margin:12px 0px 0px 0px}
+.s387{display:flex;flex-direction:column;flex-grow:1;flex-basis:0px;position:relative}
+.s388{display:flex;flex-direction:column;justify-content:flex-end;position:relative;height:56px}
+.s389{display:flex;flex-direction:column;position:relative;width:100%;height:17.6px;background:var(--color-success)}
+.s390{display:flex;flex-direction:column;position:relative;height:26px}
+.s391{display:flex;flex-direction:column;position:relative;width:100%;height:26.4px;background:var(--color-success)}
+.s392{display:flex;flex-direction:column;position:relative;height:56px}
+.s393{display:flex;flex-direction:column;position:relative;width:100%;height:8.8px;background:var(--color-danger)}
+.s394{display:flex;flex-direction:column;position:relative;width:100%;height:13.2px;background:var(--color-success)}
+.s395{display:flex;flex-direction:column;position:relative;width:100%;height:46.2px;background:var(--color-success)}
+.s396{display:flex;flex-direction:column;position:relative;width:100%;height:33px;background:var(--color-success)}
+.s397{display:flex;flex-direction:column;position:relative;width:100%;height:24.2px;background:var(--color-danger)}
+.s398{display:flex;flex-direction:column;position:relative;width:100%;height:6.6px;background:var(--color-success)}
+.s399{display:flex;flex-direction:column;position:relative;width:100%;height:19.8px;background:var(--color-success)}
+.s400{display:flex;flex-direction:column;position:relative;width:100%;height:39.6px;background:var(--color-success)}
+.s401{display:flex;flex-direction:column;position:relative;width:100%;height:13.2px;background:var(--color-danger)}
+.s402{display:flex;flex-direction:column;position:relative;width:100%;height:24.2px;background:var(--color-success)}
+.s403{display:flex;flex-direction:column;position:relative;width:100%;height:52.8px;background:var(--color-success)}
+.s404{display:flex;flex-direction:column;position:relative;width:100%;height:15.4px;background:var(--color-success)}
+.s405{display:flex;flex-direction:column;position:relative;width:100%;height:6.6px;background:var(--color-danger)}
+.s406{display:flex;flex-direction:column;position:relative;width:100%;height:11px;background:var(--color-success)}
+.s407{display:flex;flex-direction:column;position:relative;width:100%;height:22px;background:var(--color-success)}
+.s408{display:flex;flex-direction:column;position:relative;width:100%;height:17.6px;background:var(--color-danger)}
+.s409{display:flex;flex-direction:column;position:relative;width:100%;height:28.6px;background:var(--color-success);opacity:0.5}
+.s410{display:flex;flex-direction:column;position:absolute;top:56px;left:0px;width:100%;height:1px;background:var(--color-border)}
+.s411{display:flex;flex-direction:row;justify-content:space-between;position:relative;margin:4px 0px 0px 0px}
+.s412{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px;position:relative;margin:16px 0px 0px 0px;padding:12px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 1px 0px}
+.s413{display:flex;flex-direction:column;position:relative;padding:16px 0px 4px 0px}
+.s414{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:10px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s415{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;padding:10px 0px}
+.s416{margin:12px 0px 0px 0px;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s417{display:flex;flex-direction:column;gap:4px;position:relative;padding:12px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s418{width:24px;font-size:var(--size-xs);font-weight:700;text-align:center;color:var(--color-bg);background:var(--color-success);white-space:pre-wrap}
+.s419{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:400;white-space:pre-wrap}
+.s420{width:24px;font-size:var(--size-xs);font-weight:700;text-align:center;color:var(--color-on-danger);background:var(--color-danger);white-space:pre-wrap}
+.s421{display:flex;flex-direction:column;gap:4px;position:relative;padding:12px 0px}
+.s422{display:flex;flex-direction:row;align-items:flex-start;gap:10px;position:relative;padding:12px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s423{display:flex;flex-direction:column;position:relative;width:6px;height:6px;margin:6px 0px 0px 0px;border-radius:999px;background:var(--color-danger)}
+.s424{display:flex;flex-direction:column;position:relative;width:6px;height:6px;margin:6px 0px 0px 0px;border-radius:999px;background:var(--color-warning)}
+.s425{display:flex;flex-direction:row;align-items:flex-start;gap:10px;position:relative;padding:12px 0px}
+.s426{display:flex;flex-direction:column;position:relative;width:6px;height:6px;margin:6px 0px 0px 0px;border-radius:999px;background:var(--color-success)}
+</style>
+</head>
+<body>
+<input class="dm-r" type="radio" name="dm-frame" id="dm-f0" checked><input class="dm-r" type="radio" name="dm-frame" id="dm-f1"><input class="dm-r" type="radio" name="dm-frame" id="dm-f2"><input class="dm-r" type="radio" name="dm-frame" id="dm-f3"><input class="dm-r" type="radio" name="dm-frame" id="dm-f4"><input class="dm-r" type="radio" name="dm-frame" id="dm-f5"><input class="dm-r" type="radio" name="dm-frame" id="dm-f6"><input class="dm-r" type="radio" name="dm-frame" id="dm-f7"><nav class="dm-tabs"><label for="dm-f0">移动端 / 总览</label><label for="dm-f1">移动端 / 任务列表</label><label for="dm-f2">移动端 / 任务详情</label><label for="dm-f3">移动端 / 信号源</label><label for="dm-f4">移动端 / 信号源详情</label><label for="dm-f5">移动端 / 账户</label><label for="dm-f6">移动端 / 更多</label><label for="dm-f7">移动端 / 记录与报表</label></nav><main><section class="dm-frame dm-s0" data-dm-frame="0"><div data-dm-p="0-0" class="s1"><div class="s2"><div class="s3">总览</div><button type="button" class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEwLjI2OCAyMWEyIDIgMCAwIDAgMy40NjQgMCIvPjxwYXRoIGQ9Ik0zLjI2MiAxNS4zMjZBMSAxIDAgMCAwIDQgMTdoMTZhMSAxIDAgMCAwIC43NC0xLjY3M0MxOS40MSAxMy45NTYgMTggMTIuNDk5IDE4IDhBNiA2IDAgMCAwIDYgOGMwIDQuNDk5LTEuNDExIDUuOTU2LTIuNzM4IDcuMzI2Ii8+PC9zdmc+" alt="告警" class="s5"><div class="s6"></div></button></div><div class="s7"><div data-dm-p="0-1" class="s8"><div class="s9">今日</div></div><div data-dm-p="0-2" class="s8"><div class="s9">7 天</div></div><div data-dm-p="0-3" class="s8"><div class="s9">30 天</div></div><div data-dm-p="0-4" class="s8"><div class="s9">全部</div></div></div><div class="s10"><div data-dm-p="0-5" class="s11">30 天跟单盈亏（USDT）</div><div class="s12"><div data-dm-p="0-6" class="s13">+19,058.20</div><div data-dm-p="0-7" class="s14">+8.31%</div></div><div class="s15"><div class="s16"><div class="s11">总权益</div><div class="s17">248,320.15</div></div><div class="s16"><div class="s11">今日</div><div class="s18">+1,486.30</div></div><div class="s16"><div class="s11">浮动盈亏</div><div class="s18">+10,412.80</div></div><div class="s16"><div class="s11">跟单还原度</div><div class="s19">97.9%</div></div></div></div><div class="s20"><div class="s21"><div class="s22"><div class="s23"></div><div class="s11">跟单累计盈亏</div></div><div class="s22"><div class="s24"></div><div class="s11">信号源同比</div></div><div class="s22"><div class="s25"></div><div class="s11">最大回撤</div></div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAwIDIyMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzJFQkQ4NSIgc3RvcC1vcGFjaXR5PSIwLjMyIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMkVCRDg1IiBzdG9wLW9wYWNpdHk9IjAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz4KPHBvbHlnb24gcG9pbnRzPSIwLjAsMTk4LjAgMzMuMywxOTUuOCA2Ni43LDE5Mi4wIDEwMC4wLDE5My41IDEzMy4zLDE4OC44IDE2Ni43LDE4Mi40IDIwMC4wLDE4NS41IDIzMy4zLDE5Mi42IDI2Ni43LDE5Ni40IDMwMC4wLDE5My40IDMzMy4zLDE4NC42IDM2Ni43LDE3Ny40IDQwMC4wLDE3MS44IDQzMy4zLDE3NC4wIDQ2Ni43LDE2My40IDUwMC4wLDE1My43IDUzMy4zLDE0OS4zIDU2Ni43LDE1NS4zIDYwMC4wLDE1OC4zIDYzMy4zLDE1MS43IDY2Ni43LDE0MC4wIDcwMC4wLDEyNC42IDczMy4zLDExNS40IDc2Ni43LDEyMC42IDgwMC4wLDExNC4xIDgzMy4zLDEwMy4xIDg2Ni43LDg5LjIgOTAwLjAsNzkuNiA5MzMuMyw4Ny43IDk2Ni43LDc1LjIgMTAwMC4wLDU4LjIgMTAwMCwxOTguMCAwLDE5OC4wIiBmaWxsPSJ1cmwoI2cpIi8+Cjxwb2x5bGluZSBwb2ludHM9IjAuMCwxOTguMCAzMy4zLDE5NS45IDY2LjcsMTkxLjkgMTAwLjAsMTkzLjUgMTMzLjMsMTg4LjYgMTY2LjcsMTgxLjggMjAwLjAsMTg1LjMgMjMzLjMsMTkyLjcgMjY2LjcsMTk2LjMgMzAwLjAsMTkzLjMgMzMzLjMsMTg0LjUgMzY2LjcsMTc2LjcgNDAwLjAsMTcxLjAgNDMzLjMsMTcyLjkgNDY2LjcsMTYyLjEgNTAwLjAsMTUyLjAgNTMzLjMsMTQ3LjcgNTY2LjcsMTUzLjcgNjAwLjAsMTU2LjQgNjMzLjMsMTQ5LjYgNjY2LjcsMTM3LjQgNzAwLjAsMTIxLjUgNzMzLjMsMTEyLjQgNzY2LjcsMTE3LjQgODAwLjAsMTEwLjcgODMzLjMsOTkuNiA4NjYuNyw4NS42IDkwMC4wLDc1LjYgOTMzLjMsODMuOCA5NjYuNyw3MC44IDEwMDAuMCw1My4yIiBmaWxsPSJub25lIiBzdHJva2U9IiM0QzhERkYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtZGFzaGFycmF5PSI1IDQiIHZlY3Rvci1lZmZlY3Q9Im5vbi1zY2FsaW5nLXN0cm9rZSIvPgo8cG9seWxpbmUgcG9pbnRzPSIwLjAsMTk4LjAgMzMuMywxOTUuOCA2Ni43LDE5Mi4wIDEwMC4wLDE5My41IDEzMy4zLDE4OC44IDE2Ni43LDE4Mi40IDIwMC4wLDE4NS41IDIzMy4zLDE5Mi42IDI2Ni43LDE5Ni40IDMwMC4wLDE5My40IDMzMy4zLDE4NC42IDM2Ni43LDE3Ny40IDQwMC4wLDE3MS44IDQzMy4zLDE3NC4wIDQ2Ni43LDE2My40IDUwMC4wLDE1My43IDUzMy4zLDE0OS4zIDU2Ni43LDE1NS4zIDYwMC4wLDE1OC4zIDYzMy4zLDE1MS43IDY2Ni43LDE0MC4wIDcwMC4wLDEyNC42IDczMy4zLDExNS40IDc2Ni43LDEyMC42IDgwMC4wLDExNC4xIDgzMy4zLDEwMy4xIDg2Ni43LDg5LjIgOTAwLjAsNzkuNiA5MzMuMyw4Ny43IDk2Ni43LDc1LjIgMTAwMC4wLDU4LjIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJFQkQ4NSIgc3Ryb2tlLXdpZHRoPSIyIiB2ZWN0b3ItZWZmZWN0PSJub24tc2NhbGluZy1zdHJva2UiLz4KPC9zdmc+" alt="30 天跟单累计盈亏曲线" class="s26"><div class="s27"><div class="s28">10-18</div><div class="s28">10-28</div><div class="s28">11-07</div><div class="s28">11-17</div></div><div class="s27"><div class="s28">跟单损耗 −412.60</div><div class="s29">最大回撤 −3.20%</div></div></div><div class="s30"><div class="s31"><div class="s32">需要处理</div><div class="s33">2</div></div><label for="dm-f1" class="s34"><div class="s35"><div class="s36">SOL 趋势（OKX）触发风控暂停</div><div class="s11">单日亏损达上限 −1,500，14:02</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></label><label for="dm-f1" class="s38"><div class="s35"><div class="s36">ETH 波段 仓位偏差 −4.1%</div><div class="s11">正在自动补单，第 2 次重试</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></label></div><div class="s39"><div class="s40"><div class="s32">任务盈亏排行</div><div class="s11">近 14 天走势</div></div><label for="dm-f2" class="s41"><div class="s42"><div class="s36">BTC 巨鲸跟单</div><div class="s11">币安主账户</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDI2LjAgNy40LDI0LjcgMTQuOCwyMi44IDIyLjIsMjMuNSAyOS41LDIwLjkgMzYuOSwxNy44IDQ0LjMsMTkuMSA1MS43LDE1LjMgNTkuMSwxMi43IDY2LjUsMTAuOCA3My44LDExLjUgODEuMiw4LjMgODguNiw0LjUgOTYuMCwyLjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJFQkQ4NSIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=" alt class="s43"><div class="s44"><div class="s45">+18,640.52</div><div class="s46"><div class="s47"></div></div></div></label><label for="dm-f1" class="s41"><div class="s42"><div class="s36">ETH 波段</div><div class="s11">Kestrel → OKX 主账户</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDI2LjAgNy40LDIzLjMgMTQuOCwyNi4wIDIyLjIsMjAuNyAyOS41LDE4LjAgMzYuOSwyMy4zIDQ0LjMsMTguMCA1MS43LDEwLjAgNTkuMSwxMi43IDY2LjUsMTAuMCA3My44LDQuNyA4MS4yLDcuMyA4OC42LDQuNyA5Ni4wLDIuMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkVCRDg1IiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==" alt class="s43"><div class="s44"><div class="s45">+3,120.40</div><div class="s46"><div class="s48"></div></div></div></label><label for="dm-f1" class="s41"><div class="s42"><div class="s36">币安网格</div><div class="s11">币安子账户 2</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDExLjYgNy40LDYuOCAxNC44LDQuNCAyMi4yLDIuMCAyOS41LDQuNCAzNi45LDQuNCA0NC4zLDE0LjAgNTEuNywyMS4yIDU5LjEsMjYuMCA2Ni41LDI2LjAgNzMuOCwyNi4wIDgxLjIsMjYuMCA4OC42LDI2LjAgOTYuMCwyNi4wIiBmaWxsPSJub25lIiBzdHJva2U9IiNGNjQ2NUQiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" alt class="s43"><div class="s44"><div class="s49">−840.62</div><div class="s46"><div class="s50"></div></div></div></label><label for="dm-f1" class="s51"><div class="s42"><div class="s36">SOL 趋势（OKX）</div><div class="s52">风控暂停</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDI2LjAgNy40LDIzLjAgMTQuOCwyMC4wIDIyLjIsMjYuMCAyOS41LDIwLjAgMzYuOSwxNy4wIDQ0LjMsMTQuMCA1MS43LDE3LjAgNTkuMSwxMS4wIDY2LjUsMTEuMCA3My44LDE0LjAgODEuMiwxMS4wIDg4LjYsNS4wIDk2LjAsMi4wIiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" alt class="s43"><div class="s44"><div class="s49">−1,862.10</div><div class="s46"><div class="s53"></div></div></div></label></div><div class="s54"><label for="dm-f0" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjBCOTBCIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iOSIgeD0iMyIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI1IiB4PSIxNCIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI5IiB4PSIxNCIgeT0iMTIiIHJ4PSIxIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iNSIgeD0iMyIgeT0iMTYiIHJ4PSIxIi8+PC9zdmc+" alt class="s5"><div class="s56">总览</div></label><label for="dm-f1" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxOCIgcj0iMyIvPjxjaXJjbGUgY3g9IjYiIGN5PSI2IiByPSIzIi8+PGNpcmNsZSBjeD0iMTgiIGN5PSI2IiByPSIzIi8+PHBhdGggZD0iTTE4IDl2MmMwIC42LS40IDEtMSAxSDdjLS42IDAtMS0uNC0xLTFWOSIvPjxwYXRoIGQ9Ik0xMiAxMnYzIi8+PC9zdmc+" alt class="s5"><div class="s57">任务</div></label><label for="dm-f3" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTQuOSAxNi4xQzEgMTIuMiAxIDUuOCA0LjkgMS45Ii8+PHBhdGggZD0iTTcuOCA0LjdhNi4xNCA2LjE0IDAgMCAwLS44IDcuNSIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iOSIgcj0iMiIvPjxwYXRoIGQ9Ik0xNi4yIDQuOGMyIDIgMi4yNiA1LjExLjggNy40NyIvPjxwYXRoIGQ9Ik0xOS4xIDEuOWE5Ljk2IDkuOTYgMCAwIDEgMCAxNC4xIi8+PHBhdGggZD0iTTkuNSAxOGg1Ii8+PHBhdGggZD0ibTggMjIgNC0xMSA0IDExIi8+PC9zdmc+" alt class="s5"><div class="s57">信号源</div></label><label for="dm-f5" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDIydi01Ii8+PHBhdGggZD0iTTE1IDhWMiIvPjxwYXRoIGQ9Ik0xNyA4YTEgMSAwIDAgMSAxIDF2NGE0IDQgMCAwIDEtNCA0aC00YTQgNCAwIDAgMS00LTRWOWExIDEgMCAwIDEgMS0xeiIvPjxwYXRoIGQ9Ik05IDhWMiIvPjwvc3ZnPg==" alt class="s5"><div class="s57">账户</div></label><label for="dm-f6" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkuNjcxIDQuMTM2YTIuMzQgMi4zNCAwIDAgMSA0LjY1OSAwIDIuMzQgMi4zNCAwIDAgMCAzLjMxOSAxLjkxNSAyLjM0IDIuMzQgMCAwIDEgMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAgMCAzLjgzMSAyLjM0IDIuMzQgMCAwIDEtMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAtMy4zMTkgMS45MTUgMi4zNCAyLjM0IDAgMCAxLTQuNjU5IDAgMi4zNCAyLjM0IDAgMCAwLTMuMzItMS45MTUgMi4zNCAyLjM0IDAgMCAxLTIuMzMtNC4wMzMgMi4zNCAyLjM0IDAgMCAwIDAtMy44MzFBMi4zNCAyLjM0IDAgMCAxIDYuMzUgNi4wNTFhMi4zNCAyLjM0IDAgMCAwIDMuMzE5LTEuOTE1Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIvPjwvc3ZnPg==" alt class="s5"><div class="s57">更多</div></label></div></div></section><section class="dm-frame dm-s1" data-dm-frame="1"><div data-dm-p="1-0" class="s1"><div class="s2"><div class="s3">跟单任务</div><button type="button" class="s4"><div class="s58"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgMTJoMTQiLz48cGF0aCBkPSJNMTIgNXYxNCIvPjwvc3ZnPg==" alt="新建任务" class="s59"></div></button></div><div class="s60"><div class="s61"><div class="s62"><div class="s11">全部任务累计盈亏</div><div class="s63">+19,470.50</div></div><div class="s64"><div class="s28">3 盈 / 2 亏</div><div class="s65"><div class="s66"></div><div class="s67"></div></div></div></div><div class="s68"><div class="s16"><div class="s11">持仓名义</div><div class="s69">236.4k</div></div><div class="s16"><div class="s11">本周加 / 减仓</div><div class="s69">14 / 9</div></div><div class="s16"><div class="s11">P95 延迟</div><div class="s69">340ms</div></div></div></div><div class="s70"><div data-dm-p="1-1" class="s71"><div class="s9">全部 5</div></div><div data-dm-p="1-2" class="s71"><div class="s9">运行中 3</div></div><div data-dm-p="1-3" class="s71"><div class="s9">已暂停 1</div></div><div data-dm-p="1-4" class="s71"><div class="s9">已停止 1</div></div></div><div class="s72"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTIxIDIxLTQuMzQtNC4zNCIvPjxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjgiLz48L3N2Zz4=" alt class="s37"><input data-dm-p="1-5" placeholder="搜索任务、信号源、品种" type="search" class="s73"></div><div class="s74"><label data-dm-p="1-6" for="dm-f2" class="s75"><div class="s76"><div class="s62"><div class="s36">BTC 巨鲸跟单</div><div class="s11">Whale-07 → 币安主账户</div></div><div class="s22"><div class="s77"></div><div class="s78">运行中</div></div></div><div class="s31"><div class="s79"><div class="s80">+18,640.52</div><div class="s81">+23.30%</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDI2LjAgNy40LDI0LjcgMTQuOCwyMi44IDIyLjIsMjMuNSAyOS41LDIwLjkgMzYuOSwxNy44IDQ0LjMsMTkuMSA1MS43LDE1LjMgNTkuMSwxMi43IDY2LjUsMTAuOCA3My44LDExLjUgODEuMiw4LjMgODguNiw0LjUgOTYuMCwyLjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJFQkQ4NSIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=" alt class="s82"></div><div class="s83"><div class="s84"><div class="s85"><div class="s86">BTC 多</div><div class="s81">+8.9k</div></div><div class="s85"><div class="s86">ETH 空</div><div class="s81">+0.4k</div></div></div><div class="s11">本周 加 6 减 2</div></div></label><div data-dm-p="1-7" class="s87"><div class="s76"><div class="s62"><div class="s36">ETH 波段</div><div class="s11">Kestrel → OKX 主账户</div></div><div class="s22"><div class="s88"></div><div class="s89">补单中</div></div></div><div class="s31"><div class="s79"><div class="s80">+3,120.40</div><div class="s81">+7.80%</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDI2LjAgNy40LDIzLjMgMTQuOCwyNi4wIDIyLjIsMjAuNyAyOS41LDE4LjAgMzYuOSwyMy4zIDQ0LjMsMTguMCA1MS43LDEwLjAgNTkuMSwxMi43IDY2LjUsMTAuMCA3My44LDQuNyA4MS4yLDcuMyA4OC42LDQuNyA5Ni4wLDIuMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMkVCRDg1IiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==" alt class="s82"></div><div class="s83"><div class="s84"><div class="s85"><div class="s86">ETH 空</div><div class="s81">+1.2k</div></div></div><div class="s11">本周 加 3 减 2</div></div></div><div data-dm-p="1-8" class="s87"><div class="s76"><div class="s62"><div class="s36">币安网格</div><div class="s11">GridLab → 币安子账户 2</div></div><div class="s22"><div class="s77"></div><div class="s78">运行中</div></div></div><div class="s31"><div class="s79"><div class="s90">−840.62</div><div class="s29">−2.10%</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDExLjYgNy40LDYuOCAxNC44LDQuNCAyMi4yLDIuMCAyOS41LDQuNCAzNi45LDQuNCA0NC4zLDE0LjAgNTEuNywyMS4yIDU5LjEsMjYuMCA2Ni41LDI2LjAgNzMuOCwyNi4wIDgxLjIsMjYuMCA4OC42LDI2LjAgOTYuMCwyNi4wIiBmaWxsPSJub25lIiBzdHJva2U9IiNGNjQ2NUQiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" alt class="s82"></div><div class="s83"><div class="s84"><div class="s85"><div class="s86">BNB 多</div><div class="s29">−0.3k</div></div></div><div class="s11">本周 加 5 减 5</div></div></div><div data-dm-p="1-9" class="s91"><div class="s76"><div class="s62"><div class="s36">SOL 趋势（OKX）</div><div class="s52">单日亏损达上限，已风控暂停</div></div><div class="s22"><div class="s92"></div><div class="s52">已暂停</div></div></div><div class="s31"><div class="s79"><div class="s90">−1,862.10</div><div class="s29">−6.21%</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDI2LjAgNy40LDIzLjAgMTQuOCwyMC4wIDIyLjIsMjYuMCAyOS41LDIwLjAgMzYuOSwxNy4wIDQ0LjMsMTQuMCA1MS43LDE3LjAgNTkuMSwxMS4wIDY2LjUsMTEuMCA3My44LDE0LjAgODEuMiwxMS4wIDg4LjYsNS4wIDk2LjAsMi4wIiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" alt class="s82"></div><div class="s83"><div class="s11">无持仓</div><button type="button" class="s93"><div class="s9">查看并恢复</div></button></div></div><div data-dm-p="1-10" class="s94"><div class="s76"><div class="s62"><div class="s95">BNB 短线</div><div class="s11">11-02 停止，已结算</div></div><div class="s22"><div class="s96"></div><div class="s11">已停止</div></div></div><div class="s31"><div class="s79"><div class="s97">+412.30</div><div class="s28">+2.06%</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NiAyOCI+PHBvbHlsaW5lIHBvaW50cz0iMC4wLDcuMSA3LjQsNS40IDE0LjgsMi4wIDIyLjIsMy43IDI5LjUsOC45IDM2LjksMTIuMyA0NC4zLDEwLjYgNTEuNywxNC4wIDU5LjEsMTkuMSA2Ni41LDE3LjQgNzMuOCwyMC45IDgxLjIsMjIuNiA4OC42LDI2LjAgOTYuMCwyNC4zIiBmaWxsPSJub25lIiBzdHJva2U9IiNGNjQ2NUQiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" alt class="s98"></div></div></div><div class="s54"><label for="dm-f0" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iOSIgeD0iMyIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI1IiB4PSIxNCIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI5IiB4PSIxNCIgeT0iMTIiIHJ4PSIxIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iNSIgeD0iMyIgeT0iMTYiIHJ4PSIxIi8+PC9zdmc+" alt class="s5"><div class="s57">总览</div></label><div class="s99"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjBCOTBCIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxOCIgcj0iMyIvPjxjaXJjbGUgY3g9IjYiIGN5PSI2IiByPSIzIi8+PGNpcmNsZSBjeD0iMTgiIGN5PSI2IiByPSIzIi8+PHBhdGggZD0iTTE4IDl2MmMwIC42LS40IDEtMSAxSDdjLS42IDAtMS0uNC0xLTFWOSIvPjxwYXRoIGQ9Ik0xMiAxMnYzIi8+PC9zdmc+" alt class="s5"><div class="s56">任务</div></div><label for="dm-f3" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTQuOSAxNi4xQzEgMTIuMiAxIDUuOCA0LjkgMS45Ii8+PHBhdGggZD0iTTcuOCA0LjdhNi4xNCA2LjE0IDAgMCAwLS44IDcuNSIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iOSIgcj0iMiIvPjxwYXRoIGQ9Ik0xNi4yIDQuOGMyIDIgMi4yNiA1LjExLjggNy40NyIvPjxwYXRoIGQ9Ik0xOS4xIDEuOWE5Ljk2IDkuOTYgMCAwIDEgMCAxNC4xIi8+PHBhdGggZD0iTTkuNSAxOGg1Ii8+PHBhdGggZD0ibTggMjIgNC0xMSA0IDExIi8+PC9zdmc+" alt class="s5"><div class="s57">信号源</div></label><label for="dm-f5" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDIydi01Ii8+PHBhdGggZD0iTTE1IDhWMiIvPjxwYXRoIGQ9Ik0xNyA4YTEgMSAwIDAgMSAxIDF2NGE0IDQgMCAwIDEtNCA0aC00YTQgNCAwIDAgMS00LTRWOWExIDEgMCAwIDEgMS0xeiIvPjxwYXRoIGQ9Ik05IDhWMiIvPjwvc3ZnPg==" alt class="s5"><div class="s57">账户</div></label><label for="dm-f6" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkuNjcxIDQuMTM2YTIuMzQgMi4zNCAwIDAgMSA0LjY1OSAwIDIuMzQgMi4zNCAwIDAgMCAzLjMxOSAxLjkxNSAyLjM0IDIuMzQgMCAwIDEgMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAgMCAzLjgzMSAyLjM0IDIuMzQgMCAwIDEtMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAtMy4zMTkgMS45MTUgMi4zNCAyLjM0IDAgMCAxLTQuNjU5IDAgMi4zNCAyLjM0IDAgMCAwLTMuMzItMS45MTUgMi4zNCAyLjM0IDAgMCAxLTIuMzMtNC4wMzMgMi4zNCAyLjM0IDAgMCAwIDAtMy44MzFBMi4zNCAyLjM0IDAgMCAxIDYuMzUgNi4wNTFhMi4zNCAyLjM0IDAgMCAwIDMuMzE5LTEuOTE1Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIvPjwvc3ZnPg==" alt class="s5"><div class="s57">更多</div></label></div></div></section><section class="dm-frame dm-s2" data-dm-frame="2"><div data-dm-p="2-0" class="s100"><div class="s101"><label for="dm-f1" class="s102"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTE1IDE4LTYtNiA2LTYiLz48L3N2Zz4=" alt="返回" class="s103"></label><div class="s104"><div class="s105">BTC 巨鲸跟单</div><div class="s22"><div class="s77"></div><div class="s57">运行中，3 秒前对账</div></div></div><button type="button" class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMSIvPjxjaXJjbGUgY3g9IjE5IiBjeT0iMTIiIHI9IjEiLz48Y2lyY2xlIGN4PSI1IiBjeT0iMTIiIHI9IjEiLz48L3N2Zz4=" alt="更多" class="s5"></button></div><div class="s106"><div class="s62"><div class="s11">累计跟单盈亏（USDT）</div><div class="s107"><div class="s108">+18,640.52</div><div class="s109">+23.30%</div></div><div class="s28">本金 80,000，最大回撤 −4.12%</div></div><div class="s110"><div class="s111"><div class="s57">已实现</div><div class="s112">+9,384</div></div><div class="s111"><div class="s57">未实现</div><div class="s112">+9,256</div></div><div class="s111"><div class="s57">今日</div><div class="s112">+1,205</div></div><div class="s111"><div class="s57">还原度</div><div class="s113">98.7%</div></div></div></div><div class="s114"><div class="s115"><div class="s116"><div class="s117"><div class="s32">BTC</div><div class="s81">+16.8k</div></div><div class="s118"><div class="s119">ETH</div><div class="s81">+3.0k</div></div><div class="s118"><div class="s119">SOL</div><div class="s29">−1.1k</div></div></div><div class="s120"><div class="s121"><div class="s122">1H</div></div><div class="s123"><div class="s124">4H</div></div><div class="s121"><div class="s122">1D</div></div></div></div><div class="s125"><div class="s126"><div class="s127"></div><div class="s128"></div><div class="s129"></div><div class="s130"></div><div class="s131"></div><div class="s132"><div class="s133">浮盈</div><div class="s134">+8,860</div></div><div class="s135"><div class="s136"><div class="s137"></div><div class="s138"></div></div><div class="s136"><div class="s139"></div><div class="s140"></div></div><div class="s136"><div class="s141"></div><div class="s142"></div></div><div class="s136"><div class="s143"></div><div class="s144"></div></div><div class="s136"><div class="s145"></div><div class="s146"></div></div><div class="s136"><div class="s147"></div><div class="s148"></div></div><div class="s136"><div class="s149"></div><div class="s150"></div></div><div class="s136"><div class="s151"></div><div class="s152"></div></div><div class="s136"><div class="s153"></div><div class="s154"></div></div><div class="s136"><div class="s155"></div><div class="s156"></div></div><div class="s136"><div class="s157"></div><div class="s158"></div></div><div class="s136"><div class="s159"></div><div class="s160"></div></div><div class="s136"><div class="s161"></div><div class="s162"></div></div><div class="s136"><div class="s163"></div><div class="s164"></div></div><div class="s136"><div class="s165"></div><div class="s166"></div></div><div class="s136"><div class="s167"></div><div class="s168"></div></div><div class="s136"><div class="s169"></div><div class="s170"></div></div><div class="s136"><div class="s171"></div><div class="s172"></div></div><div class="s136"><div class="s173"></div><div class="s174"></div></div><div class="s136"><div class="s175"></div><div class="s176"></div></div><div class="s136"><div class="s177"></div><div class="s178"></div></div><div class="s136"><div class="s179"></div><div class="s180"></div></div><div class="s136"><div class="s181"></div><div class="s182"></div></div><div class="s136"><div class="s183"></div><div class="s184"></div></div><div class="s136"><div class="s185"></div><div class="s186"></div></div><div class="s136"><div class="s187"></div><div class="s188"></div></div><div class="s136"><div class="s189"></div><div class="s190"></div></div><div class="s136"><div class="s191"></div><div class="s192"></div></div><div class="s136"><div class="s193"></div><div class="s194"></div></div><div class="s136"><div class="s195"></div><div class="s196"></div></div><div class="s136"><div class="s197"></div><div class="s198"></div></div><div class="s136"><div class="s199"></div><div class="s200"></div></div><div class="s136"><div class="s201"></div><div class="s202"></div></div><div class="s136"><div class="s203"></div><div class="s204"></div></div><div class="s136"><div class="s205"></div><div class="s206"></div></div><div class="s136"><div class="s207"></div><div class="s208"></div></div><div class="s136"><div class="s209"></div><div class="s210"></div></div><div class="s136"><div class="s211"></div><div class="s212"></div></div><div class="s136"><div class="s213"></div><div class="s214"></div></div></div><div class="s215"></div><div class="s216"></div><div class="s217"></div><div class="s218"></div><div class="s219"><div class="s220"></div><div class="s221"><div class="s222">开</div></div></div><div class="s223"></div><div class="s224"><div class="s220"></div><div class="s221"><div class="s222">加2</div></div></div><div class="s225"></div><div class="s226"><div class="s220"></div><div class="s227"><div class="s222">加3</div></div></div><div class="s228"></div><div class="s229"><div class="s220"></div><div class="s221"><div class="s222">加4</div></div></div><div class="s230"></div><div class="s231"><div class="s232"><div class="s233">减</div></div><div class="s234"></div></div><div class="s235"></div><div class="s236"><div class="s232"><div class="s233">减</div></div><div class="s234"></div></div></div><div class="s237"><div class="s238">98.0k</div><div class="s239">96.0k</div><div class="s240">94.0k</div><div class="s241">92.0k</div><div class="s242"><div class="s243">97,450</div></div><div class="s244"><div class="s245">93,020</div></div><div class="s246"><div class="s247">92,400</div></div></div></div><div class="s248"><div class="s249">11-09</div><div class="s250">11-11</div><div class="s251">11-13</div><div class="s252">11-15</div></div><div class="s253"><div class="s254"><div class="s255"></div><div class="s256"></div><div class="s257"></div><div class="s258"></div><div class="s259"></div><div class="s260"></div><div class="s261">持仓</div></div><div class="s262"><div class="s263">2.00</div></div></div><div class="s264"><div class="s22"><div class="s23"></div><div class="s57">开/加仓</div></div><div class="s22"><div class="s25"></div><div class="s57">减/平仓</div></div><div class="s22"><div class="s24"></div><div class="s57">持仓均价</div></div><div class="s22"><div class="s265"></div><div class="s57">标记价</div></div></div></div><div class="s266"><div class="s31"><div class="s107"><div class="s267">加3</div><div class="s32">加仓（多） +1.50 BTC</div></div><div class="s28">11-10 20:00</div></div><div class="s268"><div class="s111"><div class="s57">信号源成交</div><div class="s269">92,400.0</div></div><div class="s111"><div class="s57">跟单成交</div><div class="s269">92,436.5</div></div><div class="s111"><div class="s57">滑点 / 延迟</div><div class="s33">+0.04% / 312ms</div></div><div class="s111"><div class="s57">加仓后均价</div><div class="s270">92,861.4</div></div><div class="s111"><div class="s57">加仓后仓位</div><div class="s269">3.50 BTC</div></div><div class="s111"><div class="s57">此笔浮盈</div><div class="s271">+7,520.25</div></div></div><div class="s57">点击图上的标记切换加减仓记录</div></div><div class="s272"><div data-dm-p="2-1" class="s273"><div class="s32">持仓 2</div><div data-dm-p="2-2" class="s274"></div></div><div data-dm-p="2-3" class="s273"><div class="s32">加减仓记录 6</div><div data-dm-p="2-4" class="s274"></div></div></div><div data-dm-p="2-5" class="s275"><div class="s276"><div class="s31"><div class="s107"><div class="s32">BTC-USDT</div><div class="s277">多 10x</div></div><div class="s278"><div class="s279">+8,860.35</div><div class="s81">+47.6%</div></div></div><div class="s280"><div class="s16"><div class="s11">仓位</div><div class="s269">2.00 BTC</div></div><div class="s16"><div class="s11">均价 → 标记</div><div class="s269">93,020→97,450</div></div><div class="s281"><div class="s11">对信号源偏差</div><div class="s81">0.0%</div></div></div><div class="s107"><div class="s11">加仓格</div><div class="s282"><div class="s283"></div><div class="s283"></div><div class="s283"></div><div class="s283"></div><div class="s284"></div><div class="s284"></div></div><div class="s28">4 加 2 减</div></div></div><div class="s87"><div class="s31"><div class="s107"><div class="s32">ETH-USDT</div><div class="s285">空 5x</div></div><div class="s278"><div class="s279">+396.10</div><div class="s81">+6.2%</div></div></div><div class="s280"><div class="s16"><div class="s11">仓位</div><div class="s269">−12.0 ETH</div></div><div class="s16"><div class="s11">均价 → 标记</div><div class="s269">3,412→3,379</div></div><div class="s281"><div class="s11">对信号源偏差</div><div class="s33">−4.1% 补单中</div></div></div><div class="s107"><div class="s11">加仓格</div><div class="s282"><div class="s283"></div><div class="s283"></div><div class="s286"></div></div><div class="s28">2 加 1 待补</div></div></div></div><div data-dm-p="2-6" class="s287"><div class="s288"><div class="s289">减</div><div class="s290"><div class="s269">−0.50 BTC @ 97,980</div><div class="s57">11-15 08:00   滑点 +0.01%</div></div><div class="s271">+2,479.30</div></div><div class="s288"><div class="s289">减</div><div class="s290"><div class="s269">−1.00 BTC @ 97,380</div><div class="s57">11-13 16:00   滑点 +0.02%</div></div><div class="s271">+4,360.00</div></div><div class="s288"><div class="s291">加4</div><div class="s290"><div class="s269">+1.00 BTC @ 93,900</div><div class="s57">11-11 12:00   滑点 +0.03%</div></div><div class="s270">均价 93,020</div></div><div class="s292"><div class="s291">加3</div><div class="s290"><div class="s269">+1.50 BTC @ 92,436</div><div class="s57">11-10 20:00   滑点 +0.04%</div></div><div class="s270">均价 92,861</div></div><div class="s288"><div class="s291">加2</div><div class="s290"><div class="s269">+1.00 BTC @ 93,150</div><div class="s57">11-10 04:00   滑点 +0.02%</div></div><div class="s270">均价 93,433</div></div><div class="s293"><div class="s291">开</div><div class="s290"><div class="s269">+1.00 BTC @ 94,000</div><div class="s57">11-09 12:00   滑点 +0.01%</div></div><div class="s270">均价 94,000</div></div></div><div class="s294"><button type="button" class="s295"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEwIDVIMyIvPjxwYXRoIGQ9Ik0xMiAxOUgzIi8+PHBhdGggZD0iTTE0IDN2NCIvPjxwYXRoIGQ9Ik0xNiAxN3Y0Ii8+PHBhdGggZD0iTTIxIDEyaC05Ii8+PHBhdGggZD0iTTIxIDE5aC01Ii8+PHBhdGggZD0iTTIxIDVoLTciLz48cGF0aCBkPSJNOCAxMHY0Ii8+PHBhdGggZD0iTTggMTJIMyIvPjwvc3ZnPg==" alt="编辑规则" class="s59"><div class="s57">规则</div></button><button type="button" class="s295"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjY0NjVEIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTE1IDktNiA2Ii8+PHBhdGggZD0iTTIuNTg2IDE2LjcyNkEyIDIgMCAwIDEgMiAxNS4zMTJWOC42ODhhMiAyIDAgMCAxIC41ODYtMS40MTRsNC42ODgtNC42ODhBMiAyIDAgMCAxIDguNjg4IDJoNi42MjRhMiAyIDAgMCAxIDEuNDE0LjU4Nmw0LjY4OCA0LjY4OEEyIDIgMCAwIDEgMjIgOC42ODh2Ni42MjRhMiAyIDAgMCAxLS41ODYgMS40MTRsLTQuNjg4IDQuNjg4YTIgMiAwIDAgMS0xLjQxNC41ODZIOC42ODhhMiAyIDAgMCAxLTEuNDE0LS41ODZ6Ii8+PHBhdGggZD0ibTkgOSA2IDYiLz48L3N2Zz4=" alt="停止" class="s59"><div class="s296">停止</div></button><button type="button" class="s297"><div class="s298">暂停跟单</div></button></div></div></section><section class="dm-frame dm-s3" data-dm-frame="3"><div data-dm-p="3-0" class="s1"><div class="s2"><div class="s3">信号源</div><button data-dm-p="3-1" type="button" class="s4"><div class="s58"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgMTJoMTQiLz48cGF0aCBkPSJNMTIgNXYxNCIvPjwvc3ZnPg==" alt="添加信号源" class="s59"></div></button></div><div class="s299"><div class="s11">6 个信号源</div><div class="s22"><div class="s77"></div><div class="s11">5 在线</div></div><div class="s22"><div class="s88"></div><div class="s11">1 延迟偏高</div></div></div><div class="s16"><div class="s300">Hyperliquid 地址</div><label for="dm-f4" class="s301"><div class="s35"><div class="s302"><div class="s77"></div><div class="s36">Whale-07</div></div><div class="s28">0x9f2c…04ab   持仓 3   延迟 0.8s</div></div><div class="s303"><div class="s304">8.61M</div><div class="s81">+142.4k 浮盈</div></div></label><div class="s305"><div class="s35"><div class="s302"><div class="s77"></div><div class="s36">聪明钱 A</div></div><div class="s28">0x7a31…e91c   持仓 1   延迟 0.9s</div></div><div class="s303"><div class="s304">1.24M</div><div class="s29">−6.8k 浮亏</div></div></div></div><div class="s16"><div class="s300">交易所带单员（按公开仓位跟随）</div><div class="s305"><div class="s35"><div class="s302"><div class="s77"></div><div class="s36">Kestrel</div><div class="s306">OKX</div></div><div class="s11">持仓 2   延迟约 2 秒</div></div><div class="s303"><div class="s11">权益未公开</div><div class="s11">固定倍数跟单</div></div></div><div class="s305"><div class="s35"><div class="s302"><div class="s88"></div><div class="s36">GridLab</div><div class="s306">币安</div></div><div class="s89">按成交推算持仓，比带单员晚约 2 分钟</div></div><div class="s303"><div class="s11">推算持仓 1</div></div></div></div><div class="s16"><div class="s300">API 账户 / 模拟</div><div class="s305"><div class="s35"><div class="s302"><div class="s77"></div><div class="s304">okx-readonly-01</div><div class="s306">只读</div></div><div class="s11">OKX API   每 2 秒读取</div></div><div class="s303"><div class="s304">52.3k</div><div class="s11">无持仓</div></div></div><div class="s307"><div class="s35"><div class="s302"><div class="s77"></div><div class="s36">模拟账户 sim-1</div><div class="s308">模拟</div></div><div class="s11">手动下单驱动跟单，用于试跑</div></div><div class="s303"><div class="s304">10.0k</div><div class="s11">持仓 1</div></div></div></div><div class="s54"><label for="dm-f0" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iOSIgeD0iMyIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI1IiB4PSIxNCIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI5IiB4PSIxNCIgeT0iMTIiIHJ4PSIxIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iNSIgeD0iMyIgeT0iMTYiIHJ4PSIxIi8+PC9zdmc+" alt class="s5"><div class="s57">总览</div></label><label for="dm-f1" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxOCIgcj0iMyIvPjxjaXJjbGUgY3g9IjYiIGN5PSI2IiByPSIzIi8+PGNpcmNsZSBjeD0iMTgiIGN5PSI2IiByPSIzIi8+PHBhdGggZD0iTTE4IDl2MmMwIC42LS40IDEtMSAxSDdjLS42IDAtMS0uNC0xLTFWOSIvPjxwYXRoIGQ9Ik0xMiAxMnYzIi8+PC9zdmc+" alt class="s5"><div class="s57">任务</div></label><div class="s99"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjBiOTBiIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTQuOSAxNi4xQzEgMTIuMiAxIDUuOCA0LjkgMS45Ii8+PHBhdGggZD0iTTcuOCA0LjdhNi4xNCA2LjE0IDAgMCAwLS44IDcuNSIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iOSIgcj0iMiIvPjxwYXRoIGQ9Ik0xNi4yIDQuOGMyIDIgMi4yNiA1LjExLjggNy40NyIvPjxwYXRoIGQ9Ik0xOS4xIDEuOWE5Ljk2IDkuOTYgMCAwIDEgMCAxNC4xIi8+PHBhdGggZD0iTTkuNSAxOGg1Ii8+PHBhdGggZD0ibTggMjIgNC0xMSA0IDExIi8+PC9zdmc+" alt class="s5"><div class="s56">信号源</div></div><label for="dm-f5" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDIydi01Ii8+PHBhdGggZD0iTTE1IDhWMiIvPjxwYXRoIGQ9Ik0xNyA4YTEgMSAwIDAgMSAxIDF2NGE0IDQgMCAwIDEtNCA0aC00YTQgNCAwIDAgMS00LTRWOWExIDEgMCAwIDEgMS0xeiIvPjxwYXRoIGQ9Ik05IDhWMiIvPjwvc3ZnPg==" alt class="s5"><div class="s57">账户</div></label><label for="dm-f6" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkuNjcxIDQuMTM2YTIuMzQgMi4zNCAwIDAgMSA0LjY1OSAwIDIuMzQgMi4zNCAwIDAgMCAzLjMxOSAxLjkxNSAyLjM0IDIuMzQgMCAwIDEgMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAgMCAzLjgzMSAyLjM0IDIuMzQgMCAwIDEtMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAtMy4zMTkgMS45MTUgMi4zNCAyLjM0IDAgMCAxLTQuNjU5IDAgMi4zNCAyLjM0IDAgMCAwLTMuMzItMS45MTUgMi4zNCAyLjM0IDAgMCAxLTIuMzMtNC4wMzMgMi4zNCAyLjM0IDAgMCAwIDAtMy44MzFBMi4zNCAyLjM0IDAgMCAxIDYuMzUgNi4wNTFhMi4zNCAyLjM0IDAgMCAwIDMuMzE5LTEuOTE1Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIvPjwvc3ZnPg==" alt class="s5"><div class="s57">更多</div></label></div><div data-dm-p="3-2" class="s309"><div data-dm-p="3-3" class="s310"></div><div class="s311"><div class="s31"><div class="s105">添加信号源</div><button data-dm-p="3-4" type="button" class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWFlY2VmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE4IDYgNiAxOCIvPjxwYXRoIGQ9Im02IDYgMTIgMTIiLz48L3N2Zz4=" alt="关闭" class="s5"></button></div><div class="s312"><div class="s36">Hyperliquid 地址</div><div class="s11">任意地址或金库地址，公开数据，无需凭证。</div></div><div class="s312"><div class="s36">交易所带单员（OKX / 币安）</div><div class="s11">只能读到公开持仓：按仓位跟随，不镜像挂单；币安比带单员晚 15 秒到 2.5 分钟。</div></div><div class="s312"><div class="s36">只读 API 账户</div><div class="s11">先在「账户」添加只读 Key，再选它作为信号源。</div></div><div class="s313"><div class="s36">模拟账户</div><div class="s11">按 Hyperliquid 实时价格虚拟成交，手动下单来驱动跟单。</div></div></div></div></div></section><section class="dm-frame dm-s4" data-dm-frame="4"><div class="s1"><div class="s314"><label for="dm-f3" class="s102"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTE1IDE4LTYtNiA2LTYiLz48L3N2Zz4=" alt="返回" class="s103"></label><div class="s104"><div class="s105">Whale-07</div><div class="s28">Hyperliquid · 0x9f2c…04ab</div></div><button type="button" class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMSIvPjxjaXJjbGUgY3g9IjE5IiBjeT0iMTIiIHI9IjEiLz48Y2lyY2xlIGN4PSI1IiBjeT0iMTIiIHI9IjEiLz48L3N2Zz4=" alt="更多" class="s103"></button></div><div class="s315"><div class="s11">信号源权益（USDT）</div><div class="s316">8,612,430.55</div><div class="s317"><div class="s16"><div class="s11">未实现盈亏</div><div class="s112">+142,380</div></div><div class="s16"><div class="s11">延迟</div><div class="s69">0.8s</div></div><div class="s16"><div class="s11">跟随任务</div><div class="s69">1 个</div></div></div></div><div class="s318"><div class="s319"><div class="s32">当前持仓</div><div class="s28">名义 4.86M</div></div><div class="s320"><div class="s35"><div class="s302"><div class="s36">BTC</div><div class="s321">多 5x</div></div><div class="s28">42.50 BTC   均价 93,120</div></div><div class="s112">+184,025</div></div><div class="s320"><div class="s35"><div class="s302"><div class="s36">ETH</div><div class="s322">空 3x</div></div><div class="s28">210.0 ETH   均价 3,268</div></div><div class="s323">−23,310</div></div><div class="s324"><div class="s35"><div class="s302"><div class="s36">HYPE</div><div class="s321">多 3x</div><div class="s306">未镜像</div></div><div class="s28">8,400 HYPE   均价 41.20</div></div><div class="s323">−18,335</div></div></div><div class="s325"><div class="s319"><div class="s32">最近成交</div><div class="s11">今日 7 笔</div></div><div class="s288"><div class="s326">减</div><div class="s290"><div class="s269">BTC  −10.00 @ 97,980</div><div class="s28">11-15 08:00</div></div><div class="s78">已跟 0.50</div></div><div class="s288"><div class="s327">开</div><div class="s290"><div class="s269">HYPE  +8,400 @ 41.20</div><div class="s28">11-14 22:16</div></div><div class="s11">不在跟单品种</div></div><div class="s293"><div class="s326">减</div><div class="s290"><div class="s269">BTC  −20.00 @ 97,380</div><div class="s28">11-13 16:00</div></div><div class="s78">已跟 1.00</div></div></div><div class="s328"><div class="s329"><div class="s32">跟随此信号源的任务</div></div><label for="dm-f2" class="s330"><div class="s35"><div class="s36">BTC 巨鲸跟单</div><div class="s11">权益比例 1/20，只跟 BTC、ETH</div></div><div class="s112">+18,640.52</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></label></div><div class="s331"><label for="dm-f1" class="s332"><div class="s298">用它新建跟单任务</div></label></div></div></section><section class="dm-frame dm-s5" data-dm-frame="5"><div data-dm-p="5-0" class="s1"><div class="s2"><div class="s3">交易账户</div><button data-dm-p="5-1" type="button" class="s4"><div class="s58"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUgMTJoMTQiLz48cGF0aCBkPSJNMTIgNXYxNCIvPjwvc3ZnPg==" alt="添加连接" class="s59"></div></button></div><div class="s333"><div class="s11">实盘总权益（USDT）</div><div class="s316">248,320.15</div><div class="s334"><div class="s335"></div><div class="s336"></div><div class="s337"></div></div><div class="s28">可用保证金 182,406.70   占用 26.5%</div></div><div class="s338"><div class="s339"><div class="s31"><div class="s107"><div class="s265"></div><div class="s36">币安主账户</div><div class="s306">实盘</div></div><div class="s304">142,880.40</div></div><div class="s340"><div class="s11">币安 合约交易   单向持仓   120ms</div><div class="s22"><div class="s77"></div><div class="s78">校验通过</div></div></div></div><div class="s339"><div class="s31"><div class="s107"><div class="s24"></div><div class="s36">OKX 主账户</div><div class="s306">实盘</div></div><div class="s304">72,310.20</div></div><div class="s340"><div class="s11">OKX 合约交易   单向持仓   180ms</div><div class="s22"><div class="s77"></div><div class="s78">校验通过</div></div></div></div><div class="s339"><div class="s31"><div class="s107"><div class="s341"></div><div class="s36">币安子账户 2</div><div class="s306">实盘</div></div><div class="s304">33,129.55</div></div><div class="s340"><div class="s11">币安 合约交易   双向持仓   140ms</div><div class="s22"><div class="s88"></div><div class="s89">有 2 项问题</div></div></div><div class="s342"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjBhMDMwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIwIDEzYzAgNS0zLjUgNy41LTcuNjYgOC45NWExIDEgMCAwIDEtLjY3LS4wMUM3LjUgMjAuNSA0IDE4IDQgMTNWNmExIDEgMCAwIDEgMS0xYzIgMCA0LjUtMS4yIDYuMjQtMi43MmExLjE3IDEuMTcgMCAwIDEgMS41MiAwQzE0LjUxIDMuODEgMTcgNSAxOSA1YTEgMSAwIDAgMSAxIDF6Ii8+PHBhdGggZD0iTTEyIDh2NCIvPjxwYXRoIGQ9Ik0xMiAxNmguMDEiLz48L3N2Zz4=" alt class="s37"><div class="s343"><div class="s344">这个 Key 开启了提币权限，强烈建议先关闭。双向持仓下跟单会分开计算多空。</div><button type="button" class="s345"><div class="s346">一键切换为单向持仓</div></button></div></div></div><div class="s347"><div class="s31"><div class="s107"><div class="s348"></div><div class="s36">模拟盘 sim-1</div><div class="s308">模拟</div></div><div class="s349">10,412.80</div></div><div class="s340"><div class="s11">初始资金 10,000，不计入实盘权益</div></div></div></div><div class="s54"><label for="dm-f0" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iOSIgeD0iMyIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI1IiB4PSIxNCIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI5IiB4PSIxNCIgeT0iMTIiIHJ4PSIxIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iNSIgeD0iMyIgeT0iMTYiIHJ4PSIxIi8+PC9zdmc+" alt class="s5"><div class="s57">总览</div></label><label for="dm-f1" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxOCIgcj0iMyIvPjxjaXJjbGUgY3g9IjYiIGN5PSI2IiByPSIzIi8+PGNpcmNsZSBjeD0iMTgiIGN5PSI2IiByPSIzIi8+PHBhdGggZD0iTTE4IDl2MmMwIC42LS40IDEtMSAxSDdjLS42IDAtMS0uNC0xLTFWOSIvPjxwYXRoIGQ9Ik0xMiAxMnYzIi8+PC9zdmc+" alt class="s5"><div class="s57">任务</div></label><label for="dm-f3" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTQuOSAxNi4xQzEgMTIuMiAxIDUuOCA0LjkgMS45Ii8+PHBhdGggZD0iTTcuOCA0LjdhNi4xNCA2LjE0IDAgMCAwLS44IDcuNSIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iOSIgcj0iMiIvPjxwYXRoIGQ9Ik0xNi4yIDQuOGMyIDIgMi4yNiA1LjExLjggNy40NyIvPjxwYXRoIGQ9Ik0xOS4xIDEuOWE5Ljk2IDkuOTYgMCAwIDEgMCAxNC4xIi8+PHBhdGggZD0iTTkuNSAxOGg1Ii8+PHBhdGggZD0ibTggMjIgNC0xMSA0IDExIi8+PC9zdmc+" alt class="s5"><div class="s57">信号源</div></label><div class="s99"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjBiOTBiIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDIydi01Ii8+PHBhdGggZD0iTTE1IDhWMiIvPjxwYXRoIGQ9Ik0xNyA4YTEgMSAwIDAgMSAxIDF2NGE0IDQgMCAwIDEtNCA0aC00YTQgNCAwIDAgMS00LTRWOWExIDEgMCAwIDEgMS0xeiIvPjxwYXRoIGQ9Ik05IDhWMiIvPjwvc3ZnPg==" alt class="s5"><div class="s56">账户</div></div><label for="dm-f6" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkuNjcxIDQuMTM2YTIuMzQgMi4zNCAwIDAgMSA0LjY1OSAwIDIuMzQgMi4zNCAwIDAgMCAzLjMxOSAxLjkxNSAyLjM0IDIuMzQgMCAwIDEgMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAgMCAzLjgzMSAyLjM0IDIuMzQgMCAwIDEtMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAtMy4zMTkgMS45MTUgMi4zNCAyLjM0IDAgMCAxLTQuNjU5IDAgMi4zNCAyLjM0IDAgMCAwLTMuMzItMS45MTUgMi4zNCAyLjM0IDAgMCAxLTIuMzMtNC4wMzMgMi4zNCAyLjM0IDAgMCAwIDAtMy44MzFBMi4zNCAyLjM0IDAgMCAxIDYuMzUgNi4wNTFhMi4zNCAyLjM0IDAgMCAwIDMuMzE5LTEuOTE1Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIvPjwvc3ZnPg==" alt class="s5"><div class="s57">更多</div></label></div><div data-dm-p="5-2" class="s309"><div data-dm-p="5-3" class="s310"></div><div class="s350"><div class="s31"><div class="s105">添加连接</div><button data-dm-p="5-4" type="button" class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWFlY2VmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE4IDYgNiAxOCIvPjxwYXRoIGQ9Im02IDYgMTIgMTIiLz48L3N2Zz4=" alt="关闭" class="s5"></button></div><div class="s351"><div class="s11">平台</div><div class="s352"><div data-dm-p="5-5" class="s353"><div class="s86">OKX</div></div><div data-dm-p="5-6" class="s353"><div class="s86">币安</div></div><div data-dm-p="5-7" class="s353"><div class="s86">Gate</div></div><div data-dm-p="5-8" class="s353"><div class="s86">HL</div></div><div data-dm-p="5-9" class="s353"><div class="s86">模拟</div></div></div></div><div data-dm-p="5-10" class="s354"><div class="s351"><div class="s11">别名</div><input placeholder="如：okx-follow-02" type="text" class="s355"></div><div class="s351"><div class="s11">API Key</div><input placeholder="粘贴 API Key" type="text" class="s355"></div><div class="s351"><div class="s11">Secret / 私钥</div><input placeholder="只保存在服务器，由主密码加密" type="password" class="s355"></div><div class="s31"><div class="s11">环境</div><div class="s120"><div data-dm-p="5-11" class="s356"><div class="s86">实盘</div></div><div data-dm-p="5-12" class="s356"><div class="s86">测试网</div></div></div></div></div><div data-dm-p="5-13" class="s357"><div class="s344">模拟账户用 Hyperliquid 实时行情虚拟撮合，不发真实订单。初始资金默认 10,000 USDT。</div></div><button data-dm-p="5-14" type="submit" class="s358"><div class="s298">校验并保存</div></button></div></div></div></section><section class="dm-frame dm-s6" data-dm-frame="6"><div data-dm-p="6-0" class="s1"><div class="s359"><div class="s3">更多</div></div><div class="s360"><div class="s42"><div class="s361">全局急停</div><div class="s344">暂停全部任务并撤销挂单，不平仓</div></div><button type="button" class="s362"><div class="s363">急停</div></button></div><div class="s364"><div class="s365">记录</div><label for="dm-f7" class="s366"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTMgM3YxNmEyIDIgMCAwIDAgMiAyaDE2Ii8+PHBhdGggZD0iTTE4IDE3VjkiLz48cGF0aCBkPSJNMTMgMTdWNSIvPjxwYXRoIGQ9Ik04IDE3di0zIi8+PC9zdmc+" alt class="s59"><div class="s367">收益报表</div><div class="s81">近 30 天 +19,058.20</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></label><label for="dm-f7" class="s366"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDE3VjciLz48cGF0aCBkPSJNMTYgOGgtNmEyIDIgMCAwIDAgMCA0aDRhMiAyIDAgMCAxIDAgNEg4Ii8+PHBhdGggZD0iTTQgM2ExIDEgMCAwIDEgMS0xIDEuMyAxLjMgMCAwIDEgLjcuMmwuOTMzLjZhMS4zIDEuMyAwIDAgMCAxLjQgMGwuOTM0LS42YTEuMyAxLjMgMCAwIDEgMS40IDBsLjkzMy42YTEuMyAxLjMgMCAwIDAgMS40IDBsLjkzMy0uNmExLjMgMS4zIDAgMCAxIDEuNCAwbC45MzQuNmExLjMgMS4zIDAgMCAwIDEuNCAwbC45MzMtLjZBMS4zIDEuMyAwIDAgMSAxOSAyYTEgMSAwIDAgMSAxIDF2MThhMSAxIDAgMCAxLTEgMSAxLjMgMS4zIDAgMCAxLS43LS4ybC0uOTMzLS42YTEuMyAxLjMgMCAwIDAtMS40IDBsLS45MzQuNmExLjMgMS4zIDAgMCAxLTEuNCAwbC0uOTMzLS42YTEuMyAxLjMgMCAwIDAtMS40IDBsLS45MzMuNmExLjMgMS4zIDAgMCAxLTEuNCAwbC0uOTM0LS42YTEuMyAxLjMgMCAwIDAtMS40IDBsLS45MzMuNmExLjMgMS4zIDAgMCAxLS43LjIgMSAxIDAgMCAxLTEtMXoiLz48L3N2Zz4=" alt class="s59"><div class="s367">成交记录</div><div class="s11">今日 18 笔</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></label><label for="dm-f7" class="s366"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDEyaC01Ii8+PHBhdGggZD0iTTE1IDhoLTUiLz48cGF0aCBkPSJNMTkgMTdWNWEyIDIgMCAwIDAtMi0ySDQiLz48cGF0aCBkPSJNOCAyMWgxMmEyIDIgMCAwIDAgMi0ydi0xYTEgMSAwIDAgMC0xLTFIMTFhMSAxIDAgMCAwLTEgMXYxYTIgMiAwIDEgMS00IDBWNWEyIDIgMCAxIDAtNCAwdjJhMSAxIDAgMCAwIDEgMWgzIi8+PC9zdmc+" alt class="s59"><div class="s367">执行日志</div><div class="s52">2 条失败</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></label></div><div class="s368"><div class="s365">交易</div><div class="s369"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTggMyA0IDdsNCA0Ii8+PHBhdGggZD0iTTQgN2gxNiIvPjxwYXRoIGQ9Im0xNiAyMSA0LTQtNC00Ii8+PHBhdGggZD0iTTIwIDE3SDQiLz48L3N2Zz4=" alt class="s59"><div class="s367">品种映射</div><div class="s11">312 个币种，2 处手动修正</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></div><div class="s369"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjgiIHg9IjIiIHk9IjIiIHJ4PSIyIiByeT0iMiIvPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSI4IiB4PSIyIiB5PSIxNCIgcng9IjIiIHJ5PSIyIi8+PGxpbmUgeDE9IjYiIHgyPSI2LjAxIiB5MT0iNiIgeTI9IjYiLz48bGluZSB4MT0iNiIgeDI9IjYuMDEiIHkxPSIxOCIgeTI9IjE4Ii8+PC9zdmc+" alt class="s59"><div class="s367">跟单服务器</div><div class="s22"><div class="s77"></div><div class="s11">正常，延迟 42ms</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></div></div><div class="s368"><div class="s365">安全与通知</div><div data-dm-p="6-1" class="s369"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjE4IiBoZWlnaHQ9IjExIiB4PSIzIiB5PSIxMSIgcng9IjIiIHJ5PSIyIi8+PHBhdGggZD0iTTcgMTFWN2E1IDUgMCAwIDEgMTAgMHY0Ii8+PC9zdmc+" alt class="s59"><div class="s290"><div class="s370">应用锁</div><div data-dm-p="6-2" class="s11">闲置 15 分钟自动锁定，任务照常运行</div></div><div data-dm-p="6-3" class="s371"><div data-dm-p="6-4" class="s372"></div></div></div><div data-dm-p="6-5" class="s369"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEwLjI2OCAyMWEyIDIgMCAwIDAgMy40NjQgMCIvPjxwYXRoIGQ9Ik0zLjI2MiAxNS4zMjZBMSAxIDAgMCAwIDQgMTdoMTZhMSAxIDAgMCAwIC43NC0xLjY3M0MxOS40MSAxMy45NTYgMTggMTIuNDk5IDE4IDhBNiA2IDAgMCAwIDYgOGMwIDQuNDk5LTEuNDExIDUuOTU2LTIuNzM4IDcuMzI2Ii8+PC9zdmc+" alt class="s59"><div class="s290"><div class="s370">异常通知</div><div class="s11">下单失败、风控触发、断线、急停时推送</div></div><div data-dm-p="6-6" class="s371"><div data-dm-p="6-7" class="s372"></div></div></div><div class="s373"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIuNTg2IDE3LjQxNEEyIDIgMCAwIDAgMiAxOC44MjhWMjFhMSAxIDAgMCAwIDEgMWgzYTEgMSAwIDAgMCAxLTF2LTFhMSAxIDAgMCAxIDEtMWgxYTEgMSAwIDAgMCAxLTF2LTFhMSAxIDAgMCAxIDEtMWguMTcyYTIgMiAwIDAgMCAxLjQxNC0uNTg2bC44MTQtLjgxNGE2LjUgNi41IDAgMSAwLTQtNHoiLz48Y2lyY2xlIGN4PSIxNi41IiBjeT0iNy41IiByPSIuNSIgZmlsbD0iY3VycmVudENvbG9yIi8+PC9zdmc+" alt class="s59"><div class="s290"><div class="s370">密钥存储</div><div class="s11">只存在服务器，由主密码加密（Argon2id）</div></div></div></div><div class="s368"><div class="s365">通用</div><div class="s369"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIwLjk4NSAxMi40ODZhOSA5IDAgMSAxLTkuNDczLTkuNDcyYy40MDUtLjAyMi42MTcuNDYuNDAyLjgwM2E2IDYgMCAwIDAgOC4yNjggOC4yNjhjLjM0NC0uMjE1LjgyNS0uMDA0LjgwMy40MDEiLz48L3N2Zz4=" alt class="s59"><div class="s367">主题</div><div class="s11">深色</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></div><div class="s369"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMmExNC41IDE0LjUgMCAwIDAgMCAyMCAxNC41IDE0LjUgMCAwIDAgMC0yMCIvPjxwYXRoIGQ9Ik0yIDEyaDIwIi8+PC9zdmc+" alt class="s59"><div class="s367">语言</div><div class="s11">简体中文</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></div><div class="s369"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWFhM2FlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDE1VjMiLz48cGF0aCBkPSJNMjEgMTV2NGEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnYtNCIvPjxwYXRoIGQ9Im03IDEwIDUgNSA1LTUiLz48L3N2Zz4=" alt class="s59"><div class="s367">配置导入 / 导出</div><div class="s11">不含密钥</div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTkgMTggNi02LTYtNiIvPjwvc3ZnPg==" alt class="s37"></div></div><div class="s374"><button type="button" class="s375"><div class="s376">锁定界面</div></button><div class="s28">v0.1.0</div></div><div class="s54"><label for="dm-f0" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iOSIgeD0iMyIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI1IiB4PSIxNCIgeT0iMyIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI5IiB4PSIxNCIgeT0iMTIiIHJ4PSIxIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iNSIgeD0iMyIgeT0iMTYiIHJ4PSIxIi8+PC9zdmc+" alt class="s5"><div class="s57">总览</div></label><label for="dm-f1" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxOCIgcj0iMyIvPjxjaXJjbGUgY3g9IjYiIGN5PSI2IiByPSIzIi8+PGNpcmNsZSBjeD0iMTgiIGN5PSI2IiByPSIzIi8+PHBhdGggZD0iTTE4IDl2MmMwIC42LS40IDEtMSAxSDdjLS42IDAtMS0uNC0xLTFWOSIvPjxwYXRoIGQ9Ik0xMiAxMnYzIi8+PC9zdmc+" alt class="s5"><div class="s57">任务</div></label><label for="dm-f3" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTQuOSAxNi4xQzEgMTIuMiAxIDUuOCA0LjkgMS45Ii8+PHBhdGggZD0iTTcuOCA0LjdhNi4xNCA2LjE0IDAgMCAwLS44IDcuNSIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iOSIgcj0iMiIvPjxwYXRoIGQ9Ik0xNi4yIDQuOGMyIDIgMi4yNiA1LjExLjggNy40NyIvPjxwYXRoIGQ9Ik0xOS4xIDEuOWE5Ljk2IDkuOTYgMCAwIDEgMCAxNC4xIi8+PHBhdGggZD0iTTkuNSAxOGg1Ii8+PHBhdGggZD0ibTggMjIgNC0xMSA0IDExIi8+PC9zdmc+" alt class="s5"><div class="s57">信号源</div></label><label for="dm-f5" class="s55"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUFBM0FFIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDIydi01Ii8+PHBhdGggZD0iTTE1IDhWMiIvPjxwYXRoIGQ9Ik0xNyA4YTEgMSAwIDAgMSAxIDF2NGE0IDQgMCAwIDEtNCA0aC00YTQgNCAwIDAgMS00LTRWOWExIDEgMCAwIDEgMS0xeiIvPjxwYXRoIGQ9Ik05IDhWMiIvPjwvc3ZnPg==" alt class="s5"><div class="s57">账户</div></label><div class="s99"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjBiOTBiIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkuNjcxIDQuMTM2YTIuMzQgMi4zNCAwIDAgMSA0LjY1OSAwIDIuMzQgMi4zNCAwIDAgMCAzLjMxOSAxLjkxNSAyLjM0IDIuMzQgMCAwIDEgMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAgMCAzLjgzMSAyLjM0IDIuMzQgMCAwIDEtMi4zMyA0LjAzMyAyLjM0IDIuMzQgMCAwIDAtMy4zMTkgMS45MTUgMi4zNCAyLjM0IDAgMCAxLTQuNjU5IDAgMi4zNCAyLjM0IDAgMCAwLTMuMzItMS45MTUgMi4zNCAyLjM0IDAgMCAxLTIuMzMtNC4wMzMgMi4zNCAyLjM0IDAgMCAwIDAtMy44MzFBMi4zNCAyLjM0IDAgMCAxIDYuMzUgNi4wNTFhMi4zNCAyLjM0IDAgMCAwIDMuMzE5LTEuOTE1Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIvPjwvc3ZnPg==" alt class="s5"><div class="s56">更多</div></div></div></div></section><section class="dm-frame dm-s7" data-dm-frame="7"><div data-dm-p="7-0" class="s1"><div class="s314"><label for="dm-f6" class="s102"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRUFFQ0VGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0ibTE1IDE4LTYtNiA2LTYiLz48L3N2Zz4=" alt="返回" class="s103"></label><div class="s105">记录与报表</div><button type="button" class="s377"><div class="s378">导出</div></button></div><div class="s379"><div data-dm-p="7-1" class="s380"><div class="s36">收益</div><div data-dm-p="7-2" class="s274"></div></div><div data-dm-p="7-3" class="s380"><div class="s36">成交</div><div data-dm-p="7-4" class="s274"></div></div><div data-dm-p="7-5" class="s380"><div class="s36">执行日志</div><div data-dm-p="7-6" class="s274"></div></div></div><div data-dm-p="7-7" class="s381"><div class="s76"><div class="s62"><div data-dm-p="7-8" class="s11">近 30 天跟单盈亏（USDT）</div><div data-dm-p="7-9" class="s382">+19,058.20</div></div><div class="s383"><div data-dm-p="7-10" class="s384"><div class="s86">7天</div></div><div data-dm-p="7-11" class="s384"><div class="s86">30天</div></div></div></div><div class="s385">期初 229,261.95 → 期末 248,320.15</div><div class="s386"><div class="s387"><div class="s388"><div class="s389"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s391"></div></div><div class="s390"></div></div><div class="s387"><div class="s392"></div><div class="s390"><div class="s393"></div></div></div><div class="s387"><div class="s388"><div class="s394"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s395"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s396"></div></div><div class="s390"></div></div><div class="s387"><div class="s392"></div><div class="s390"><div class="s397"></div></div></div><div class="s387"><div class="s388"><div class="s398"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s399"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s400"></div></div><div class="s390"></div></div><div class="s387"><div class="s392"></div><div class="s390"><div class="s401"></div></div></div><div class="s387"><div class="s388"><div class="s402"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s403"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s404"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s396"></div></div><div class="s390"></div></div><div class="s387"><div class="s392"></div><div class="s390"><div class="s405"></div></div></div><div class="s387"><div class="s388"><div class="s406"></div></div><div class="s390"></div></div><div class="s387"><div class="s388"><div class="s407"></div></div><div class="s390"></div></div><div class="s387"><div class="s392"></div><div class="s390"><div class="s408"></div></div></div><div class="s387"><div class="s388"><div class="s409"></div></div><div class="s390"></div></div><div class="s410"></div></div><div class="s411"><div class="s28">10-29</div><div class="s11">每日盈亏，最后一根为今日</div><div class="s28">11-17</div></div><div class="s412"><div class="s16"><div class="s11">成交笔数</div><div class="s69">214</div></div><div class="s16"><div class="s11">成交额</div><div class="s69">3.62M</div></div><div class="s16"><div class="s11">盈利天数</div><div class="s69">15 / 20</div></div></div><div class="s413"><div class="s32">按跟单账户</div></div><div class="s414"><div class="s370">币安主账户</div><div class="s112">+18,640.52</div></div><div class="s414"><div class="s370">OKX 主账户</div><div class="s112">+1,258.30</div></div><div class="s415"><div class="s370">币安子账户 2</div><div class="s323">−840.62</div></div><div class="s416">盈亏按权益快照差计算（每分钟采样），含资金费与手续费。</div></div><div data-dm-p="7-12" class="s287"><div class="s417"><div class="s31"><div class="s107"><div class="s418">买</div><div class="s419">BTC  +0.50 @ 97,420.5</div></div><div class="s78">成交</div></div><div class="s11">14:32:08   BTC 巨鲸跟单   滑点 +0.02%   286ms</div></div><div class="s417"><div class="s31"><div class="s107"><div class="s420">卖</div><div class="s419">SOL  −40.0 @ 214.36</div></div><div class="s52">失败</div></div><div class="s11">14:02:51   SOL 趋势（OKX）   风控已暂停，未下单</div></div><div class="s417"><div class="s31"><div class="s107"><div class="s420">卖</div><div class="s419">ETH  −2.00 @ 3,381.2</div></div><div class="s78">成交</div></div><div class="s11">13:47:15   ETH 波段   补单   滑点 +0.05%   402ms</div></div><div class="s421"><div class="s31"><div class="s107"><div class="s418">买</div><div class="s419">BNB  +1.20 @ 618.40</div></div><div class="s11">跳过</div></div><div class="s11">12:10:44   币安网格   低于最小下单量</div></div></div><div data-dm-p="7-13" class="s287"><div class="s422"><div class="s423"></div><div class="s42"><div class="s86">SOL 趋势（OKX）触发风控：单日亏损 −1,502.40 超过上限 −1,500</div><div class="s11">14:02:50   任务已暂停，挂单已撤销</div></div></div><div class="s422"><div class="s424"></div><div class="s42"><div class="s86">ETH 波段 仓位偏差 −4.1%，超过容差 2%，开始补单</div><div class="s11">13:47:12   第 2 次重试</div></div></div><div class="s425"><div class="s426"></div><div class="s42"><div class="s86">BTC 巨鲸跟单 对账完成，与信号源一致</div><div class="s11">14:35:00   耗时 182ms</div></div></div></div></div></section></main>
+<script>
+// penhold-mcp 原型交互运行时
+(function () {
+var __name = function (f) { return f; };
+var createProtoEngine = function createProtoEngine() {
+    const FNS = {
+        len: (x) => String(x ?? '').length,
+        pad: (x, n) => String(x ?? '').padStart(Number(n) || 2, '0'),
+        floor: (x) => Math.floor(Number(x) || 0),
+        min: (a, b) => Math.min(Number(a), Number(b)),
+        max: (a, b) => Math.max(Number(a), Number(b)),
+    };
+    const LEVELS = [['||'], ['&&'], ['==', '!='], ['<', '>', '<=', '>='], ['+', '-'], ['*', '/', '%']];
+    const TEMPLATE_RE = /\{\{([\s\S]+?)\}\}/g;
+    class ExprError extends Error {
+    }
+    function tokenize(src) {
+        const out = [];
+        const re = /\s*(?:(\d+(?:\.\d+)?)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|([a-zA-Z_][a-zA-Z0-9_]*)|(==|!=|<=|>=|&&|\|\||[-+*/%!<>?:(),]))/y;
+        let i = 0;
+        while (i < src.length) {
+            if (/^\s*$/.test(src.slice(i)))
+                break;
+            re.lastIndex = i;
+            const m = re.exec(src);
+            if (!m)
+                throw new ExprError(`无法识别 “${src.slice(i).trim().slice(0, 12)}”`);
+            out.push(m[1] ?? m[2] ?? m[3] ?? m[4]);
+            i = re.lastIndex;
+        }
+        return out;
+    }
+    const cache = new Map();
+    function parseExpr(src) {
+        const hit = cache.get(src);
+        if (hit)
+            return hit;
+        if (src.length > 500)
+            throw new ExprError('表达式过长');
+        const t = tokenize(src);
+        let p = 0;
+        const peek = () => t[p];
+        const eat = (s) => {
+            const v = t[p];
+            if (s !== undefined && v !== s)
+                throw new ExprError(`缺少 “${s}”`);
+            if (v === undefined)
+                throw new ExprError('表达式不完整');
+            p++;
+            return v;
+        };
+        const bin = (lvl) => {
+            if (lvl === LEVELS.length)
+                return unary();
+            let a = bin(lvl + 1);
+            while (LEVELS[lvl].includes(peek())) {
+                const op = eat();
+                a = { k: 'bin', op, a, b: bin(lvl + 1) };
+            }
+            return a;
+        };
+        const unary = () => {
+            if (peek() === '!' || peek() === '-') {
+                const op = eat();
+                return { k: 'un', op, a: unary() };
+            }
+            return primary();
+        };
+        const primary = () => {
+            const v = eat();
+            if (v === '(') {
+                const e = expr();
+                eat(')');
+                return e;
+            }
+            if (/^\d/.test(v))
+                return { k: 'lit', v: Number(v) };
+            if (v[0] === "'" || v[0] === '"')
+                return { k: 'lit', v: v.slice(1, -1).replace(/\\(.)/g, '$1') };
+            if (v === 'true' || v === 'false')
+                return { k: 'lit', v: v === 'true' };
+            if (/^[a-zA-Z_]/.test(v)) {
+                if (peek() !== '(')
+                    return { k: 'var', n: v };
+                if (!FNS[v])
+                    throw new ExprError(`未知函数 ${v}()`);
+                eat('(');
+                const args = [];
+                if (peek() !== ')') {
+                    args.push(expr());
+                    while (peek() === ',') {
+                        eat(',');
+                        args.push(expr());
+                    }
+                }
+                eat(')');
+                return { k: 'call', f: v, args };
+            }
+            throw new ExprError(`意外的 “${v}”`);
+        };
+        const expr = () => {
+            const c = bin(0);
+            if (peek() !== '?')
+                return c;
+            eat('?');
+            const a = expr();
+            eat(':');
+            return { k: 'cond', c, a, b: expr() };
+        };
+        const ast = expr();
+        if (p < t.length)
+            throw new ExprError(`多余的 “${t[p]}”`);
+        if (cache.size > 2000)
+            cache.clear();
+        cache.set(src, ast);
+        return ast;
+    }
+    const eq = (a, b) => (typeof a === typeof b ? a === b : String(a) === String(b));
+    function run(a, vars) {
+        switch (a.k) {
+            case 'lit':
+                return a.v;
+            case 'var':
+                return vars[a.n] ?? '';
+            case 'un': {
+                const v = run(a.a, vars);
+                return a.op === '!' ? !v : -Number(v);
+            }
+            case 'cond':
+                return run(a.c, vars) ? run(a.a, vars) : run(a.b, vars);
+            case 'call':
+                return FNS[a.f](...a.args.map((x) => run(x, vars)));
+            case 'bin': {
+                if (a.op === '&&')
+                    return run(a.a, vars) && run(a.b, vars);
+                if (a.op === '||')
+                    return run(a.a, vars) || run(a.b, vars);
+                const l = run(a.a, vars);
+                const r = run(a.b, vars);
+                switch (a.op) {
+                    case '==':
+                        return eq(l, r);
+                    case '!=':
+                        return !eq(l, r);
+                    case '+':
+                        return typeof l === 'number' && typeof r === 'number' ? l + r : `${l}${r}`;
+                    case '-':
+                        return Number(l) - Number(r);
+                    case '*':
+                        return Number(l) * Number(r);
+                    case '/':
+                        return Number(l) / Number(r);
+                    case '%':
+                        return Number(l) % Number(r);
+                    case '<':
+                        return Number(l) < Number(r);
+                    case '>':
+                        return Number(l) > Number(r);
+                    case '<=':
+                        return Number(l) <= Number(r);
+                    case '>=':
+                        return Number(l) >= Number(r);
+                }
+            }
+        }
+        return '';
+    }
+    /** 求值；语法错误返回 undefined。 */
+    function evalExpr(src, vars) {
+        try {
+            return run(parseExpr(src), vars);
+        }
+        catch {
+            return undefined;
+        }
+    }
+    const truthy = (src, vars) => (src === undefined ? true : !!evalExpr(src, vars));
+    /** 文本插值：{{表达式}}。 */
+    function renderTemplate(text, vars) {
+        return text.replace(TEMPLATE_RE, (_, e) => {
+            const v = evalExpr(e.trim(), vars);
+            return v === undefined ? '' : typeof v === 'number' ? String(Math.round(v * 1000) / 1000) : String(v);
+        });
+    }
+    /** 一个画板的运行时：维护状态变量，执行动作，按状态刷新显隐、条件样式、文本与禁用。 */
+    class ProtoRuntime {
+        win;
+        nav;
+        vars = {};
+        entries = new Map();
+        els = [];
+        countdowns = new Map();
+        timeouts = new Set();
+        /** 进入画板或停止时递增：之前排队的动作不再执行。 */
+        gen = 0;
+        constructor(win, nav) {
+            this.win = win;
+            this.nav = nav;
+        }
+        /** 进入画板：重置状态。 */
+        reset(initial) {
+            this.stopAll();
+            this.vars = { ...initial };
+        }
+        /** 文档变化后同一画板重绘：保留当前状态，只补充新声明的变量。 */
+        merge(initial) {
+            for (const [k, v] of Object.entries(initial))
+                if (!(k in this.vars))
+                    this.vars[k] = v;
+        }
+        /** 绑定渲染结果：root 内 data-dm-p="<prefix><序号>" 的元素对应 entries[序号]。 */
+        mount(root, entries, prefix = '') {
+            this.entries = new Map(entries.map((e, i) => [prefix + i, e]));
+            this.els = [];
+            for (const [id, e] of this.entries) {
+                const el = root.querySelector(`[data-dm-p="${id}"]`);
+                if (!el)
+                    continue;
+                if (e.proto.onClick)
+                    el.setAttribute('data-dm-click', '');
+                // 内联样式模式下元素自带样式：条件样式叠加在其后
+                this.els.push([el, e, el.getAttribute('style') ?? '']);
+            }
+            this.apply();
+        }
+        owns(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id !== null && this.entries.has(id);
+        }
+        runLoad() {
+            for (const e of this.entries.values())
+                if (e.proto.onLoad)
+                    this.run(e.proto.onLoad);
+        }
+        stopAll() {
+            this.gen++;
+            for (const t of this.countdowns.values())
+                this.win.clearInterval(t);
+            for (const t of this.timeouts)
+                this.win.clearTimeout(t);
+            this.countdowns.clear();
+            this.timeouts.clear();
+        }
+        apply() {
+            const v = this.vars;
+            for (const [el, e, base] of this.els) {
+                const css = base ? [base] : [];
+                for (const s of e.styles)
+                    if (truthy(s.when, v))
+                        css.push(...s.css);
+                if (!truthy(e.proto.show, v))
+                    css.push('display:none');
+                const text = css.join(';');
+                if (el.style.cssText !== text)
+                    el.style.cssText = text;
+                el.toggleAttribute('data-dm-disabled', e.proto.disabled !== undefined && truthy(e.proto.disabled, v));
+                if (e.template && !el.firstElementChild) {
+                    const t = renderTemplate(e.template, v);
+                    if (el.textContent !== t)
+                        el.textContent = t;
+                }
+                if (e.proto.bind && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+                    const field = el;
+                    const val = String(v[e.proto.bind] ?? '');
+                    if (field.value !== val && el.ownerDocument.activeElement !== el)
+                        field.value = val;
+                }
+            }
+        }
+        entryOf(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id === null ? undefined : this.entries.get(id);
+        }
+        /** 处理点击：返回是否命中了可交互元素（含被禁用的元素）。 */
+        click(target) {
+            let el = target.closest('[data-dm-click],[data-dm-href]');
+            while (el) {
+                if (el.hasAttribute('data-dm-disabled'))
+                    return true;
+                const e = this.entryOf(el);
+                const href = el.getAttribute('data-dm-href');
+                if (e?.proto.onClick || href) {
+                    const gen = this.gen;
+                    if (e?.proto.onClick)
+                        this.run(e.proto.onClick);
+                    if (href && gen === this.gen)
+                        this.nav.follow(href);
+                    return true;
+                }
+                el = el.parentElement?.closest('[data-dm-click],[data-dm-href]') ?? null;
+            }
+            return !!target.closest('[data-dm-disabled]');
+        }
+        input(target) {
+            const e = this.entryOf(target);
+            if (!e?.proto.bind || !('value' in target))
+                return;
+            this.vars[e.proto.bind] = String(target.value);
+            this.apply();
+        }
+        run(actions) {
+            const gen = this.gen;
+            for (const a of actions) {
+                if (gen !== this.gen)
+                    return;
+                switch (a.do) {
+                    case 'set': {
+                        const v = a.expr !== undefined ? evalExpr(a.expr, this.vars) : a.value;
+                        if (v !== undefined)
+                            this.vars[a.var] = v;
+                        break;
+                    }
+                    case 'toggle':
+                        this.vars[a.var] = !this.vars[a.var];
+                        break;
+                    case 'countdown': {
+                        this.clearCountdown(a.var);
+                        this.vars[a.var] = a.from;
+                        const t = this.win.setInterval(() => {
+                            const n = Number(this.vars[a.var]) - 1;
+                            this.vars[a.var] = Math.max(0, n);
+                            if (n <= 0) {
+                                this.clearCountdown(a.var);
+                                if (a.then)
+                                    this.run(a.then);
+                            }
+                            this.apply();
+                        }, a.interval ?? 1000);
+                        this.countdowns.set(a.var, t);
+                        break;
+                    }
+                    case 'stop':
+                        this.clearCountdown(a.var);
+                        break;
+                    case 'delay': {
+                        const t = this.win.setTimeout(() => {
+                            this.timeouts.delete(t);
+                            if (gen === this.gen)
+                                this.run(a.then);
+                        }, a.ms);
+                        this.timeouts.add(t);
+                        break;
+                    }
+                    case 'if':
+                        this.run((truthy(a.when, this.vars) ? a.then : a.else) ?? []);
+                        break;
+                    case 'navigate':
+                        return this.nav.go(a.frame);
+                    case 'back':
+                        return this.nav.back();
+                    case 'open':
+                        this.nav.open(a.url);
+                        break;
+                }
+            }
+            if (gen === this.gen)
+                this.apply();
+        }
+        clearCountdown(name) {
+            const t = this.countdowns.get(name);
+            if (t !== undefined)
+                this.win.clearInterval(t);
+            this.countdowns.delete(name);
+        }
+    }
+    return { ExprError, parseExpr, evalExpr, truthy, renderTemplate, ProtoRuntime };
+};
+var D = {"ids":["f_xa547g2h","f_4i9jxuul","f_0wrsixoc","f_yclx4uq1","f_u63ttdjy","f_ej4emh7p","f_m9jn5i0u","f_7u2eutsy"],"files":{},"frames":[{"vars":{"range":"30d"},"entries":[{"proto":{"vars":{"range":"30d"}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"range","value":"1d"}],"styles":[{"when":"range=='1d'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"range=='1d'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"range","value":"7d"}],"styles":[{"when":"range=='7d'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"range=='7d'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"range","value":"30d"}],"styles":[{"when":"range=='30d'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"range=='30d'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"range","value":"all"}],"styles":[{"when":"range=='all'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"range=='all'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{},"template":"{{range=='1d' ? '今日' : range=='7d' ? '7 天' : range=='all' ? '全部' : '30 天'}}跟单盈亏（USDT）","styles":[]},{"proto":{},"template":"{{range=='1d' ? '+1,486.30' : range=='7d' ? '+6,204.75' : range=='all' ? '+27,315.90' : '+19,058.20'}}","styles":[]},{"proto":{},"template":"{{range=='1d' ? '+0.60%' : range=='7d' ? '+2.56%' : range=='all' ? '+12.4%' : '+8.31%'}}","styles":[]}]},{"vars":{"st":"all","q":""},"entries":[{"proto":{"vars":{"st":"all","q":""}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"st","value":"all"}],"styles":[{"when":"st=='all'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"st=='all'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"st","value":"run"}],"styles":[{"when":"st=='run'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"st=='run'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"st","value":"pause"}],"styles":[{"when":"st=='pause'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"st=='pause'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"st","value":"stop"}],"styles":[{"when":"st=='stop'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"st=='stop'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"bind":"q"},"styles":[]},{"proto":{"show":"st=='all' || st=='run'"},"styles":[]},{"proto":{"show":"st=='all' || st=='run'"},"styles":[]},{"proto":{"show":"st=='all' || st=='run'"},"styles":[]},{"proto":{"show":"st=='all' || st=='pause'"},"styles":[]},{"proto":{"show":"st=='all' || st=='stop'"},"styles":[]}]},{"vars":{"tab":"pos"},"entries":[{"proto":{"vars":{"tab":"pos"}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"tab","value":"pos"}],"styles":[{"when":"tab!='pos'","style":{"color":"{color.muted-fg}"}}]},"styles":[{"when":"tab!='pos'","css":["color:var(--color-muted-fg)"]}]},{"proto":{"show":"tab=='pos'"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"tab","value":"log"}],"styles":[{"when":"tab!='log'","style":{"color":"{color.muted-fg}"}}]},"styles":[{"when":"tab!='log'","css":["color:var(--color-muted-fg)"]}]},{"proto":{"show":"tab=='log'"},"styles":[]},{"proto":{"show":"tab=='pos'"},"styles":[]},{"proto":{"show":"tab=='log'"},"styles":[]}]},{"vars":{"sheet":false},"entries":[{"proto":{"vars":{"sheet":false}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"sheet","value":true}]},"styles":[]},{"proto":{"show":"sheet"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"sheet","value":false}]},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"sheet","value":false}]},"styles":[]}]},{"vars":{},"entries":[]},{"vars":{"sheet":false,"env":"live","plat":"okx"},"entries":[{"proto":{"vars":{"sheet":false,"env":"live","plat":"okx"}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"sheet","value":true}]},"styles":[]},{"proto":{"show":"sheet"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"sheet","value":false}]},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"sheet","value":false}]},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"plat","value":"okx"}],"styles":[{"when":"plat=='okx'","style":{"color":"{color.primary}","background":"{color.primary-soft}"}}]},"styles":[{"when":"plat=='okx'","css":["color:var(--color-primary)","background:var(--color-primary-soft)"]}]},{"proto":{"onClick":[{"do":"set","var":"plat","value":"bn"}],"styles":[{"when":"plat=='bn'","style":{"color":"{color.primary}","background":"{color.primary-soft}"}}]},"styles":[{"when":"plat=='bn'","css":["color:var(--color-primary)","background:var(--color-primary-soft)"]}]},{"proto":{"onClick":[{"do":"set","var":"plat","value":"gate"}],"styles":[{"when":"plat=='gate'","style":{"color":"{color.primary}","background":"{color.primary-soft}"}}]},"styles":[{"when":"plat=='gate'","css":["color:var(--color-primary)","background:var(--color-primary-soft)"]}]},{"proto":{"onClick":[{"do":"set","var":"plat","value":"hl"}],"styles":[{"when":"plat=='hl'","style":{"color":"{color.primary}","background":"{color.primary-soft}"}}]},"styles":[{"when":"plat=='hl'","css":["color:var(--color-primary)","background:var(--color-primary-soft)"]}]},{"proto":{"onClick":[{"do":"set","var":"plat","value":"sim"}],"styles":[{"when":"plat=='sim'","style":{"color":"{color.primary}","background":"{color.primary-soft}"}}]},"styles":[{"when":"plat=='sim'","css":["color:var(--color-primary)","background:var(--color-primary-soft)"]}]},{"proto":{"show":"plat!='sim'"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"env","value":"live"}],"styles":[{"when":"env=='live'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"env=='live'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"env","value":"test"}],"styles":[{"when":"env=='test'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"env=='test'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"show":"plat=='sim'"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"sheet","value":false}]},"styles":[]}]},{"vars":{"lock":true,"notify":true},"entries":[{"proto":{"vars":{"lock":true,"notify":true}},"styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"lock"}]},"styles":[]},{"proto":{},"template":"{{lock ? '闲置 15 分钟自动锁定，任务照常运行' : '已关闭'}}","styles":[]},{"proto":{"styles":[{"when":"lock","style":{"background":"{color.primary}"}}]},"styles":[{"when":"lock","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"lock","style":{"transform":"translateX(16px)"}}]},"styles":[{"when":"lock","css":["transform:translateX(16px)"]}]},{"proto":{"onClick":[{"do":"toggle","var":"notify"}]},"styles":[]},{"proto":{"styles":[{"when":"notify","style":{"background":"{color.primary}"}}]},"styles":[{"when":"notify","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"notify","style":{"transform":"translateX(16px)"}}]},"styles":[{"when":"notify","css":["transform:translateX(16px)"]}]}]},{"vars":{"tab":"pnl","range":"30d"},"entries":[{"proto":{"vars":{"tab":"pnl","range":"30d"}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"tab","value":"pnl"}],"styles":[{"when":"tab!='pnl'","style":{"color":"{color.muted-fg}"}}]},"styles":[{"when":"tab!='pnl'","css":["color:var(--color-muted-fg)"]}]},{"proto":{"show":"tab=='pnl'"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"tab","value":"fill"}],"styles":[{"when":"tab!='fill'","style":{"color":"{color.muted-fg}"}}]},"styles":[{"when":"tab!='fill'","css":["color:var(--color-muted-fg)"]}]},{"proto":{"show":"tab=='fill'"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"tab","value":"log"}],"styles":[{"when":"tab!='log'","style":{"color":"{color.muted-fg}"}}]},"styles":[{"when":"tab!='log'","css":["color:var(--color-muted-fg)"]}]},{"proto":{"show":"tab=='log'"},"styles":[]},{"proto":{"show":"tab=='pnl'"},"styles":[]},{"proto":{},"template":"{{range=='7d' ? '近 7 天' : '近 30 天'}}跟单盈亏（USDT）","styles":[]},{"proto":{},"template":"{{range=='7d' ? '+6,204.75' : '+19,058.20'}}","styles":[]},{"proto":{"onClick":[{"do":"set","var":"range","value":"7d"}],"styles":[{"when":"range=='7d'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"range=='7d'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"onClick":[{"do":"set","var":"range","value":"30d"}],"styles":[{"when":"range=='30d'","style":{"color":"{color.fg}","background":"{color.muted}"}}]},"styles":[{"when":"range=='30d'","css":["color:var(--color-fg)","background:var(--color-muted)"]}]},{"proto":{"show":"tab=='fill'"},"styles":[]},{"proto":{"show":"tab=='log'"},"styles":[]}]}]};
+var E = createProtoEngine();
+var radios = Array.prototype.slice.call(document.querySelectorAll('input.dm-r'));
+var cur = 0, hist = [0];
+var nav = {
+  go: function (id) {
+    var i = D.ids.indexOf(id);
+    if (i >= 0) { if (radios[i]) radios[i].checked = true; enter(i, true); }
+    else if (D.files[id]) location.href = D.files[id];
+  },
+  back: function () {
+    if (hist.length > 1) { hist.pop(); var i = hist[hist.length - 1]; if (radios[i]) radios[i].checked = true; enter(i, false); }
+    else history.back();
+  },
+  open: function (url) { if (/^(https?:|mailto:|tel:)/i.test(url)) window.open(url, '_blank', 'noopener'); },
+  follow: function (href) {
+    if (href === '#back') return nav.back();
+    if (href.charAt(0) === '#') return nav.go(href.slice(1));
+    nav.open(href);
+  }
+};
+var rts = D.frames.map(function (f, i) {
+  var rt = new E.ProtoRuntime(window, nav);
+  rt.reset(f.vars);
+  rt.mount(document.querySelector('[data-dm-frame="' + i + '"]') || document, f.entries, i + '-');
+  return rt;
+});
+function enter(i, push) {
+  if (push && i === cur) return;
+  rts[cur].stopAll();
+  cur = i;
+  if (push) hist.push(i);
+  rts[i].reset(D.frames[i].vars);
+  rts[i].apply();
+  rts[i].runLoad();
+  window.scrollTo(0, 0);
+}
+radios.forEach(function (r, i) { r.addEventListener('change', function () { if (r.checked) enter(i, true); }); });
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  if (!t || !t.closest) return;
+  if (rts[cur].click(t) && t.closest('[data-dm-disabled],[data-dm-href]')) e.preventDefault();
+});
+document.addEventListener('input', function (e) { if (e.target && e.target.getAttribute) rts[cur].input(e.target); });
+rts[0].runLoad();
+})();
+</script>
+</body>
+</html>
