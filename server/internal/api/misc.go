@@ -945,6 +945,7 @@ func init() {
 		"probe_lead_trader":   probeLeadTrader,
 		"search_lead_traders": searchLeadTraders,
 		"delete_source":       deleteSource,
+		"backfill_source":     backfillSource,
 		"source_detail":       sourceDetail,
 		"paper_trade":         paperTrade,
 

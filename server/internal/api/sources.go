@@ -2,9 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
-	"errors"
 	"sort"
 	"strings"
 
@@ -166,13 +163,46 @@ func addSource(ctx context.Context, s *Server, body []byte) (any, error) {
 		return nil, errs.Msg("未知信号源类型")
 	}
 	id := util.NewUUID()
-	// created_at doubles as the fill-reconstruction anchor.
+	// created_at is the fill-reconstruction anchor until a history backfill
+	// moves it back.
 	if _, err := db.ExecContext(ctx, "INSERT INTO sources (id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode) VALUES (?,?,?,?,?,?,?,?,?)",
 		id, in.Kind, strings.TrimSpace(in.Name), platform, conn, addr, testnet, util.NowMs(), leadMode); err != nil {
 		return nil, err
 	}
 	s.E.Changed("sources")
+	// No task uses a new source yet, so rebuilding from history is safe.
+	if leadMode != nil {
+		if src, err := store.Source(ctx, db, id); err == nil && src != nil {
+			_ = s.E.BackfillSource(ctx, src)
+		}
+	}
 	return id, nil
+}
+
+func backfillSource(ctx context.Context, s *Server, body []byte) (any, error) {
+	if err := s.guard(); err != nil {
+		return nil, err
+	}
+	a, err := bind[idArg](body)
+	if err != nil {
+		return nil, err
+	}
+	src, err := store.Source(ctx, s.E.DB, a.ID)
+	if err != nil {
+		return nil, err
+	}
+	if src == nil {
+		return nil, errs.Msg("信号源不存在")
+	}
+	// Positions appearing at once would be mirrored by a running task.
+	n, err := store.Count(ctx, s.E.DB, "SELECT COUNT(*) FROM tasks WHERE source_id = ? AND status != 'stopped'", a.ID)
+	if err != nil {
+		return nil, err
+	}
+	if n > 0 {
+		return nil, errs.Msg("有 %d 个任务正在使用该信号源，请先停止再重建", n)
+	}
+	return nil, s.E.BackfillSource(ctx, src)
 }
 
 func deleteSource(ctx context.Context, s *Server, body []byte) (any, error) {
@@ -245,9 +275,10 @@ type SourceOrderDto struct {
 }
 
 type FillInfoDto struct {
-	Anchor     int64  `json:"anchor"`
-	LastFillAt *int64 `json:"last_fill_at"`
-	Applied    uint64 `json:"applied"`
+	Anchor     int64              `json:"anchor"`
+	LastFillAt *int64             `json:"last_fill_at"`
+	Applied    uint64             `json:"applied"`
+	Backfill   *exchange.Backfill `json:"backfill"`
 }
 
 type SourceDetailDto struct {
@@ -271,6 +302,20 @@ func sourceDetail(ctx context.Context, s *Server, body []byte) (any, error) {
 	}
 	if src == nil {
 		return nil, errs.Msg("信号源不存在")
+	}
+	var fills *FillInfoDto
+	if src.IsFills() {
+		fills = &FillInfoDto{Anchor: src.CreatedAt, Backfill: exchange.BackfillStatus(a.ID)}
+		st, err := exchange.LoadFillState(ctx, db, a.ID)
+		if err != nil {
+			return nil, err
+		}
+		if st != nil {
+			fills.Anchor, fills.LastFillAt, fills.Applied = st.Anchor, st.LastFillAt, st.Applied
+		}
+		if fills.Backfill != nil && fills.Backfill.Running {
+			return SourceDetailDto{Equity: "0", Notional: "0", Positions: []model.Position{}, Orders: []SourceOrderDto{}, Ts: util.NowMs(), Fills: fills}, nil
+		}
 	}
 	ex, err := s.E.SourceAdapter(ctx, src)
 	if err != nil {
@@ -297,22 +342,10 @@ func sourceDetail(ctx context.Context, s *Server, body []byte) (any, error) {
 	sort.SliceStable(positions, func(i, j int) bool {
 		return positions[i].Size.Mul(positions[i].MarkPx).Abs().GreaterThan(positions[j].Size.Mul(positions[j].MarkPx).Abs())
 	})
-	var fills *FillInfoDto
-	if src.IsFills() {
-		fills = &FillInfoDto{Anchor: src.CreatedAt}
-		var j string
-		err := db.QueryRowContext(ctx, "SELECT json FROM lead_fill_state WHERE source_id = ?", a.ID).Scan(&j)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return nil, err
-		}
-		if err == nil {
-			var st struct {
-				LastFillAt *int64 `json:"last_fill_at"`
-				Applied    uint64 `json:"applied"`
-			}
-			if json.Unmarshal([]byte(j), &st) == nil {
-				fills.LastFillAt, fills.Applied = st.LastFillAt, st.Applied
-			}
+	if fills != nil {
+		// The snapshot may have advanced the state.
+		if st, err := exchange.LoadFillState(ctx, db, a.ID); err == nil && st != nil {
+			fills.Anchor, fills.LastFillAt, fills.Applied = st.Anchor, st.LastFillAt, st.Applied
 		}
 	}
 	return SourceDetailDto{

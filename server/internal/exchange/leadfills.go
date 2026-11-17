@@ -4,7 +4,8 @@ package exchange
 //
 // Binance traders can hide positions but their trade history stays public
 // (measured ~2 min behind the real fill). We follow only what happens after
-// an anchor time (when the source was added):
+// an anchor time (the oldest fill still listed when the source was rebuilt
+// from history, else when it was added):
 //   - each side (LONG / SHORT, or BOTH in one-way mode) is accumulated on its
 //     own and never crosses zero, so closing a position opened before the
 //     anchor (invisible to us) cannot conjure a reverse position;

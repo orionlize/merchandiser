@@ -258,6 +258,27 @@ func (e *Engine) SourceAdapter(ctx context.Context, s *store.SourceRow) (exchang
 	return nil, errs.Msg("未知信号源类型")
 }
 
+// BackfillSource rebuilds a `fills` lead source from its whole public trade
+// history in the background (see exchange/leadbackfill.go).
+func (e *Engine) BackfillSource(ctx context.Context, s *store.SourceRow) error {
+	if s.Kind != "lead_trader" || !s.IsFills() {
+		return errs.Msg("只有按成交记录推算的带单员信号源可以重建历史")
+	}
+	ex, err := e.SourceAdapter(ctx, s)
+	if err != nil {
+		return err
+	}
+	lt, ok := ex.(*exchange.LeadTrader)
+	if !ok {
+		return errs.Msg("未知信号源类型")
+	}
+	if err := lt.StartBackfill(e.ctx, func() { e.Changed("sources") }); err != nil {
+		return err
+	}
+	e.Changed("sources")
+	return nil
+}
+
 // ---------- markets ----------
 
 func (e *Engine) Markets(ctx context.Context, ex exchange.Exchange) (*exchange.Markets, error) {
@@ -373,6 +394,10 @@ func (e *Engine) StartTask(ctx context.Context, taskID string, freshStart bool) 
 		}
 		e.Changed("tasks")
 		return nil
+	}
+	var sourceID string
+	if err := e.DB.QueryRowContext(ctx, "SELECT source_id FROM tasks WHERE id = ?", taskID).Scan(&sourceID); err == nil && exchange.BackfillRunning(sourceID) {
+		return errs.Msg("信号源正在从历史成交重建仓位，完成后再启动")
 	}
 	tr, err := prepareRunner(ctx, e, taskID, freshStart)
 	if err != nil {
