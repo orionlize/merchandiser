@@ -582,3 +582,29 @@ func WatchUser(ctx context.Context, address string, testnet bool, notify chan<- 
 		backoff = min(backoff*2, 30*time.Second)
 	}
 }
+
+// Candle is one OHLCV bar; T is the open time in ms.
+type Candle struct {
+	T int64   `json:"t"`
+	O float64 `json:"o"`
+	H float64 `json:"h"`
+	L float64 `json:"l"`
+	C float64 `json:"c"`
+	V float64 `json:"v"`
+}
+
+// Candles returns bars for an HL coin (the venue's own name, e.g. "kPEPE")
+// between start and end (ms). Public data; the venue caps one call at 5000 bars.
+func (h *Hyperliquid) Candles(ctx context.Context, coin, interval string, start, end int64) ([]Candle, error) {
+	v, err := h.info(ctx, map[string]any{"type": "candleSnapshot", "req": map[string]any{"coin": coin, "interval": interval, "startTime": start, "endTime": end}}, 20)
+	if err != nil {
+		return nil, err
+	}
+	f := func(j util.J) float64 { x, _ := j.Dec().Float64(); return x }
+	out := []Candle{}
+	for _, c := range v.Arr() {
+		t, _ := c.Get("t").Int()
+		out = append(out, Candle{T: t, O: f(c.Get("o")), H: f(c.Get("h")), L: f(c.Get("l")), C: f(c.Get("c")), V: f(c.Get("v"))})
+	}
+	return out, nil
+}

@@ -1,5 +1,5 @@
-import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
-import { api, errMsg } from "./api";
+import { QueryClient, keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { api, errMsg, type ChartInterval, type PnlRange } from "./api";
 import { subscribe } from "./server";
 import { useUi } from "./store";
 
@@ -11,11 +11,11 @@ export const qc = new QueryClient({
 const scopeKeys: Record<string, string[][]> = {
   tasks: [["tasks"], ["task"], ["overview"], ["health"]],
   live: [["task"], ["overview"], ["tasks"]],
-  orders: [["task"], ["logs"], ["overview"]],
+  orders: [["task"], ["task-chart"], ["logs"], ["overview"]],
   signals: [["task"], ["logs"]],
   mirrors: [["task"], ["source"]],
   alerts: [["overview"], ["alerts"]],
-  equity: [["overview"], ["connections"], ["tasks"]],
+  equity: [["overview"], ["connections"], ["tasks"], ["pnl-curve"]],
   connections: [["connections"], ["overview"]],
   sources: [["sources"]],
   estop: [["health"], ["overview"], ["tasks"], ["task"]],
@@ -71,6 +71,9 @@ export const useHealth = () => useQuery({ queryKey: ["health"], queryFn: api.hea
 export const useOverview = () => useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: 10000 });
 export const useTasks = () => useQuery({ queryKey: ["tasks"], queryFn: api.tasks, refetchInterval: 10000 });
 export const useTask = (id?: string) => useQuery({ queryKey: ["task", id], queryFn: () => api.task(id!), enabled: !!id, refetchInterval: 5000 });
+export const useTaskChart = (taskId: string | undefined, base: string | undefined, interval: ChartInterval) =>
+  useQuery({ queryKey: ["task-chart", taskId, base ?? "", interval], queryFn: () => api.taskChart({ taskId: taskId!, base, interval }), enabled: !!taskId, refetchInterval: 30000, placeholderData: keepPreviousData });
+export const usePnlCurve = (range: PnlRange) => useQuery({ queryKey: ["pnl-curve", range], queryFn: () => api.pnlCurve(range), refetchInterval: 60000, placeholderData: keepPreviousData });
 export const useConnections = () => useQuery({ queryKey: ["connections"], queryFn: api.connections, refetchInterval: 30000 });
 export const useSources = () => useQuery({ queryKey: ["sources"], queryFn: api.sources });
 export const useSettings = () => useQuery({ queryKey: ["settings"], queryFn: api.settings });

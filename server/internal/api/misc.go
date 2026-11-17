@@ -963,6 +963,8 @@ func init() {
 		"export_logs_csv": exportLogsCsv,
 		"pnl_report":      pnlReport,
 		"equity_series":   equitySeries,
+		"task_chart":      taskChart,
+		"pnl_curve":       pnlCurve,
 
 		"get_settings":      getSettings,
 		"set_settings":      setSettings,

@@ -333,6 +333,9 @@ type TaskSummary struct {
 	TodayPnl       *string          `json:"today_pnl"`
 	TotalPnl       *string          `json:"total_pnl"`
 	Live           *engine.TaskLive `json:"live"`
+	// Source position changes over the last 7 days: opens and adds, trims and closes.
+	WeekAdds    int64 `json:"week_adds"`
+	WeekReduces int64 `json:"week_reduces"`
 }
 
 func summarize(ctx context.Context, s *Server, t *store.TaskRow) (*TaskSummary, error) {
@@ -394,6 +397,11 @@ func summarize(ctx context.Context, s *Server, t *store.TaskRow) (*TaskSummary, 
 	}
 	if src != nil {
 		sum.SourceName, sum.SourceKind, sum.SourcePlatform, sum.SourceAddress = src.Name, src.Kind, src.Platform, src.Address
+	}
+	if err := db.QueryRowContext(ctx, `SELECT
+		COALESCE(SUM(kind IN ('open','add','flip')), 0), COALESCE(SUM(kind IN ('reduce','close')), 0)
+		FROM signals WHERE task_id = ? AND ts >= ?`, t.ID, util.NowMs()-7*86_400_000).Scan(&sum.WeekAdds, &sum.WeekReduces); err != nil {
+		return nil, err
 	}
 	if have {
 		sum.TodayPnl = util.Ptr(util.Fmt(today.RoundBank(2)))

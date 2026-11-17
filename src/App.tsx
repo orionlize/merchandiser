@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ServerSetup } from "./components/ServerSetup";
-import { Sidebar, Toasts, TopBar } from "./components/Shell";
+import { BottomTabs, Sidebar, Toasts, TopBar } from "./components/Shell";
 import { Button, Field, Input, Modal } from "./components/ui";
 import { api, errMsg } from "./lib/api";
 import { useTr } from "./lib/i18n";
@@ -26,18 +26,29 @@ function Title() {
     case "overview":
       return <>{tr("总览", "Overview")}</>;
     case "tasks":
-    case "task":
       return <>{tr("跟单任务", "Copy tasks")}</>;
+    case "task":
+      return (
+        <>
+          <span className="md:hidden">{t?.name ?? ""}</span>
+          <span className="max-md:hidden">{tr("跟单任务", "Copy tasks")}</span>
+        </>
+      );
     case "wizard":
       return <>{route.id ? tr(`编辑「${t?.name ?? ""}」`, `Edit "${t?.name ?? ""}"`) : tr("新建跟单任务", "New copy task")}</>;
     case "sources":
       return <>{tr("信号源", "Sources")}</>;
     case "connections":
-      return <>{tr("连接", "Connections")}</>;
+      return <>{tr("交易账户", "Accounts")}</>;
     case "records":
-      return <>{tr("记录", "Records")}</>;
+      return <>{tr("成交与盈亏", "Fills & PnL")}</>;
     case "settings":
-      return <>{tr("设置", "Settings")}</>;
+      return (
+        <>
+          <span className="md:hidden">{tr("更多", "More")}</span>
+          <span className="max-md:hidden">{tr("设置", "Settings")}</span>
+        </>
+      );
   }
 }
 
@@ -211,10 +222,11 @@ function Shell() {
       <Sidebar />
       <main className="flex min-w-0 flex-1 flex-col">
         <TopBar title={<Title />} />
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1 max-md:pb-14">
           <Page />
         </div>
       </main>
+      <BottomTabs />
       <Toasts />
       {health?.locked ? <LockScreen /> : null}
       {health?.secrets_locked && !health.locked ? <SecretsUnlock /> : null}

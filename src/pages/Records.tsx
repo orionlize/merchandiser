@@ -2,18 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { Download } from "lucide-react";
 import { useState } from "react";
+import { dailyFromCurve, DailyBars } from "../components/Charts";
 import { Button, Empty, Loading, Seg, Select, Tabs } from "../components/ui";
-import { api, errMsg, type LogFilter, type LogRow } from "../lib/api";
+import { api, errMsg, type LogFilter, type LogRow, type PnlCurve, type PnlRow } from "../lib/api";
 import { num, pnlClass, price, qty, signed, time } from "../lib/format";
 import { trNow, useTr } from "../lib/i18n";
-import { useConnections, useSettings, useTasks } from "../lib/queries";
+import { useConnections, usePnlCurve, useSettings, useTasks } from "../lib/queries";
 import { downloadText } from "../lib/files";
 import { useUi } from "../lib/store";
 
 export function Records() {
   const tr = useTr();
-  const [tab, setTab] = useState<"log" | "fills" | "pnl">("log");
-  const [range, setRange] = useState<LogFilter["range"]>("today");
+  const initial = useUi((s) => s.route.id);
+  const [tab, setTab] = useState<"log" | "fills" | "pnl">(initial === "log" || initial === "fills" ? initial : "pnl");
+  const [range, setRange] = useState<LogFilter["range"]>(initial === "log" || initial === "fills" ? "today" : "30d");
   const [taskId, setTaskId] = useState("");
   const [connId, setConnId] = useState("");
   const [status, setStatus] = useState<"all" | "skipped" | "failed">("all");
@@ -26,6 +28,7 @@ export function Records() {
   const filter: LogFilter = { range, task_id: taskId || null, connection_id: connId || null, status: tab === "log" ? status : "all", fills_only: tab === "fills", limit };
   const logs = useQuery({ queryKey: ["logs", filter], queryFn: () => api.logs(filter), enabled: tab !== "pnl", refetchInterval: 10000 });
   const pnl = useQuery({ queryKey: ["pnl", range], queryFn: () => api.pnl(range), enabled: tab === "pnl" });
+  const { data: curve } = usePnlCurve(range);
 
   const exportCsv = async () => {
     try {
@@ -45,7 +48,7 @@ export function Records() {
   ];
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-6 py-4">
+    <div className="flex h-full flex-col overflow-y-auto px-4 py-4 md:px-6">
       <Tabs
         value={tab}
         onChange={(t) => {
@@ -53,12 +56,12 @@ export function Records() {
           setLimit(50);
         }}
         tabs={[
-          { value: "log", label: tr("执行日志", "Execution log") },
-          { value: "fills", label: tr("成交记录", "Fills") },
           { value: "pnl", label: tr("收益报表", "PnL report") },
+          { value: "fills", label: tr("成交记录", "Fills") },
+          { value: "log", label: tr("执行日志", "Execution log") },
         ]}
       />
-      <div className="mt-4 mb-4 flex items-center gap-2">
+      <div className="mt-4 mb-4 flex flex-wrap items-center gap-2">
         <Select value={range} onChange={setRange} options={rangeOpts} />
         {tab !== "pnl" ? (
           <>
@@ -68,7 +71,7 @@ export function Records() {
         ) : null}
         {tab === "log" ? (
           <Seg
-            className="ml-2"
+            className="md:ml-2"
             value={status}
             onChange={setStatus}
             options={[
@@ -82,7 +85,7 @@ export function Records() {
         {tab !== "pnl" ? (
           <Button onClick={exportCsv}>
             <Download size={14} />
-            {tr("导出 CSV", "Export CSV")}
+            <span className="max-md:hidden">{tr("导出 CSV", "Export CSV")}</span>
           </Button>
         ) : null}
       </div>
@@ -91,33 +94,36 @@ export function Records() {
         pnl.isLoading ? (
           <Loading />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <>
+          <PnlSummary curve={curve} rows={pnl.data ?? []} range={range} />
+          <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-fg">
                   <th className="px-4 py-2.5 text-left font-normal">{tr("账户", "Account")}</th>
-                  <th className="px-2 text-right font-normal">{tr("期初权益", "Start equity")}</th>
+                  <th className="px-2 text-right font-normal max-md:hidden">{tr("期初权益", "Start equity")}</th>
                   <th className="px-2 text-right font-normal">{tr("期末权益", "End equity")}</th>
                   <th className="px-2 text-right font-normal">{tr("盈亏", "PnL")}</th>
-                  <th className="px-2 text-right font-normal">{tr("成交笔数", "Fills")}</th>
-                  <th className="px-4 text-right font-normal">{tr("成交额", "Volume")}</th>
+                  <th className="px-2 text-right font-normal max-md:hidden">{tr("成交笔数", "Fills")}</th>
+                  <th className="px-4 text-right font-normal max-md:hidden">{tr("成交额", "Volume")}</th>
                 </tr>
               </thead>
               <tbody>
                 {(pnl.data ?? []).map((r) => (
                   <tr key={r.connection_id} className="border-b border-border last:border-0">
                     <td className="px-4 py-2.5">{r.alias}</td>
-                    <td className="num px-2 text-right">{num(r.start_equity)}</td>
+                    <td className="num px-2 text-right max-md:hidden">{num(r.start_equity)}</td>
                     <td className="num px-2 text-right">{num(r.end_equity)}</td>
-                    <td className={clsx("num px-2 text-right", pnlClass(r.pnl))}>{signed(r.pnl)}</td>
-                    <td className="num px-2 text-right">{r.fills}</td>
-                    <td className="num px-4 text-right">{num(r.volume)}</td>
+                    <td className={clsx("num px-2 text-right max-md:pr-4", pnlClass(r.pnl))}>{signed(r.pnl)}</td>
+                    <td className="num px-2 text-right max-md:hidden">{r.fills}</td>
+                    <td className="num px-4 text-right max-md:hidden">{num(r.volume)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="border-t border-border px-4 py-3 text-xs text-muted-fg">{tr("盈亏按权益快照差计算（每分钟采样），含资金费与手续费；分项拆分与跟踪误差将在第二期提供。", "PnL is the change in sampled equity (every minute), fees and funding included. Breakdown and tracking error arrive in phase 2.")}</p>
           </div>
+          <p className="mt-3 text-xs text-muted-fg">{tr("盈亏按权益快照差计算（每分钟采样），含资金费与手续费。", "PnL is the change in sampled equity (every minute), fees and funding included.")}</p>
+          </>
         )
       ) : logs.isLoading ? (
         <Loading />
@@ -127,8 +133,8 @@ export function Records() {
         </div>
       ) : (
         <>
-          <div key={`${tab}-${status}`} className="anim-fade overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full text-sm">
+          <div key={`${tab}-${status}`} className="anim-fade overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-fg">
                   <th className="px-4 py-2.5 font-normal">{tr("时间", "Time")}</th>
@@ -163,7 +169,7 @@ export function Records() {
               </tbody>
             </table>
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-muted-fg">
+          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-muted-fg">
             <span>{tr(`共 ${logs.data.total} 条，当前显示 ${logs.data.rows.length} 条。日志本地保留 ${settings?.log_retention_days ?? 90} 天，可在设置中修改。`, `${logs.data.total} rows, showing ${logs.data.rows.length}. Logs are kept ${settings?.log_retention_days ?? 90} days (configurable).`)}</span>
             {logs.data.rows.length < logs.data.total ? (
               <Button variant="link" className="text-sm" onClick={() => setLimit((l) => l + 50)}>
@@ -175,6 +181,66 @@ export function Records() {
       )}
     </div>
   );
+}
+
+function PnlSummary({ curve, rows, range }: { curve: PnlCurve | undefined; rows: PnlRow[]; range: LogFilter["range"] }) {
+  const tr = useTr();
+  const points = curve?.points ?? [];
+  const pnl = points.length ? points[points.length - 1][1] : 0;
+  const days = dailyFromCurve(points);
+  const fills = rows.reduce((a, r) => a + r.fills, 0);
+  const volume = rows.reduce((a, r) => a + Number(r.volume || 0), 0);
+  const won = days.filter((d) => d[1] > 0).length;
+  const label = { today: tr("今日", "Today's"), "7d": tr("近 7 天", "7-day"), "30d": tr("近 30 天", "30-day"), all: tr("累计", "All-time") }[range];
+  return (
+    <div className="border border-border bg-card max-md:-mx-4 max-md:border-x-0">
+      <div className="flex flex-wrap items-end justify-between gap-4 px-4 pt-4 md:px-5">
+        <div>
+          <div className="text-xs text-muted-fg">{tr(`${label}跟单盈亏（USDT）`, `${label} copy PnL (USDT)`)}</div>
+          <div className={clsx("num mt-1 text-[32px] leading-tight font-semibold", pnlClass(pnl))}>{signed(pnl)}</div>
+          {curve && curve.start_equity > 0 ? (
+            <div className="num mt-1 text-xs text-muted-fg">
+              {tr("期初", "Start")} {num(curve.start_equity)} → {tr("期末", "end")} {num(curve.start_equity + pnl)}
+            </div>
+          ) : null}
+        </div>
+        <div className="grid grid-cols-3 gap-6">
+          <div>
+            <div className="text-xs text-muted-fg">{tr("成交笔数", "Fills")}</div>
+            <div className="num mt-1 text-lg">{fills}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-fg">{tr("成交额", "Volume")}</div>
+            <div className="num mt-1 text-lg">{compact(volume)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-fg">{tr("盈利天数", "Green days")}</div>
+            <div className="num mt-1 text-lg">
+              {won} / {days.length}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="px-4 pt-4 pb-3 md:px-5">
+        {days.length > 1 ? <DailyBars days={days} height={110} /> : <div className="flex h-[60px] items-center text-xs text-muted-fg">{tr("区间内不足两天的权益数据，暂不显示每日柱状图", "Daily bars appear once the range spans two days of equity data")}</div>}
+        {days.length > 1 ? (
+          <div className="num mt-1.5 flex justify-between text-xs text-muted-fg">
+            <span>{new Date(days[0][0]).toLocaleDateString(undefined, { month: "2-digit", day: "2-digit" })}</span>
+            <span>{tr("每日盈亏，最后一根为今日", "Daily PnL; the last bar is today")}</span>
+            <span>{new Date(days[days.length - 1][0]).toLocaleDateString(undefined, { month: "2-digit", day: "2-digit" })}</span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function compact(v: number) {
+  const a = Math.abs(v);
+  if (a >= 1e9) return `${num(v / 1e9, 2)}B`;
+  if (a >= 1e6) return `${num(v / 1e6, 2)}M`;
+  if (a >= 1e4) return `${num(v / 1e3, 1)}K`;
+  return num(v, 0);
 }
 
 function signalShort(r: LogRow) {

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button, Confirm, Dot, Empty, Field, Input, Loading, Modal, PlatformTag, Seg, SideTag, Toggle } from "../components/ui";
 import { api, errMsg, type LeadProbe, type LeadSummary, type Platform, type Source } from "../lib/api";
@@ -16,6 +16,8 @@ export function Sources() {
   const [addHl, setAddHl] = useState(false);
   const [addApi, setAddApi] = useState(false);
   const [addLead, setAddLead] = useState(false);
+  // Phones show the list or one source, not both.
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!sel && sources?.length) setSel(sources[0].id);
@@ -32,7 +34,7 @@ export function Sources() {
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="flex w-[340px] shrink-0 flex-col border-r border-border">
+      <div className={clsx("flex w-[340px] shrink-0 flex-col border-r border-border max-md:w-full max-md:border-r-0", open && "max-md:hidden")}>
         <div className="grid grid-cols-3 gap-2 p-4">
           <Button onClick={() => setAddApi(true)}>
             <Plus size={14} />
@@ -53,8 +55,15 @@ export function Sources() {
               <div className="px-4 pt-3 pb-2 text-xs text-muted-fg">{label}</div>
               {list.length === 0 ? <div className="px-4 pb-2 text-xs text-muted-fg">—</div> : null}
               {list.map((s) => (
-                <button key={s.id} onClick={() => setSel(s.id)} className={clsx("relative flex w-full items-start justify-between px-4 py-3 text-left transition-colors duration-150", sel === s.id ? "bg-muted" : "hover:bg-muted/50")}>
-                  {sel === s.id ? <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-primary" /> : null}
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setSel(s.id);
+                    setOpen(true);
+                  }}
+                  className={clsx("relative flex w-full items-start justify-between px-4 py-3 text-left transition-colors duration-150 max-md:border-b max-md:border-border", sel === s.id ? "md:bg-muted" : "hover:bg-muted/50")}
+                >
+                  {sel === s.id ? <span className="absolute top-0 bottom-0 left-0 w-[3px] bg-primary max-md:hidden" /> : null}
                   <div className="min-w-0">
                     <div className="text-sm">{s.name}</div>
                     <div className="num mt-0.5 truncate text-xs text-muted-fg">{s.kind === "hl_address" ? shortAddr(s.address) : s.kind === "lead_trader" ? `${leadVenue(s.platform)} · ${s.address ?? ""}` : `${s.connection_alias ?? ""} · ${s.platform === "paper" ? tr("模拟", "paper") : s.platform}`}</div>
@@ -70,8 +79,21 @@ export function Sources() {
           ))}
         </div>
       </div>
-      <div className="min-w-0 flex-1 overflow-y-auto">
-        {current ? <SourceDetailView key={current.id} s={current} onDeleted={() => setSel(null)} /> : <Empty title={tr("还没有信号源", "No sources yet")} hint={tr("添加任意 Hyperliquid 地址（无需凭证）、OKX / 币安跟单广场的带单员，或用只读 API 连接、模拟账户作为信号源。", "Add any Hyperliquid address (no credentials needed), an OKX / Binance lead trader, or use a read-only API connection or a paper account.")} />}
+      <div className={clsx("min-w-0 flex-1 overflow-y-auto", !open && "max-md:hidden")}>
+        <button className="flex items-center gap-1 px-4 pt-3 text-sm text-muted-fg md:hidden" onClick={() => setOpen(false)}>
+          <ChevronLeft size={16} />
+          {tr("全部信号源", "All sources")}
+        </button>
+        {current ? (
+          <SourceDetailView
+            key={current.id}
+            s={current}
+            onDeleted={() => {
+              setSel(null);
+              setOpen(false);
+            }}
+          />
+        ) : <Empty title={tr("还没有信号源", "No sources yet")} hint={tr("添加任意 Hyperliquid 地址（无需凭证）、OKX / 币安跟单广场的带单员，或用只读 API 连接、模拟账户作为信号源。", "Add any Hyperliquid address (no credentials needed), an OKX / Binance lead trader, or use a read-only API connection or a paper account.")} />}
       </div>
       <AddHlModal open={addHl} onClose={() => setAddHl(false)} onAdded={setSel} />
       <AddApiModal open={addApi} onClose={() => setAddApi(false)} onAdded={setSel} />
@@ -95,8 +117,8 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
   const backfillMut = useAction(api.backfillSource, { ok: tr("开始重建", "Rebuild started"), invalidate: [["source", s.id]] });
   const bf = data?.fills?.backfill ?? null;
   return (
-    <div className="anim-fade px-8 py-6">
-      <div className="flex items-start justify-between">
+    <div className="anim-fade px-4 py-4 md:px-8 md:py-6 [&_table]:min-w-[560px]">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-semibold tracking-[-1px]">{s.name}</h2>
@@ -104,16 +126,16 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
               <Trash2 size={14} />
             </button>
           </div>
-          <div className="mt-1 flex items-center gap-3 text-xs text-muted-fg">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-fg">
             {lead ? <span>{leadVenue(s.platform)} {tr("带单员", "lead trader")}</span> : null}
-            <span className="num selectable">{s.address ?? s.connection_alias}</span>
+            <span className="num selectable break-all">{s.address ?? s.connection_alias}</span>
             <span className="flex items-center gap-1.5">
               <Dot color={error ? "danger" : "success"} />
               {error ? tr("读取失败", "Unreachable") : tr(`已连接，快照 ${ago(dataUpdatedAt, lang === "en")}`, `Connected, snapshot ${ago(dataUpdatedAt, true)}`)}
             </span>
           </div>
         </div>
-        <div className="flex gap-8 text-right">
+        <div className="flex gap-8 text-right max-md:text-left">
           <div>
             <div className="text-xs text-muted-fg">{tr("权益", "Equity")} {s.platform === "hyperliquid" ? "USDC" : "USDT"}</div>
             <div className="num mt-1 text-xl" title={equityHidden ? tr("OKX 不公开带单员权益", "OKX does not publish lead trader equity") : undefined}>
@@ -171,6 +193,7 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
           {data.positions.length === 0 ? (
             <div className="py-6 text-sm text-muted-fg">{tr("无持仓", "No positions")}</div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-fg">
@@ -206,11 +229,13 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
                 ))}
               </tbody>
             </table>
+            </div>
           )}
           {lead ? null : <h3 className="mt-8 mb-2 text-md font-semibold">{tr("未成交挂单", "Open orders")}</h3>}
           {lead ? null : data.orders.length === 0 ? (
             <div className="py-6 text-sm text-muted-fg">{tr("无挂单", "No open orders")}</div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <tbody>
                 {data.orders.map((o) => (
@@ -232,6 +257,7 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </>
       ) : null}
@@ -285,7 +311,7 @@ function PaperTradePanel({ connectionId }: { connectionId: string }) {
         <h3 className="text-md font-semibold">{tr("模拟下单", "Paper order")}</h3>
         <span className="text-xs text-muted-fg">{tr("按 Hyperliquid 实时价格虚拟成交，跟随该信号源的任务会照常跟单。", "Virtual fills at live Hyperliquid prices; tasks following this source copy them as usual.")}</span>
       </div>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-3 max-md:grid-cols-2">
         <Field label={tr("品种", "Coin")}>
           <Input value={base} onChange={(e) => setBase(e.target.value.toUpperCase())} className="num" placeholder="BTC" />
         </Field>

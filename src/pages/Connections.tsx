@@ -3,7 +3,7 @@ import { AlertTriangle, Check, Info, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button, Confirm, Drawer, Empty, Field, Input, Loading, Seg, Toggle } from "../components/ui";
 import { api, errMsg, type Connection, type ConnectionInput, type Platform, type Validation } from "../lib/api";
-import { num, platformLabel } from "../lib/format";
+import { num, platformLabel, pnlClass, signed } from "../lib/format";
 import { useTr } from "../lib/i18n";
 import { qc, useAction, useConnections } from "../lib/queries";
 import { useUi } from "../lib/store";
@@ -36,13 +36,47 @@ export function Connections() {
     return parts.join(tr("，", ", "));
   };
 
+  const live = conns.filter((c) => c.platform !== "paper" && !c.testnet && c.equity != null);
+  const equity = live.reduce((a, c) => a + Number(c.equity), 0);
+  const avail = live.reduce((a, c) => a + Number(c.available ?? 0), 0);
+  const today = live.reduce((a, c) => a + Number(c.today_pnl ?? 0), 0);
+  const used = equity > 0 ? Math.min(1, Math.max(0, (equity - avail) / equity)) : 0;
+  const issues = (c: Connection) => (c.perms?.withdraw ? 1 : 0) + (c.one_way === false ? 1 : 0);
+
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-6 py-6">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="flex h-full flex-col overflow-y-auto px-4 py-4 md:px-6 md:py-6">
+      {live.length ? (
+        <div className="mb-4 border border-border bg-card px-4 py-4 max-md:-mx-4 max-md:border-x-0 md:px-5">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="text-xs text-muted-fg">{tr("实盘总权益（USDT）", "Live equity (USDT)")}</div>
+              <div className="num mt-1 text-[32px] leading-tight font-semibold tracking-[-0.5px]">{num(equity)}</div>
+            </div>
+            <div className="flex gap-8">
+              <div>
+                <div className="text-xs text-muted-fg">{tr("今日", "Today")}</div>
+                <div className={clsx("num mt-1 text-lg", pnlClass(today))}>{signed(today)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-fg">{tr("可用保证金", "Available")}</div>
+                <div className="num mt-1 text-lg">{num(avail)}</div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 flex h-1.5 bg-muted">
+            <div className="h-full bg-primary" style={{ width: `${used * 100}%` }} />
+          </div>
+          <div className="mt-1.5 flex justify-between text-xs text-muted-fg">
+            <span>{tr("保证金占用", "Margin in use")}</span>
+            <span className="num">{num(used * 100, 1)}%</span>
+          </div>
+        </div>
+      ) : null}
+      <div className="mb-4 flex items-center justify-between gap-3">
         <span className="text-xs text-muted-fg">{tr(`${conns.length} 个连接，密钥加密保存在服务器上，只在服务端进程内解密`, `${conns.length} connections. Keys are stored encrypted on the server and only decrypted inside the server process.`)}</span>
         <Button variant="primary" onClick={() => setDrawer({ open: true })}>
           <Plus size={14} />
-          {tr("添加连接", "Add connection")}
+          {tr("添加账户", "Add account")}
         </Button>
       </div>
       {conns.length === 0 ? (
@@ -53,7 +87,45 @@ export function Connections() {
           />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <>
+        <div className="flex flex-col gap-3 md:hidden">
+          {conns.map((c) => (
+            <div key={c.id} className={clsx("border bg-card", issues(c) ? "border-warning" : "border-border")}>
+              <div className="flex items-start justify-between gap-3 px-4 pt-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-semibold">{c.alias}</span>
+                    {c.platform === "paper" ? <span className="bg-primary-soft px-1 text-[11px] text-primary">{tr("模拟", "Paper")}</span> : c.testnet ? <span className="bg-primary-soft px-1 text-[11px] text-primary">{tr("测试网", "Testnet")}</span> : null}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-muted-fg">{role(c)}</div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="num">{num(c.equity)}</div>
+                  <div className={clsx("num text-xs", pnlClass(c.today_pnl))}>{signed(c.today_pnl)}</div>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3 px-4 pb-1 text-xs">
+                <span className={clsx("truncate", c.perms?.withdraw ? "text-danger" : "text-muted-fg")}>
+                  {permLabel(c)}
+                  {c.one_way === false ? <span className="text-warning">{tr("，双向持仓", ", hedge mode")}</span> : null}
+                </span>
+                <span className={clsx("num shrink-0", (c.latency_ms ?? 0) > 300 ? "text-warning" : "text-muted-fg")}>{c.platform !== "paper" && c.latency_ms != null ? `${c.latency_ms} ms` : ""}</span>
+              </div>
+              <div className="flex justify-end border-t border-border px-2 py-1">
+                <Button variant="ghost" size="sm" loading={test.isPending && test.variables === c.id} onClick={() => test.mutate(c.id)}>
+                  {tr("测试", "Test")}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setDrawer({ open: true, edit: c })}>
+                  {tr("编辑", "Edit")}
+                </Button>
+                <Button variant="ghost" size="sm" className="text-muted-fg hover:text-danger" onClick={() => setDeleting(c)}>
+                  {tr("删除", "Delete")}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card max-md:hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-fg">
@@ -104,6 +176,7 @@ export function Connections() {
             </tbody>
           </table>
         </div>
+        </>
       )}
       {withdraw.map((c) => (
         <div key={c.id} className="mt-4 flex items-center gap-2 rounded-md bg-danger-soft px-4 py-3 text-sm text-danger">
