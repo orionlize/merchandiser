@@ -303,7 +303,14 @@ func bnFilter(s util.J, ty string) (util.J, bool) {
 }
 
 func bnSpec(s util.J) *model.ContractSpec {
-	if s.JStr("contractType") != "PERPETUAL" || s.JStr("status") != "TRADING" {
+	// Stock / commodity perps (NVDAUSDT, SKHYNIXUSDT, XAUUSDT) are listed as
+	// TRADIFI_PERPETUAL; they trade through the same fapi endpoints.
+	switch s.JStr("contractType") {
+	case "PERPETUAL", "TRADIFI_PERPETUAL":
+	default:
+		return nil
+	}
+	if s.JStr("status") != "TRADING" {
 		return nil
 	}
 	quote := s.JStr("quoteAsset")

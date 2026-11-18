@@ -241,3 +241,22 @@ func TestMsgpackCompactInts(t *testing.T) {
 		t.Fatalf("%x", b)
 	}
 }
+
+func TestBinanceTradFiPerpsAreListed(t *testing.T) {
+	mk := func(sym, base, ct string) util.J {
+		v, err := util.ParseJ([]byte(`{"symbol":"` + sym + `","contractType":"` + ct + `","status":"TRADING","baseAsset":"` + base + `","quoteAsset":"USDT","filters":[{"filterType":"LOT_SIZE","stepSize":"0.01","minQty":"0.01"},{"filterType":"PRICE_FILTER","tickSize":"0.01"}]}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	for _, c := range []struct{ sym, base string }{{"NVDAUSDT", "NVDA"}, {"SKHYNIXUSDT", "SKHYNIX"}} {
+		s := bnSpec(mk(c.sym, c.base, "TRADIFI_PERPETUAL"))
+		if s == nil || s.Base != c.base || s.Symbol != c.sym {
+			t.Fatalf("%s: %+v", c.sym, s)
+		}
+	}
+	if bnSpec(mk("BTCUSDT_261226", "BTC", "CURRENT_QUARTER")) != nil {
+		t.Fatal("delivery contract should be skipped")
+	}
+}
