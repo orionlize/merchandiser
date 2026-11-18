@@ -10,6 +10,12 @@
 //	MERCHANDISER_MASTER_PASSWORD_FILE same, read from a file (Docker secrets)
 //	MERCHANDISER_WEB_DIR              built frontend to serve at / (default /app/web when present)
 //	MERCHANDISER_LOG_LEVEL            debug | info | warn | error (default info)
+//	MERCHANDISER_BACKUP_ON_START      1 = copy the database to <data>/backups before opening it
+//	MERCHANDISER_DRAIN                time to report not-ready before closing on shutdown (default 2s)
+//
+// Only one process runs on a data directory at a time (engine.lock). A second
+// one stands by, serving /healthz but not /readyz, until the first exits;
+// blue-green deploys rely on this.
 package main
 
 import (
@@ -23,12 +29,14 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 	_ "time/tzdata"
 
 	"merchandiser/server/internal/api"
 	"merchandiser/server/internal/engine"
+	"merchandiser/server/internal/leader"
 	"merchandiser/server/internal/secrets"
 	"merchandiser/server/internal/store"
 )
@@ -85,14 +93,95 @@ func masterPassword() string {
 	return ""
 }
 
+// switchable lets the listener come up in standby and switch to the real
+// API once this instance owns the data directory. While draining it reports
+// not ready so a gateway stops sending new requests before the listener closes.
+type switchable struct {
+	h        atomic.Pointer[http.Handler]
+	draining atomic.Bool
+}
+
+func (s *switchable) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.draining.Load() && r.URL.Path == "/readyz" {
+		http.Error(w, "draining", http.StatusServiceUnavailable)
+		return
+	}
+	(*s.h.Load()).ServeHTTP(w, r)
+}
+func (s *switchable) set(h http.Handler) { s.h.Store(&h) }
+
+// standby answers while another instance still holds the data directory:
+// alive (/healthz) but not ready, so the gateway keeps traffic on the old one.
+func standby() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("standby"))
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Retry-After", "1")
+		http.Error(w, "standby: another instance is active", http.StatusServiceUnavailable)
+	})
+	return mux
+}
+
 func run() error {
 	dir := env("MERCHANDISER_DATA_DIR", "/data")
 	addr := env("MERCHANDISER_ADDR", ":8686")
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	handler := &switchable{}
+	handler.set(standby())
+	srv := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 10 * time.Second}
+	errc := make(chan error, 1)
+	go func() {
+		slog.Info("listening", "addr", addr, "data", dir)
+		errc <- srv.ListenAndServe()
+	}()
+	shutdown := func() {
+		sctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(sctx)
+	}
+
+	// Only one process may run the engine on a data directory.
+	acq := make(chan error, 1)
+	var lock *os.File
+	go func() {
+		var err error
+		lock, err = leader.Acquire(ctx, dir)
+		acq <- err
+	}()
+	select {
+	case err := <-errc:
+		if !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	case err := <-acq:
+		if err != nil {
+			shutdown()
+			if ctx.Err() != nil {
+				slog.Info("stopped while in standby")
+				return nil
+			}
+			return err
+		}
+	}
+	defer lock.Close()
+	slog.Info("acquired data directory; starting")
+
+	if env("MERCHANDISER_BACKUP_ON_START", "") == "1" {
+		if p, err := store.Backup(dir, 5); err != nil {
+			slog.Warn("pre-start backup failed", "err", err)
+		} else if p != "" {
+			slog.Info("database backed up", "file", p)
+		}
+	}
+
 	db, err := store.Open(dir)
 	if err != nil {
+		shutdown()
 		return err
 	}
 	defer db.Close()
@@ -101,6 +190,7 @@ func run() error {
 	}
 	token, err := loadToken(dir)
 	if err != nil {
+		shutdown()
 		return err
 	}
 
@@ -129,16 +219,8 @@ func run() error {
 		slog.Info("no frontend to serve; API only", "web_dir", web)
 		web = ""
 	}
-	srv := &http.Server{
-		Addr:              addr,
-		Handler:           (&api.Server{E: eng, Token: token, Ctx: ctx, WebDir: web}).Handler(),
-		ReadHeaderTimeout: 10 * time.Second,
-	}
-	errc := make(chan error, 1)
-	go func() {
-		slog.Info("listening", "addr", addr, "data", dir)
-		errc <- srv.ListenAndServe()
-	}()
+	handler.set((&api.Server{E: eng, Token: token, Ctx: ctx, WebDir: web}).Handler())
+	slog.Info("active")
 	select {
 	case err := <-errc:
 		if !errors.Is(err, http.ErrServerClosed) {
@@ -146,10 +228,15 @@ func run() error {
 		}
 	case <-ctx.Done():
 	}
+	// Fail /readyz first so a gateway (blue-green) moves new requests away;
+	// closing the listener right away would reset its pooled connections.
+	if d, err := time.ParseDuration(env("MERCHANDISER_DRAIN", "2s")); err == nil && d > 0 {
+		handler.draining.Store(true)
+		slog.Info("draining", "for", d)
+		time.Sleep(d)
+	}
 	slog.Info("shutting down")
-	sctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	_ = srv.Shutdown(sctx)
+	shutdown()
 	// Runners stop with ctx; positions are left as they are and tasks resume on next boot.
 	time.Sleep(500 * time.Millisecond)
 	return nil

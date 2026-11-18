@@ -1,40 +1,74 @@
+# Blue-green deployment. Use ./deploy.sh rather than `docker compose up`:
+#   ./deploy.sh            build the idle color, switch traffic to it
+#   ./deploy.sh rollback   switch back to the previous color
+#   ./deploy.sh status     show which color is live
+#
+# blue and green share one data volume. Only one of them runs the engine at a
+# time: the server takes an exclusive lock on /data/engine.lock at startup, and
+# a second instance stands by (healthy, not ready) until the first exits. The
+# gateway routes to whichever one answers /readyz.
+
+x-app: &app
+  build: .
+  restart: unless-stopped
+  volumes:
+    - merchandiser-data:/data
+  environment:
+    # "Today" statistics and daily loss limits use this timezone's midnight.
+    TZ: ${TZ:-Asia/Shanghai}
+    # Access token the web UI asks for. Leave empty to generate one into /data/api_token.
+    MERCHANDISER_TOKEN: ${MERCHANDISER_TOKEN:-}
+    # Copy the database to /data/backups (newest 5 kept) before each start, so a
+    # release whose schema change goes wrong can be rolled back with its data.
+    MERCHANDISER_BACKUP_ON_START: "1"
+    # Optional: unlock secrets.enc at boot so tasks resume unattended after a restart
+    # (strongly recommended with blue-green: otherwise every deploy waits for an
+    # unlock from the web UI before tasks run again).
+    # MERCHANDISER_MASTER_PASSWORD_FILE: /run/secrets/master_password
+  # secrets:
+  #   - master_password
+  # Time to finish in-flight orders on shutdown before the other color takes over.
+  stop_grace_period: 30s
+  # Explicit resolvers. Rootless Docker forwards the host's resolv.conf, which breaks
+  # when the host resolves via a loopback address (127.0.0.53, a local DNS server):
+  # every exchange lookup then times out and copy tasks report "source lost".
+  dns:
+    - ${MERCHANDISER_DNS1:-223.5.5.5}
+    - ${MERCHANDISER_DNS2:-119.29.29.29}
+
 services:
-  merchandiser:
-    build: .
-    image: merchandiser:latest
+  # Entry point: forwards to the live color. The only service that publishes a port.
+  gateway:
+    image: caddy:2.10-alpine
     restart: unless-stopped
     ports:
       # Default: reachable only from this host (http://127.0.0.1:8686).
       # External access, either:
-      #   - HTTPS (recommended): set DOMAIN in .env and run `docker compose --profile https up -d`
+      #   - HTTPS (recommended): set DOMAIN in .env and run `docker compose --profile https up -d caddy`
       #   - plain HTTP on all interfaces: set MERCHANDISER_BIND=0.0.0.0 in .env (token travels unencrypted)
       - "${MERCHANDISER_BIND:-127.0.0.1}:${MERCHANDISER_PORT:-8686}:8686"
     volumes:
-      - merchandiser-data:/data
-    environment:
-      # "Today" statistics and daily loss limits use this timezone's midnight.
-      TZ: ${TZ:-Asia/Shanghai}
-      # Access token the web UI asks for. Leave empty to generate one into /data/api_token.
-      MERCHANDISER_TOKEN: ${MERCHANDISER_TOKEN:-}
-      # Optional: unlock secrets.enc at boot so tasks resume unattended after a restart.
-      # Otherwise unlock from the web UI after each restart.
-      # MERCHANDISER_MASTER_PASSWORD_FILE: /run/secrets/master_password
-    # secrets:
-    #   - master_password
-    # Explicit resolvers. Rootless Docker forwards the host's resolv.conf, which breaks
-    # when the host resolves via a loopback address (127.0.0.53, a local DNS server):
-    # every exchange lookup then times out and copy tasks report "source lost".
-    dns:
-      - ${MERCHANDISER_DNS1:-223.5.5.5}
-      - ${MERCHANDISER_DNS2:-119.29.29.29}
+      - ./deploy/gateway.Caddyfile:/etc/caddy/Caddyfile:ro
 
-  # Automatic HTTPS (Let's Encrypt) in front of the server. Needs a domain whose
+  # The two colors are behind profiles so a bare `docker compose up -d` never
+  # starts a stale color; deploy.sh enables them.
+  blue:
+    <<: *app
+    image: merchandiser:blue
+    profiles: ["blue"]
+
+  green:
+    <<: *app
+    image: merchandiser:green
+    profiles: ["green"]
+
+  # Automatic HTTPS (Let's Encrypt) in front of the gateway. Needs a domain whose
   # DNS A record points at this host, and ports 80 + 443 open to the internet.
   caddy:
     profiles: ["https"]
     image: caddy:2.10-alpine
     restart: unless-stopped
-    depends_on: [merchandiser]
+    depends_on: [gateway]
     ports:
       - "80:80"
       - "443:443"
