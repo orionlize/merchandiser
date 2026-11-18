@@ -72,7 +72,9 @@ type TaskLive struct {
 	LastError       *string        `json:"last_error"`
 	Rows            []CompareRow   `json:"rows"`
 	Followers       []FollowerLive `json:"followers"`
-	Paused          bool           `json:"paused"`
+	// Follower positions in the coins this task manages.
+	Positions []PositionLive `json:"positions"`
+	Paused    bool           `json:"paused"`
 }
 
 // StrSet serialises as a JSON array.
@@ -438,6 +440,7 @@ func (r *taskRunner) step(ctx context.Context, force, wsOk bool) error {
 	for i, s := range snaps {
 		if s != nil {
 			r.followers[i].snap = s
+			r.e.RememberSnapshot(r.followers[i].connID, s)
 		}
 	}
 	r.lastFollowerRefresh = now
@@ -735,6 +738,7 @@ func (r *taskRunner) syncPositions(ctx context.Context, src *model.AccountSnapsh
 			s.Orders = f.snap.Orders
 		}
 		f.snap = s
+		r.e.RememberSnapshot(f.connID, s)
 	}
 	r.e.Changed("orders")
 }
@@ -1410,6 +1414,33 @@ func (r *taskRunner) publish(src *model.AccountSnapshot) {
 			rows = append(rows, row)
 		}
 	}
+	positions := []PositionLive{}
+	for _, f := range r.followers {
+		fs := f.snap
+		if fs == nil {
+			continue
+		}
+		for _, base := range bases {
+			if !r.rules.Allows(base) || r.baseline.Ignored.Has(base) {
+				continue
+			}
+			for i := range fs.Positions {
+				p := &fs.Positions[i]
+				if p.Base != base || p.Size.IsZero() {
+					continue
+				}
+				pl := newPositionLive(f.connID, f.alias, p)
+				if sp := srcPosition(src, base); sp != nil {
+					pl.SrcSize = util.Ptr(util.Fmt(sp.Size))
+					pl.SrcEntryPx = util.Ptr(util.Fmt(sp.EntryPx))
+					if sp.Leverage != nil && sp.Leverage.IsPositive() {
+						pl.SrcLeverage = util.Ptr(util.Fmt(sp.Leverage.RoundBank(2)))
+					}
+				}
+				positions = append(positions, pl)
+			}
+		}
+	}
 	followers := []FollowerLive{}
 	for _, f := range r.followers {
 		if s := f.snap; s != nil {
@@ -1429,6 +1460,7 @@ func (r *taskRunner) publish(src *model.AccountSnapshot) {
 		DeviationPct:    util.Fmt(devPct),
 		Rows:            rows,
 		Followers:       followers,
+		Positions:       positions,
 		Paused:          r.paused,
 	}
 	if r.lastReconcile > 0 {

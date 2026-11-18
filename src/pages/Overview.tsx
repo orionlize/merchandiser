@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { ChevronRight, Plus } from "lucide-react";
 import { useState } from "react";
 import { maxDrawdown, PnlCurveChart, Spark } from "../components/Charts";
+import { PositionsTable } from "../components/Positions";
 import { Button, Confirm, Dot, Empty, Loading, PlatformTag, Seg } from "../components/ui";
 import { api, type Overview as OV, type PnlRange, type TaskPnl, type TaskSummary } from "../lib/api";
 import { num, pnlClass, shortAddr, signed, time } from "../lib/format";
@@ -188,6 +189,14 @@ export function Overview() {
             </section>
           </div>
         </div>
+
+        <section className="mt-4 border border-border bg-card max-md:-mx-4 max-md:border-x-0">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h2 className="text-sm font-semibold">{tr("我的持仓", "My positions")}</h2>
+            <span className="text-xs text-muted-fg">{tr("全部跟单账户 · 每分钟刷新", "All follower accounts · refreshed every minute")}</span>
+          </div>
+          <PositionsTable kind="overview" rows={data.positions ?? []} empty={<div className="px-4 py-6 text-sm text-muted-fg">{tr("当前没有持仓", "No open positions")}</div>} />
+        </section>
 
         <Ranking tasks={curve?.tasks ?? []} live={data.tasks} range={range} />
 

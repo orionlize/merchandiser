@@ -11,6 +11,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
+	"merchandiser/server/internal/engine"
 	"merchandiser/server/internal/errs"
 	"merchandiser/server/internal/model"
 	"merchandiser/server/internal/secrets"
@@ -29,6 +30,20 @@ type AccountDto struct {
 	TodayPnl *string `json:"today_pnl"`
 }
 
+// OverviewPosition is an open position on a follower account, with the
+// tasks that copy that coin onto it.
+type OverviewPosition struct {
+	engine.PositionLive
+	Platform string   `json:"platform"`
+	Testnet  bool     `json:"testnet"`
+	Tasks    []IDName `json:"tasks"`
+}
+
+type IDName struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type TodayStats struct {
 	Signals        int64   `json:"signals"`
 	Orders         int64   `json:"orders"`
@@ -38,19 +53,20 @@ type TodayStats struct {
 }
 
 type OverviewDto struct {
-	TotalEquity   string           `json:"total_equity"`
-	FollowerCount int              `json:"follower_count"`
-	TodayPnl      string           `json:"today_pnl"`
-	TodayPnlPct   string           `json:"today_pnl_pct"`
-	Upnl          string           `json:"upnl"`
-	Available     string           `json:"available"`
-	Notional      string           `json:"notional"`
-	LatencyP95    *int64           `json:"latency_p95"`
-	Accounts      []AccountDto     `json:"accounts"`
-	Tasks         []*TaskSummary   `json:"tasks"`
-	Alerts        []store.AlertRow `json:"alerts"`
-	Today         TodayStats       `json:"today"`
-	Estopped      bool             `json:"estopped"`
+	TotalEquity   string             `json:"total_equity"`
+	FollowerCount int                `json:"follower_count"`
+	TodayPnl      string             `json:"today_pnl"`
+	TodayPnlPct   string             `json:"today_pnl_pct"`
+	Upnl          string             `json:"upnl"`
+	Available     string             `json:"available"`
+	Notional      string             `json:"notional"`
+	LatencyP95    *int64             `json:"latency_p95"`
+	Accounts      []AccountDto       `json:"accounts"`
+	Positions     []OverviewPosition `json:"positions"`
+	Tasks         []*TaskSummary     `json:"tasks"`
+	Alerts        []store.AlertRow   `json:"alerts"`
+	Today         TodayStats         `json:"today"`
+	Estopped      bool               `json:"estopped"`
 }
 
 func strings_(ctx context.Context, s *Server, q string, args ...any) ([]string, error) {
@@ -139,6 +155,30 @@ func getOverview(ctx context.Context, s *Server, _ []byte) (any, error) {
 		}
 		tasks = append(tasks, sum)
 	}
+	// Positions on every listed account, tagged with the tasks managing each coin.
+	owners := map[string][]IDName{}
+	for _, t := range tasks {
+		if t.Live == nil {
+			continue
+		}
+		for _, p := range t.Live.Positions {
+			k := p.ConnectionID + "|" + p.Base
+			owners[k] = append(owners[k], IDName{ID: t.ID, Name: t.Name})
+		}
+	}
+	positions := []OverviewPosition{}
+	for _, a := range accounts {
+		for _, p := range engine.PositionsOf(a.ID, a.Alias, s.E.LatestSnapshot(a.ID)) {
+			op := OverviewPosition{PositionLive: p, Platform: a.Platform, Testnet: a.Testnet, Tasks: owners[a.ID+"|"+p.Base]}
+			if op.Tasks == nil {
+				op.Tasks = []IDName{}
+			}
+			positions = append(positions, op)
+		}
+	}
+	sort.SliceStable(positions, func(i, j int) bool {
+		return util.Dec(positions[i].Notional).GreaterThan(util.Dec(positions[j].Notional))
+	})
 	alerts, err := store.Alerts(ctx, db, 6)
 	if err != nil {
 		return nil, err
@@ -184,7 +224,7 @@ func getOverview(ctx context.Context, s *Server, _ []byte) (any, error) {
 	return OverviewDto{
 		TotalEquity: util.Fmt(eq.RoundBank(2)), FollowerCount: followerCount, TodayPnl: util.Fmt(todayPnl.RoundBank(2)), TodayPnlPct: pct,
 		Upnl: util.Fmt(upnl.RoundBank(2)), Available: util.Fmt(avail.RoundBank(2)), Notional: util.Fmt(notional.RoundBank(2)),
-		LatencyP95: p95(lats), Accounts: accounts, Tasks: tasks, Alerts: alerts, Today: st, Estopped: s.E.Estopped(),
+		LatencyP95: p95(lats), Accounts: accounts, Positions: positions, Tasks: tasks, Alerts: alerts, Today: st, Estopped: s.E.Estopped(),
 	}, nil
 }
 
