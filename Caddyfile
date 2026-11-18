@@ -1,5 +1,6 @@
 {$DOMAIN} {
 	encode gzip
-	# SSE (/api/events) is streamed unbuffered by reverse_proxy automatically.
-	reverse_proxy merchandiser:8686
+	# The gateway picks the live blue / green instance; SSE (/api/events) is
+	# streamed unbuffered by reverse_proxy automatically.
+	reverse_proxy gateway:8686
 }

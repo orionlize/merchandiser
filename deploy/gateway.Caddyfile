@@ -1,0 +1,28 @@
+# Blue-green gateway: sends traffic to whichever of blue / green is ready.
+# Only the instance holding the data directory answers /readyz with 200; the
+# other is stopped or standing by. During a switch requests wait (up to
+# lb_try_duration) for the new instance instead of failing.
+{
+	admin off
+	auto_https off
+}
+
+:8686 {
+	reverse_proxy blue:8686 green:8686 {
+		lb_policy first
+		lb_try_duration 60s
+		lb_try_interval 250ms
+		# Buffer request bodies so a POST can be retried on the new color
+		# (API bodies are small; import_config is the largest).
+		request_buffers 4MiB
+
+		health_uri /readyz
+		health_interval 1s
+		health_timeout 2s
+		health_passes 1
+		health_fails 1
+
+		# SSE (/api/events) must not be buffered.
+		flush_interval -1
+	}
+}
