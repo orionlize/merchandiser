@@ -370,11 +370,12 @@ func (p *Paper) Query(_ context.Context, _ *model.ContractSpec, clientID string)
 	return nil, nil
 }
 
-func (p *Paper) SetLeverage(_ context.Context, spec *model.ContractSpec, leverage uint32) error {
+func (p *Paper) SetLeverage(ctx context.Context, spec *model.ContractSpec, leverage uint32) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if ps, ok := p.st.Positions[spec.Base]; ok {
+	if ps, ok := p.st.Positions[spec.Base]; ok && ps.Leverage != max(leverage, 1) {
 		ps.Leverage = max(leverage, 1)
+		return p.persist(ctx)
 	}
 	return nil
 }

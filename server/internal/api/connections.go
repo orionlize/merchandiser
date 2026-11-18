@@ -281,6 +281,7 @@ func saveConnection(ctx context.Context, s *Server, body []byte) (any, error) {
 	if ex, err := s.E.Adapter(ctx, id); err == nil {
 		if m, err := s.E.Markets(ctx, ex); err == nil {
 			if snap, err := ex.Snapshot(ctx, m, false); err == nil {
+				s.E.RememberSnapshot(id, snap)
 				_ = store.InsertEquity(ctx, db, id, snap.Equity, snap.Available, snap.Upnl(), snap.Notional())
 			}
 		}
@@ -572,6 +573,9 @@ func paperTrade(ctx context.Context, s *Server, body []byte) (any, error) {
 		}
 	default:
 		return nil, errs.Msg("未知操作")
+	}
+	if snap, err := ex.Snapshot(ctx, m, false); err == nil {
+		s.E.RememberSnapshot(in.ConnectionID, snap)
 	}
 	s.E.Changed("connections")
 	s.E.Changed("sources")

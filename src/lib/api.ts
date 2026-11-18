@@ -232,6 +232,32 @@ export interface CompareRow {
   note: string;
 }
 
+export interface PositionLive {
+  connection_id: string;
+  alias: string;
+  base: string;
+  symbol: string;
+  /** Signed coins, positive = long. */
+  size: string;
+  entry_px: string;
+  mark_px: string;
+  leverage: string | null;
+  notional: string;
+  margin: string | null;
+  upnl: string;
+  pnl_pct: string | null;
+  roe_pct: string | null;
+  src_size?: string | null;
+  src_entry_px?: string | null;
+  src_leverage?: string | null;
+}
+
+export interface OverviewPosition extends PositionLive {
+  platform: Platform;
+  testnet: boolean;
+  tasks: { id: string; name: string }[];
+}
+
 export interface TaskLive {
   source_connected: boolean;
   source_equity: string;
@@ -243,6 +269,8 @@ export interface TaskLive {
   last_error: string | null;
   rows: CompareRow[];
   followers: { connection_id: string; alias: string; equity: string; upnl: string; notional: string }[];
+  /** Follower positions in the coins this task manages (absent from older servers). */
+  positions?: PositionLive[];
   paused: boolean;
 }
 
@@ -418,6 +446,8 @@ export interface Overview {
   notional: string;
   latency_p95: number | null;
   accounts: { id: string; alias: string; platform: Platform; testnet: boolean; equity: string | null; today_pnl: string | null }[];
+  /** Open positions on follower accounts (absent from older servers). */
+  positions?: OverviewPosition[];
   tasks: TaskSummary[];
   alerts: Alert[];
   today: { signals: number; orders: number; avg_slippage_pct: string | null; skipped: number; failed: number };

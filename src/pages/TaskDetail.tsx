@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
+import { PositionsTable } from "../components/Positions";
 import { fillLabel, TaskChart } from "../components/TaskChart";
 import { Button, Drawer, Empty, Loading, Modal, Radio, Seg, SideTag, Tabs } from "../components/ui";
 import { api, type ChartInterval, type CompareRow, type Mirror, type Risk, type TaskDetail as TD, type TaskSummary } from "../lib/api";
@@ -16,7 +17,7 @@ export function TaskDetail() {
   const tr = useTr();
   const { route, go } = useUi();
   const { data: t, isLoading } = useTask(route.id);
-  const [tab, setTab] = useState<"pos" | "mirror" | "log">("pos");
+  const [tab, setTab] = useState<"hold" | "pos" | "mirror" | "log">("hold");
   const [stopping, setStopping] = useState(false);
   const [rules, setRules] = useState(false);
   const act = useAction(({ a }: { a: "start" | "resume" | "pause" | "reconcile" }) => api.taskAction(route.id!, a), { invalidate: [["task"], ["tasks"]] });
@@ -73,12 +74,22 @@ export function TaskDetail() {
           value={tab}
           onChange={setTab}
           tabs={[
-            { value: "pos", label: tr("仓位对比", "Positions") },
+            { value: "hold", label: `${tr("当前持仓", "Positions")} ${live?.positions?.length || ""}` },
+            { value: "pos", label: tr("仓位对比", "Source vs. follower") },
             { value: "mirror", label: `${tr("挂单镜像", "Mirrored orders")} ${liveMirrors.length || ""}` },
             { value: "log", label: tr("执行日志", "Execution log") },
           ]}
         />
         <div key={tab} className="anim-rise mt-4 overflow-x-auto max-md:[&_table]:min-w-[640px]">
+          {tab === "hold" ? (
+            <div className="border border-border bg-card">
+              <PositionsTable
+                kind="task"
+                rows={live?.positions ?? []}
+                empty={<Empty title={t.status === "running" ? tr("当前没有持仓", "No open positions") : tr("任务未运行", "Task not running")} hint={tr("跟单账户在本任务管理的品种上有仓位时，这里显示持仓均价、杠杆、保证金和浮动盈亏。", "Entry, leverage, margin and unrealized PnL appear here for coins this task manages.")} />}
+              />
+            </div>
+          ) : null}
           {tab === "pos" ? <PositionCompare rows={live?.rows ?? []} running={t.status === "running"} tolerance={t.rules.tolerance_pct} /> : null}
           {tab === "mirror" ? <Mirrors mirrors={t.mirrors} enabled={t.rules.mirror.enabled} grace={t.rules.mirror.grace_ms} /> : null}
           {tab === "log" ? <SignalLog t={t} /> : null}

@@ -107,13 +107,17 @@ type Engine struct {
 	liveMu sync.RWMutex
 	live   map[string]*TaskLive
 
+	// Freshest snapshot per account (positions for the overview).
+	snapMu sync.RWMutex
+	snaps  map[string]*model.AccountSnapshot
+
 	estopped atomic.Bool
 	// UI lock (tasks keep running while locked).
 	locked atomic.Bool
 }
 
 func New(ctx context.Context, db *sql.DB, sec *secrets.Store, bus *Bus) *Engine {
-	e := &Engine{DB: db, Secrets: sec, Bus: bus, ctx: ctx, adapters: map[string]exchange.Exchange{}, markets: map[mktKey]mktEntry{}, runners: map[string]*runner{}, live: map[string]*TaskLive{}}
+	e := &Engine{DB: db, Secrets: sec, Bus: bus, ctx: ctx, adapters: map[string]exchange.Exchange{}, markets: map[mktKey]mktEntry{}, runners: map[string]*runner{}, live: map[string]*TaskLive{}, snaps: map[string]*model.AccountSnapshot{}}
 	e.locked.Store(store.SettingsCache().AppLock)
 	return e
 }
@@ -227,6 +231,7 @@ func (e *Engine) Adapter(ctx context.Context, connID string) (exchange.Exchange,
 }
 
 func (e *Engine) ForgetAdapter(connID string) {
+	e.forgetSnapshot(connID)
 	e.adMu.Lock()
 	delete(e.adapters, connID)
 	e.adMu.Unlock()
@@ -666,6 +671,7 @@ func (e *Engine) SampleEquity(ctx context.Context) {
 			slog.Debug("equity", "alias", c.Alias, "err", err)
 			continue
 		}
+		e.RememberSnapshot(c.ID, s)
 		_ = store.InsertEquity(ctx, e.DB, c.ID, s.Equity, s.Available, s.Upnl(), s.Notional())
 	}
 	e.Changed("equity")
