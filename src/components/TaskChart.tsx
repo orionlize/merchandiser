@@ -24,8 +24,8 @@ import type { ReplayedFill } from "../lib/replay";
 import { trNow } from "../lib/i18n";
 
 const STEP: Record<ChartInterval, number> = { "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000 };
-/** Above this many markers in view, labels are dropped so arrows stay readable. */
-const LABEL_LIMIT = 60;
+/** Above this many marker groups, add/trim dots lose their labels. */
+const LABEL_LIMIT = 30;
 
 /** lightweight-charts renders UTC; shift timestamps so the axis reads local time. */
 const local = (ms: number) => ((ms - new Date(ms).getTimezoneOffset() * 60_000) / 1000) as UTCTimestamp;
@@ -60,6 +60,61 @@ export function fillLabel(f: ReplayedFill) {
     case "flip":
       return trNow("反", "Flip");
   }
+}
+
+/** Higher wins when several fills merge into one marker. */
+const RANK: Record<ReplayedFill["kind"], number> = { reduce: 0, add: 1, close: 2, open: 3, flip: 4 };
+/** Markers closer than this on screen are merged. */
+const MIN_GAP_PX = 14;
+
+/**
+ * Bars per marker group at the current zoom: 1 when bars are wide enough,
+ * otherwise a power of two so small zooms don't regroup.
+ */
+function bucketFor(barSpacing: number) {
+  const k = Math.ceil(MIN_GAP_PX / Math.max(barSpacing, 0.01));
+  return k <= 1 ? 1 : 2 ** Math.ceil(Math.log2(k));
+}
+
+/**
+ * One marker per side for every `bucket` bars. Opens, closes and flips keep
+ * an arrow; groups of only adds or trims get a small dot, so scaling in and
+ * out does not bury the candles. The label is the most significant kind plus
+ * the count; zoomed out (bucket > 1) only the selection keeps its label.
+ */
+function buildMarkers(candles: Candle[], fills: ReplayedFill[], selected: number | null, bucket: number, p: ReturnType<typeof palette>): SeriesMarker<Time>[] {
+  const groups = new Map<string, { bar: number; buy: boolean; fills: ReplayedFill[] }>();
+  for (const f of fills) {
+    const bar = barIndex(candles, f.ts);
+    if (bar < 0) continue;
+    const key = `${Math.floor(bar / bucket)}:${f.buy ? 1 : 0}`;
+    const g = groups.get(key);
+    if (g) {
+      g.fills.push(f);
+      g.bar = bar;
+    } else groups.set(key, { bar, buy: f.buy, fills: [f] });
+  }
+  const list = [...groups.values()].sort((a, b) => a.bar - b.bar || Number(a.buy) - Number(b.buy));
+  const labels = bucket === 1;
+  const fewGroups = list.length <= LABEL_LIMIT;
+  return list.map(({ bar, buy, fills: fs }) => {
+    const top = fs.reduce((a, f) => (RANK[f.kind] >= RANK[a.kind] ? f : a));
+    const sel = fs.find((f) => f.id === selected);
+    const minor = top.kind === "add" || top.kind === "reduce";
+    const n = fs.length;
+    const label = minor ? (top.kind === "add" ? trNow("加", "Add") : trNow("减", "Trim")) : fillLabel(top);
+    const show = sel || (labels && (fewGroups || !minor));
+    return {
+      // Clicking selects the latest fill in the group.
+      id: `f${(sel ?? fs[n - 1]).id}`,
+      time: local(candles[bar].t),
+      position: buy ? "belowBar" : "aboveBar",
+      shape: minor ? "circle" : buy ? "arrowUp" : "arrowDown",
+      color: sel ? p.primary : buy ? p.up : p.down,
+      text: show ? (n > 1 ? `${label}×${n}` : label) : undefined,
+      size: sel ? 1.4 : minor ? 0.5 : 0.9,
+    };
+  });
 }
 
 /** Index of the last candle starting at or before ts, or -1. */
@@ -106,6 +161,9 @@ export function TaskChart({ candles, fills, interval, avg, pos, selected, onSele
   const state = useRef({ candles, fills, onSelect });
   state.current = { candles, fills, onSelect };
   const fitKey = useRef("");
+  // Markers are regrouped when zooming changes how many bars share a group.
+  const bucket = useRef(1);
+  const drawMarkers = useRef(() => {});
 
   // Build the chart once; colors follow the theme attribute.
   useEffect(() => {
@@ -142,6 +200,18 @@ export function TaskChart({ candles, fills, interval, avg, pos, selected, onSele
     };
     c.subscribeClick(click);
 
+    const zoom = () => {
+      const r = c.timeScale().getVisibleLogicalRange();
+      const w = c.timeScale().width();
+      if (!r || w <= 0) return;
+      const k = bucketFor(w / Math.max(1, r.to - r.from));
+      if (k !== bucket.current) {
+        bucket.current = k;
+        drawMarkers.current();
+      }
+    };
+    c.timeScale().subscribeVisibleLogicalRangeChange(zoom);
+
     const recolor = () => {
       const p = palette();
       c.applyOptions({ layout: { textColor: p.muted, panes: { separatorColor: p.border } }, grid: { vertLines: { color: p.border }, horzLines: { color: p.border } }, rightPriceScale: { borderColor: p.border }, timeScale: { borderColor: p.border } });
@@ -155,6 +225,7 @@ export function TaskChart({ candles, fills, interval, avg, pos, selected, onSele
     return () => {
       mo.disconnect();
       c.unsubscribeClick(click);
+      c.timeScale().unsubscribeVisibleLogicalRangeChange(zoom);
       c.remove();
       chart.current = null;
     };
@@ -183,21 +254,9 @@ export function TaskChart({ candles, fills, interval, avg, pos, selected, onSele
     avgLine.current.setData(avgData);
     posLine.current.setData(posData);
 
-    const visible = fills.filter((f) => barIndex(candles, f.ts) >= 0);
-    const labels = visible.length <= LABEL_LIMIT;
-    const ms: SeriesMarker<Time>[] = visible.map((f) => {
-      const sel = f.id === selected;
-      return {
-        id: `f${f.id}`,
-        time: local(candles[barIndex(candles, f.ts)].t),
-        position: f.buy ? "belowBar" : "aboveBar",
-        shape: f.buy ? "arrowUp" : "arrowDown",
-        color: sel ? p.primary : f.buy ? p.up : p.down,
-        text: labels || sel ? fillLabel(f) : undefined,
-        size: sel ? 1.6 : 1,
-      };
-    });
-    markers.current.setMarkers(ms);
+    const m = markers.current;
+    drawMarkers.current = () => m.setMarkers(buildMarkers(candles, fills, selected, bucket.current, palette()));
+    drawMarkers.current();
 
     if (avgPrice.current) price.current.removePriceLine(avgPrice.current);
     avgPrice.current = Math.abs(pos) > 1e-12 && avg > 0 ? price.current.createPriceLine({ price: avg, color: p.avg, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: trNow("均价", "Avg") }) : null;

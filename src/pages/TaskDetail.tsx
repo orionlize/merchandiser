@@ -80,7 +80,7 @@ export function TaskDetail() {
             { value: "log", label: tr("执行日志", "Execution log") },
           ]}
         />
-        <div key={tab} className="anim-rise mt-4 overflow-x-auto max-md:[&_table]:min-w-[640px]">
+        <div key={tab} className="anim-rise mt-4 shrink-0 overflow-x-auto max-md:[&_table]:min-w-[640px]">
           {tab === "hold" ? (
             <div className="border border-border bg-card">
               <PositionsTable
@@ -180,11 +180,31 @@ function HeroCell({ label, value, cls, sub, last }: { label: string; value: stri
 }
 
 const INTERVALS: ChartInterval[] = ["15m", "1h", "4h", "1d"];
+const INTERVAL_KEY = "merchandiser.chartInterval";
+
+/** The last K-line timeframe picked on this device. */
+function savedInterval(): ChartInterval {
+  try {
+    const v = localStorage.getItem(INTERVAL_KEY) as ChartInterval | null;
+    if (v && INTERVALS.includes(v)) return v;
+  } catch {
+    /* storage unavailable */
+  }
+  return "4h";
+}
 
 function ChartCard({ t }: { t: TD }) {
   const tr = useTr();
   const [base, setBase] = useState<string>();
-  const [interval, setIv] = useState<ChartInterval>("4h");
+  const [interval, setIvState] = useState<ChartInterval>(savedInterval);
+  const setIv = (v: ChartInterval) => {
+    setIvState(v);
+    try {
+      localStorage.setItem(INTERVAL_KEY, v);
+    } catch {
+      /* storage unavailable */
+    }
+  };
   const [selected, setSelected] = useState<number | null>(null);
   const { data, isLoading, error } = useTaskChart(t.id, base, interval);
   const r = useMemo(() => replay(data?.fills ?? []), [data?.fills]);
@@ -249,12 +269,18 @@ function ChartCard({ t }: { t: TD }) {
         <TaskChart candles={data.candles} fills={r.fills} interval={data.interval} avg={r.avg} pos={r.pos} selected={selected} onSelect={setSelected} viewKey={`${cur}:${data.interval}`} height={typeof window !== "undefined" && window.innerWidth < 768 ? 300 : 420} />
         <div className="pointer-events-none absolute top-3 left-4 flex gap-4 text-xs text-muted-fg">
           <span className="flex items-center gap-1.5">
-            <span className="text-success">▲</span>
-            {tr("开 / 加仓", "Open / add")}
+            <span>
+              <span className="text-success">▲</span>
+              <span className="text-danger">▼</span>
+            </span>
+            {tr("开 / 平仓", "Open / close")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-danger">▼</span>
-            {tr("减 / 平仓", "Trim / close")}
+            <span className="text-[8px]">
+              <span className="text-success">●</span>
+              <span className="text-danger">●</span>
+            </span>
+            {tr("加 / 减仓（同一根 K 线合并）", "Add / trim (merged per bar)")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-4 border-t border-dashed border-[var(--chart-avg)]" />
