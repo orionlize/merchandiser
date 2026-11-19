@@ -11,6 +11,7 @@ import { onServerConfig, serverConfig, ServerError } from "./lib/server";
 import { applyTheme, useUi } from "./lib/store";
 import { Connections } from "./pages/Connections";
 import { Overview } from "./pages/Overview";
+import { Plaza } from "./pages/Plaza";
 import { Records } from "./pages/Records";
 import { Settings } from "./pages/Settings";
 import { Sources } from "./pages/Sources";
@@ -38,6 +39,13 @@ function Title() {
       return <>{route.id ? tr(`编辑「${t?.name ?? ""}」`, `Edit "${t?.name ?? ""}"`) : tr("新建跟单任务", "New copy task")}</>;
     case "sources":
       return <>{tr("信号源", "Sources")}</>;
+    case "plaza":
+      return (
+        <>
+          <span className="md:hidden">{tr("信号源", "Sources")}</span>
+          <span className="max-md:hidden">{tr("跟单员广场", "Trader plaza")}</span>
+        </>
+      );
     case "connections":
       return <>{tr("交易账户", "Accounts")}</>;
     case "records":
@@ -65,6 +73,8 @@ function Page() {
       return <Wizard key={route.id ?? "new"} />;
     case "sources":
       return <Sources />;
+    case "plaza":
+      return <Plaza />;
     case "connections":
       return <Connections />;
     case "records":

@@ -1,7 +1,7 @@
 // Typed wrappers over the server commands. Types mirror server/internal/api.
 import { call as invoke } from "./server";
 
-export type Platform = "okx" | "binance" | "gate" | "hyperliquid" | "paper";
+export type Platform = "hyperliquid" | "paper";
 
 export interface Permissions {
   read: boolean;
@@ -61,7 +61,6 @@ export interface ConnectionInput {
   testnet: boolean;
   api_key: string;
   secret: string;
-  passphrase?: string | null;
   proxy?: string | null;
   paper_initial?: string | null;
 }
@@ -88,7 +87,7 @@ export interface Connection {
 
 export interface Source {
   id: string;
-  kind: "api" | "hl_address" | "lead_trader";
+  kind: "api" | "hl_address";
   name: string;
   platform: Platform;
   connection_id: string | null;
@@ -97,51 +96,54 @@ export interface Source {
   created_at: number;
   connection_alias: string | null;
   task_count: number;
-  /** Public profile page (lead traders). */
-  url: string | null;
-  /** Lead traders: "fills" = positions reconstructed from public fills. */
-  lead_mode: "positions" | "fills" | null;
-  /** "fills" sources: how the trade history is read (null = "interval"). */
-  lead_poll: LeadPoll | null;
 }
 
-/** interval: read the trade history every 6 s; trigger: only when the trader's lastTradeTime moves. */
-export type LeadPoll = "interval" | "trigger";
+export type PlazaWindow = "7d" | "30d" | "all";
 
-/** One order from a Binance lead trader's public order history. */
-export interface LeadOrder {
-  time: number;
-  symbol: string;
-  buy: boolean;
-  pos_side: "LONG" | "SHORT" | "BOTH";
-  type: string;
-  qty: string;
-  avg_px: string;
-  pnl: string;
+export interface PlazaFactors {
+  dd: number;
+  hold: number;
+  stable: number;
+  size: number;
 }
 
-export interface LeadProbe {
-  platform: Platform;
-  id: string;
-  nickname: string;
-  positions_public: boolean;
-  fills_public: boolean;
-  last_fill_ms: number | null;
-  equity: string | null;
+export interface PlazaWallet {
+  address: string;
+  name: string | null;
+  equity: number;
+  perf: Partial<Record<PlazaWindow, { pnl: number; roi: number; vlm: number }>>;
+  analyzed: boolean;
+  error?: string;
+  scores: Partial<Record<PlazaWindow, { score: number; factors: PlazaFactors }>>;
+  max_dd: Partial<Record<PlazaWindow, number>>;
+  win_rate: number | null;
+  avg_hold_sec: number | null;
+  trades_per_day: number;
+  hft: boolean;
+  coins: string[];
+  curves: Partial<Record<PlazaWindow, [number, number][]>>;
+  favorite: boolean;
+  source_id: string | null;
+  task_id: string | null;
 }
 
-export interface LeadSummary {
-  platform: Platform;
-  id: string;
-  nickname: string;
-  avatar: string | null;
-  aum: string | null;
-  copiers: number | null;
-  max_copiers: number | null;
-  roi_pct: string | null;
-  pnl: string | null;
-  positions_public: boolean | null;
-  url: string | null;
+export interface PlazaList {
+  status: { updated_at: number; analyzed: number; total: number; error?: string };
+  wallets: PlazaWallet[];
+}
+
+export interface PlazaPosition {
+  coin: string;
+  size: number;
+  entry_px: number;
+  value: number;
+  upnl: number;
+  leverage: number;
+}
+
+export interface PlazaWalletDetail extends PlazaWallet {
+  positions: PlazaPosition[];
+  positions_error?: string;
 }
 
 export interface Position {
@@ -169,29 +171,12 @@ export interface OpenOrder {
   mirrored_to: number;
 }
 
-/** History rebuild of a "fills" lead trader. */
-export interface Backfill {
-  running: boolean;
-  /** Fills fetched so far / fills the venue lists. */
-  fetched: number;
-  total: number;
-  error: string | null;
-  finished_at: number | null;
-  /** Oldest fill counted, once finished. */
-  from: number | null;
-}
-
 export interface SourceDetail {
   equity: string;
   notional: string;
   positions: Position[];
   orders: OpenOrder[];
   ts: number;
-  /** Fill reconstruction progress ("fills" lead traders). */
-  fills: { anchor: number; last_fill_at: number | null; last_trade_at: number | null; applied: number; corrected: number; backfill: Backfill | null } | null;
-  /** Binance lead traders: newest public orders. */
-  lead_orders: LeadOrder[] | null;
-  lead_orders_error: string | null;
 }
 
 export type SizingMode = "equity_ratio" | "fixed_multiple" | "fixed_notional";
@@ -577,15 +562,12 @@ export const api = {
   deleteConnection: (id: string) => invoke<void>("delete_connection", { id }),
 
   sources: () => invoke<Source[]>("list_sources"),
-  addSource: (input: { kind: Source["kind"]; name: string; connection_id?: string | null; address?: string | null; testnet?: boolean; platform?: Platform | null; lead_mode?: "fills" | null; lead_poll?: LeadPoll | null }) => invoke<string>("add_source", { input }),
-  /** Switch how a "fills" lead source reads the trade history; applies to running tasks at once. */
-  setSourceLeadPoll: (args: { id: string; lead_poll: LeadPoll }) => invoke<void>("set_source_lead_poll", args),
-  probeLeadTrader: (platform: Platform, id: string) => invoke<LeadProbe>("probe_lead_trader", { platform, id }),
-  searchLeadTraders: (platform: Platform, query: string, page?: number) => invoke<LeadSummary[]>("search_lead_traders", { platform, query, page: page ?? null }),
+  addSource: (input: { kind: Source["kind"]; name: string; connection_id?: string | null; address?: string | null; testnet?: boolean }) => invoke<string>("add_source", { input }),
   deleteSource: (id: string) => invoke<void>("delete_source", { id }),
   sourceDetail: (id: string) => invoke<SourceDetail>("source_detail", { id }),
-  /** Rebuild a "fills" lead trader from its whole public trade history (runs in the background). */
-  backfillSource: (id: string) => invoke<void>("backfill_source", { id }),
+  plaza: () => invoke<PlazaList>("plaza_list"),
+  plazaWallet: (address: string) => invoke<PlazaWalletDetail>("plaza_wallet", { address }),
+  plazaFavorite: (address: string, on: boolean) => invoke<void>("plaza_favorite", { address, on }),
   paperTrade: (input: { connection_id: string; base: string; action: "open" | "close" | "cancel"; buy?: boolean; notional?: string | null; price?: string | null; leverage?: number | null; order_id?: string | null }) =>
     invoke<void>("paper_trade", { input }),
 

@@ -28,12 +28,4 @@ func TestSignalSource(t *testing.T) {
 	if s := signalSource(prev, cur, "BTC"); *s.SrcPx != "120" {
 		t.Fatalf("reduce: %s", *s.SrcPx)
 	}
-	// With fill totals: VWAP, last fill time and realised PnL of the gap.
-	prev.Trades = map[string]model.TradeCum{"BTC": {Qty: d("1"), Notional: d("100"), LastTs: 1}}
-	cur = &model.AccountSnapshot{Equity: d("1000"), Positions: pos("0", "", ""),
-		Trades: map[string]model.TradeCum{"BTC": {Qty: d("2"), Notional: d("212"), Realized: d("12"), LastTs: 99}}}
-	s = signalSource(prev, cur, "BTC")
-	if *s.SrcPx != "112" || *s.SrcBasis != "fills" || *s.SrcTs != 99 || *s.SrcRealized != "12" {
-		t.Fatalf("fills: %+v", s)
-	}
 }

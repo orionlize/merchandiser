@@ -1,10 +1,12 @@
 import { create } from "zustand";
 
-export type Page = "overview" | "tasks" | "task" | "wizard" | "sources" | "connections" | "records" | "settings";
+export type Page = "overview" | "tasks" | "task" | "wizard" | "sources" | "plaza" | "connections" | "records" | "settings";
 
 export interface Route {
   page: Page;
   id?: string;
+  /** Wizard: preselected source id. */
+  src?: string;
 }
 
 interface UiState {
@@ -12,7 +14,7 @@ interface UiState {
   lang: "zh" | "en";
   theme: "dark" | "light" | "system";
   toasts: { id: number; kind: "ok" | "error" | "info"; text: string }[];
-  go: (page: Page, id?: string) => void;
+  go: (page: Page, id?: string, src?: string) => void;
   setLang: (l: "zh" | "en") => void;
   setTheme: (t: "dark" | "light" | "system") => void;
   toast: (text: string, kind?: "ok" | "error" | "info") => void;
@@ -26,7 +28,7 @@ export const useUi = create<UiState>((set) => ({
   lang: "zh",
   theme: "dark",
   toasts: [],
-  go: (page, id) => set({ route: { page, id } }),
+  go: (page, id, src) => set({ route: { page, id, src } }),
   setLang: (lang) => set({ lang }),
   setTheme: (theme) => set({ theme }),
   toast: (text, kind = "ok") => {

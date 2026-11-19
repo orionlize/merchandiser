@@ -69,17 +69,12 @@ type ConnectionInput struct {
 	Testnet      bool    `json:"testnet"`
 	APIKey       string  `json:"api_key"`
 	Secret       string  `json:"secret"`
-	Passphrase   *string `json:"passphrase"`
 	Proxy        *string `json:"proxy"`
 	PaperInitial *string `json:"paper_initial"`
 }
 
 func (i *ConnectionInput) creds() model.Credentials {
-	c := model.Credentials{APIKey: strings.TrimSpace(i.APIKey), Secret: strings.TrimSpace(i.Secret)}
-	if i.Passphrase != nil {
-		c.Passphrase = util.Ptr(strings.TrimSpace(*i.Passphrase))
-	}
-	return c
+	return model.Credentials{APIKey: strings.TrimSpace(i.APIKey), Secret: strings.TrimSpace(i.Secret)}
 }
 
 type Check struct {
@@ -160,9 +155,6 @@ func validate(ctx context.Context, s *Server, in *ConnectionInput) ValidationDto
 	}
 	if p.Withdraw != nil && *p.Withdraw {
 		checks = append(checks, check("error", "该 Key 开启了提币权限。跟单只需合约交易权限，请到交易所关闭提币并绑定 IP 白名单"))
-	}
-	if p.IPRestricted != nil && !*p.IPRestricted && platform != model.Hyperliquid && platform != model.Paper {
-		checks = append(checks, check("warn", "未绑定 IP 白名单，建议绑定"))
 	}
 	if p.Note != nil {
 		checks = append(checks, check("info", *p.Note))
@@ -417,7 +409,7 @@ func switchOneWay(ctx context.Context, s *Server, body []byte) (any, error) {
 	case a.Input != nil:
 		i := a.Input
 		row := &store.ConnectionRow{ID: "__tmp__", Platform: i.Platform, Alias: i.Alias, Testnet: i.Testnet, Proxy: i.Proxy}
-		c := model.Credentials{APIKey: i.APIKey, Secret: i.Secret, Passphrase: i.Passphrase}
+		c := i.creds()
 		ex, err = s.E.BuildAdapter(ctx, row, &c)
 	default:
 		return nil, errs.Msg("缺少参数")

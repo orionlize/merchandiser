@@ -34,7 +34,14 @@ export function maxDrawdown(points: [number, number][]) {
 }
 
 /** Cumulative PnL as a baseline area: green above zero, red below; the worst drawdown is marked. */
-export function PnlCurveChart({ points, height = 260 }: { points: [number, number][]; height?: number }) {
+/** 139282626 → "139.3M" (axis labels for large curves). */
+function compactNum(v: number) {
+  const a = Math.abs(v);
+  const s = a >= 1e9 ? `${(a / 1e9).toFixed(1)}B` : a >= 1e6 ? `${(a / 1e6).toFixed(1)}M` : a >= 1e3 ? `${(a / 1e3).toFixed(1)}K` : a.toFixed(0);
+  return (v < 0 ? "−" : "") + s;
+}
+
+export function PnlCurveChart({ points, height = 260, compact = false }: { points: [number, number][]; height?: number; compact?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
   const series = useRef<ISeriesApi<"Baseline"> | null>(null);
@@ -50,6 +57,7 @@ export function PnlCurveChart({ points, height = 260 }: { points: [number, numbe
       crosshair: { mode: CrosshairMode.Magnet },
       handleScroll: false,
       handleScale: false,
+      ...(compact ? { localization: { priceFormatter: compactNum } } : {}),
     });
     const s = c.addSeries(BaselineSeries, { baseValue: { type: "price", price: 0 }, lineWidth: 2, priceLineVisible: false, priceFormat: { type: "price", precision: 2, minMove: 0.01 } });
     chart.current = c;

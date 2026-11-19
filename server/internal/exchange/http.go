@@ -211,19 +211,6 @@ func SendJSON(c *http.Client, p model.Platform, req *http.Request) (util.J, erro
 	return v, nil
 }
 
-// enc percent-encodes like the urlencoding crate (spaces as %20).
-func enc(s string) string { return strings.ReplaceAll(url.QueryEscape(s), "+", "%20") }
-
-type kv struct{ k, v string }
-
-func buildQS(q []kv) string {
-	parts := make([]string, len(q))
-	for i, x := range q {
-		parts[i] = x.k + "=" + enc(x.v)
-	}
-	return strings.Join(parts, "&")
-}
-
 func newReq(ctx context.Context, method, u, body string) (*http.Request, error) {
 	var r io.Reader
 	if body != "" {

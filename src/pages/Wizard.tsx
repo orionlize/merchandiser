@@ -2,8 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { AlertTriangle, Check, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { hasLeadPoll, LeadPollSwitch, leadPollOf } from "../components/LeadPoll";
-import { Button, Checkbox, Confirm, Field, Input, Loading, NumInput, PlatformTag, Radio, Seg, Spinner, Toggle } from "../components/ui";
+import { Button, Checkbox, Field, Input, Loading, NumInput, PlatformTag, Radio, Seg, Spinner, Toggle } from "../components/ui";
 import { api, errMsg, type FollowerSpec, type Risk, type Rules } from "../lib/api";
 import { num, shortAddr } from "../lib/format";
 import { useTr } from "../lib/i18n";
@@ -47,8 +46,9 @@ export function Wizard() {
   const { data: existing, isLoading: loadingTask } = useTask(editId);
   const { data: sources } = useSources();
   const { data: conns } = useConnections();
-  const [step, setStep] = useState<Step>(0);
-  const [sourceId, setSourceId] = useState<string>("");
+  // Coming from the plaza the source is already chosen.
+  const [step, setStep] = useState<Step>(route.src ? 1 : 0);
+  const [sourceId, setSourceId] = useState<string>(route.src ?? "");
   const [followers, setFollowers] = useState<FollowerSpec[]>([]);
   const [rules, setRules] = useState<Rules>(DEFAULT_RULES);
   const [risk, setRisk] = useState<Risk>(DEFAULT_RISK);
@@ -70,13 +70,7 @@ export function Wizard() {
   }, [existing, loaded]);
 
   const source = sources?.find((s) => s.id === sourceId);
-  // OKX lead traders publish no equity, and hidden Binance traders report one
-  // that does not match their positions: equity-ratio sizing is unavailable.
-  const noSourceEquity = source?.kind === "lead_trader" && (source.platform === "okx" || source.lead_mode === "fills");
-  useEffect(() => {
-    if (noSourceEquity && rules.sizing.mode === "equity_ratio") setRules((r) => ({ ...r, sizing: { ...r.sizing, mode: "fixed_multiple" } }));
-  }, [noSourceEquity, rules.sizing.mode]);
-  const eligible = (conns ?? []).filter((c) => c.id !== source?.connection_id && (c.platform === "paper" || c.perms?.trade));
+  const eligible = (conns ?? []).filter((c) => c.id !== source?.connection_id && (c.platform === "paper" || (c.platform === "hyperliquid" && c.perms?.trade)));
 
   useEffect(() => {
     if (!editId && source && !name) setName(source.kind === "hl_address" ? `${source.name}` : `${source.name} 跟单`);
@@ -99,11 +93,7 @@ export function Wizard() {
   const steps = [tr("信号源", "Source"), tr("跟单账户", "Followers"), tr("设规则", "Rules"), tr("风控", "Risk"), tr("确认", "Confirm")];
   const nextLabel = step < 4 ? tr(`下一步：${steps[step + 1]}`, `Next: ${steps[step + 1]}`) : editId ? tr("保存修改", "Save changes") : startNow ? tr("创建并启动", "Create and start") : tr("创建任务", "Create task");
 
-  // Hidden-position lead traders need an explicit second confirmation.
-  const [confirmFills, setConfirmFills] = useState(false);
-  const fillsSource = source?.kind === "lead_trader" && source.lead_mode === "fills";
   const submit = async () => {
-    setConfirmFills(false);
     setBusy(true);
     try {
       if (editId) {
@@ -128,24 +118,6 @@ export function Wizard() {
 
   return (
     <div className="flex h-full flex-col">
-      <Confirm
-        open={confirmFills}
-        onClose={() => setConfirmFills(false)}
-        title={tr("确认跟随未公开持仓的带单员？", "Follow a trader with hidden positions?")}
-        confirmLabel={startNow ? tr("确认跟单并启动", "Follow and start") : tr("确认创建", "Create")}
-        busy={busy}
-        onConfirm={submit}
-        body={
-          <div className="flex flex-col gap-2 text-sm">
-            <p>{tr(`信号源「${source?.name ?? ""}」没有公开持仓，任务将按他公开的成交记录推算仓位跟单：`, `Source "${source?.name ?? ""}" hides positions; this task follows positions reconstructed from public fills:`)}</p>
-            <ul className="list-disc pl-5 text-muted-fg">
-              <li>{tr("比带单员晚约 2 分钟，成交价会与他不同；超过「单笔最大滑点」的开仓会被跳过。", "About 2 minutes behind; fill prices will differ. Opens beyond the max slippage are skipped.")}</li>
-              <li>{tr("只跟信号源添加之后新开的仓位；杠杆未知，「跟随信号源杠杆」改用固定值。", "Only positions opened after the source was added; leverage is unknown, so the fixed value is used.")}</li>
-              <li>{tr("推算可能与真实持仓不同，请控制跟单规模。", "The reconstruction may differ from the real positions; size accordingly.")}</li>
-            </ul>
-          </div>
-        }
-      />
       {/* Stepper */}
       <div className="flex h-[52px] shrink-0 items-center gap-4 overflow-x-auto border-b border-border px-4 md:px-6">
         {steps.map((s, i) => (
@@ -171,7 +143,7 @@ export function Wizard() {
           ) : step === 1 ? (
             <FollowerStep eligible={eligible} followers={followers} setFollowers={setFollowers} />
           ) : step === 2 ? (
-            <RulesStep rules={rules} setRules={setRules} kInvalid={kInvalid} nInvalid={nInvalid} supportsMirror={source?.kind !== "lead_trader"} noSourceEquity={noSourceEquity} />
+            <RulesStep rules={rules} setRules={setRules} kInvalid={kInvalid} nInvalid={nInvalid} />
           ) : step === 3 ? (
             <RiskStep risk={risk} setRisk={setRisk} rules={rules} setRules={setRules} />
           ) : (
@@ -189,7 +161,7 @@ export function Wizard() {
           <Button disabled={step === 0} onClick={() => setStep((s) => (s - 1) as Step)}>
             {tr("上一步", "Back")}
           </Button>
-          <Button variant="primary" disabled={!canNext} loading={busy} onClick={() => (step < 4 ? setStep((s) => (s + 1) as Step) : !editId && fillsSource ? setConfirmFills(true) : submit())}>
+          <Button variant="primary" disabled={!canNext} loading={busy} onClick={() => (step < 4 ? setStep((s) => (s + 1) as Step) : submit())}>
             {nextLabel}
           </Button>
         </div>
@@ -210,7 +182,9 @@ function H({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
 function SourceStep({ sourceId, setSourceId, disabled }: { sourceId: string; setSourceId: (s: string) => void; disabled: boolean }) {
   const tr = useTr();
   const { go } = useUi();
-  const { data: sources } = useSources();
+  const { data: all } = useSources();
+  // Sources left over from removed venues cannot be followed.
+  const sources = all?.filter((s) => (s.kind === "hl_address" || s.kind === "api") && (s.platform === "hyperliquid" || s.platform === "paper"));
   return (
     <div className="max-w-[640px]">
       <H hint={tr("选择要跟随的对象。添加新的信号源请到「信号源」页。", "Choose who to follow. Add new sources on the Sources page.")}>{tr("选择信号源", "Choose a source")}</H>
@@ -233,7 +207,7 @@ function SourceStep({ sourceId, setSourceId, disabled }: { sourceId: string; set
               <PlatformTag platform={s.platform} testnet={s.testnet} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold">{s.name}</div>
-                <div className="num mt-0.5 truncate text-xs text-muted-fg">{s.kind === "hl_address" ? s.address : s.kind === "lead_trader" ? `${tr("带单员", "Lead trader")} · ${s.address}${s.lead_mode === "fills" ? tr(" · 成交推算（晚约 2 分钟）", " · from fills (~2 min behind)") + (leadPollOf(s) === "trigger" ? tr(" · 动作触发", " · on activity") : "") : ""}` : s.platform === "paper" ? `${tr("模拟账户", "Paper account")} · ${s.connection_alias}` : `${tr("只读 API", "Read-only API")} · ${s.connection_alias}`}</div>
+                <div className="num mt-0.5 truncate text-xs text-muted-fg">{s.kind === "hl_address" ? s.address : s.platform === "paper" ? `${tr("模拟账户", "Paper account")} · ${s.connection_alias}` : `${tr("只读 API", "Read-only API")} · ${s.connection_alias}`}</div>
               </div>
               <span className="text-xs text-muted-fg">{s.task_count ? tr(`${s.task_count} 个任务`, `${s.task_count} tasks`) : ""}</span>
             </button>
@@ -241,15 +215,6 @@ function SourceStep({ sourceId, setSourceId, disabled }: { sourceId: string; set
         </div>
       )}
       {disabled ? <p className="mt-3 text-xs text-muted-fg">{tr("已有任务不能更换信号源；如需更换请新建任务。", "A task's source cannot change; create a new task instead.")}</p> : null}
-      {(() => {
-        const sel = sources?.find((x) => x.id === sourceId);
-        return hasLeadPoll(sel) ? (
-          <div className="mt-4 rounded-lg border border-border px-4 py-3">
-            <LeadPollSwitch source={sel} />
-            <p className="mt-1.5 text-xs text-muted-fg">{tr("设置属于信号源：使用它的所有任务一起生效，任务运行中也能在任务详情里切换。", "This belongs to the source: every task using it follows the switch, and you can change it from the task page while it runs.")}</p>
-          </div>
-        ) : null;
-      })()}
     </div>
   );
 }
@@ -290,7 +255,7 @@ function FollowerStep({ eligible, followers, setFollowers }: { eligible: ReturnT
   );
 }
 
-function RulesStep({ rules, setRules, kInvalid, nInvalid, supportsMirror, noSourceEquity }: { rules: Rules; setRules: (r: Rules) => void; kInvalid: boolean; nInvalid: boolean; supportsMirror: boolean; noSourceEquity: boolean }) {
+function RulesStep({ rules, setRules, kInvalid, nInvalid }: { rules: Rules; setRules: (r: Rules) => void; kInvalid: boolean; nInvalid: boolean }) {
   const tr = useTr();
   const [newSym, setNewSym] = useState("");
   const [adding, setAdding] = useState(false);
@@ -308,8 +273,6 @@ function RulesStep({ rules, setRules, kInvalid, nInvalid, supportsMirror, noSour
           {modes.map((m) => (
             <button
               key={m.v}
-              disabled={noSourceEquity && m.v === "equity_ratio"}
-              title={noSourceEquity && m.v === "equity_ratio" ? tr("信号源权益未知", "Source equity unknown") : undefined}
               onClick={() => set({ sizing: { ...rules.sizing, mode: m.v } })}
               className={clsx("rounded-md border px-3 py-2.5 text-left transition-[border-color,background-color,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-40", rules.sizing.mode === m.v ? "border-fg bg-muted" : "border-border hover:bg-muted/50")}
             >
@@ -330,7 +293,6 @@ function RulesStep({ rules, setRules, kInvalid, nInvalid, supportsMirror, noSour
           )}
         </div>
         <p className="mt-2 text-xs text-muted-fg">{tr("每个跟单账户可在确认页单独覆盖。", "Each follower can override this on the confirm step.")}</p>
-        {noSourceEquity ? <p className="mt-1 text-xs text-muted-fg">{tr("OKX 带单员不公开自身权益，隐藏持仓的币安带单员公布的权益与持仓对不上，「按权益比例」不可用。固定倍数按带单员的币数乘以 k。", "OKX lead traders do not publish equity, and hidden Binance traders report an equity that does not match their positions, so equity ratio is unavailable. Fixed multiple uses the trader's coin size × k.")}</p> : null}
       </section>
 
       <section className="grid grid-cols-2 gap-8">
@@ -352,11 +314,7 @@ function RulesStep({ rules, setRules, kInvalid, nInvalid, supportsMirror, noSour
         </div>
         <div>
           <H>{tr("挂单镜像", "Order mirroring")}</H>
-          {supportsMirror ? (
-            <Toggle checked={rules.mirror.enabled} onChange={(v) => set({ mirror: { ...rules.mirror, enabled: v } })} label={tr("同步限价单与止盈止损", "Mirror limit and TP/SL orders")} />
-          ) : (
-            <span className="text-sm text-muted-fg">{tr("该信号源不公开挂单，只做仓位跟随", "Source does not expose orders")}</span>
-          )}
+          <Toggle checked={rules.mirror.enabled} onChange={(v) => set({ mirror: { ...rules.mirror, enabled: v } })} label={tr("同步限价单与止盈止损", "Mirror limit and TP/SL orders")} />
         </div>
       </section>
 

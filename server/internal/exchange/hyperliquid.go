@@ -139,6 +139,17 @@ func (h *Hyperliquid) info(ctx context.Context, body map[string]any, weight floa
 	return SendJSON(h.client, model.Hyperliquid, req)
 }
 
+// PublicInfo is a public /info request; `extra` is acquired from the caller's own
+// budget first (plaza crawling must not starve trading).
+func (h *Hyperliquid) PublicInfo(ctx context.Context, body map[string]any, weight float64, extra *TokenBucket) (util.J, error) {
+	if extra != nil {
+		if err := extra.Acquire(ctx, weight, false); err != nil {
+			return util.J{}, err
+		}
+	}
+	return h.info(ctx, body, weight)
+}
+
 func (h *Hyperliquid) exchange(ctx context.Context, action OMap, high bool) (util.J, error) {
 	if h.agent == nil {
 		return util.J{}, errs.Msg("该信号源为只读地址，不能下单")

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ChevronLeft, Copy, LayoutGrid, Link2, List, Lock, MoreHorizontal, OctagonX, Radio as RadioIcon, SlidersHorizontal, Wallet, Workflow } from "lucide-react";
+import { ChevronLeft, Copy, LayoutGrid, Link2, List, Lock, MoreHorizontal, OctagonX, Radio as RadioIcon, SlidersHorizontal, Trophy, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { api } from "../lib/api";
 import { platformLabel, pnlClass, signed } from "../lib/format";
@@ -11,6 +11,7 @@ import { Dot } from "./ui";
 const NAV: { page: Page; icon: typeof LayoutGrid; zh: string; en: string; match: Page[] }[] = [
   { page: "overview", icon: LayoutGrid, zh: "总览", en: "Overview", match: ["overview"] },
   { page: "tasks", icon: Copy, zh: "跟单任务", en: "Copy tasks", match: ["tasks", "task", "wizard"] },
+  { page: "plaza", icon: Trophy, zh: "跟单员广场", en: "Trader plaza", match: ["plaza"] },
   { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources"] },
   { page: "connections", icon: Link2, zh: "交易账户", en: "Accounts", match: ["connections"] },
   { page: "records", icon: List, zh: "成交与盈亏", en: "Fills & PnL", match: ["records"] },
@@ -78,7 +79,7 @@ function TodayCard() {
 const TABS: { page: Page; icon: typeof LayoutGrid; zh: string; en: string; match: Page[] }[] = [
   { page: "overview", icon: LayoutGrid, zh: "总览", en: "Home", match: ["overview"] },
   { page: "tasks", icon: Copy, zh: "任务", en: "Tasks", match: ["tasks", "task", "wizard"] },
-  { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources"] },
+  { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources", "plaza"] },
   { page: "connections", icon: Wallet, zh: "账户", en: "Accounts", match: ["connections"] },
   { page: "settings", icon: MoreHorizontal, zh: "更多", en: "More", match: ["settings", "records"] },
 ];
@@ -132,7 +133,7 @@ export function TopBar({ title }: { title: ReactNode }) {
           return (
             <span key={p.platform} className="flex items-center gap-1.5 max-lg:hidden" title={p.last_error ?? undefined}>
               <Dot color={color} />
-              <span className="text-xs">{platformLabel[p.platform][lang === "en" ? 1 : 0]}</span>
+              <span className="text-xs">{platformLabel(p.platform, lang === "en")}</span>
               <span className={clsx("num text-xs", slow || stale ? "text-warning" : "text-muted-fg")}>{p.latency_ms != null ? `${p.latency_ms}ms` : "—"}</span>
             </span>
           );

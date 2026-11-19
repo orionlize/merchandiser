@@ -13,18 +13,15 @@ import (
 type Platform string
 
 const (
-	Okx         Platform = "okx"
-	Binance     Platform = "binance"
-	Gate        Platform = "gate"
 	Hyperliquid Platform = "hyperliquid"
 	Paper       Platform = "paper"
 )
 
-var LivePlatforms = []Platform{Okx, Binance, Gate, Hyperliquid}
+var LivePlatforms = []Platform{Hyperliquid}
 
 func ParsePlatform(s string) (Platform, bool) {
 	switch Platform(s) {
-	case Okx, Binance, Gate, Hyperliquid, Paper:
+	case Hyperliquid, Paper:
 		return Platform(s), true
 	}
 	return "", false
@@ -32,12 +29,6 @@ func ParsePlatform(s string) (Platform, bool) {
 
 func (p Platform) Label() string {
 	switch p {
-	case Okx:
-		return "OKX"
-	case Binance:
-		return "币安"
-	case Gate:
-		return "Gate"
 	case Hyperliquid:
 		return "Hyperliquid"
 	case Paper:
@@ -46,19 +37,11 @@ func (p Platform) Label() string {
 	return string(p)
 }
 
-// Credentials: for Hyperliquid `api_key` is the main account address and
-// `secret` is the API (agent) wallet private key.
+// Credentials: `api_key` is the main account address and `secret` is the
+// API (agent) wallet private key.
 type Credentials struct {
-	APIKey     string  `json:"api_key"`
-	Secret     string  `json:"secret"`
-	Passphrase *string `json:"passphrase"`
-}
-
-func (c Credentials) Pass() string {
-	if c.Passphrase == nil {
-		return ""
-	}
-	return *c.Passphrase
+	APIKey string `json:"api_key"`
+	Secret string `json:"secret"`
 }
 
 type ContractSpec struct {
@@ -149,19 +132,6 @@ type AccountSnapshot struct {
 	Positions []Position      `json:"positions"`
 	Orders    []OpenOrder     `json:"orders"`
 	Ts        int64           `json:"ts"`
-	// Running totals of the account's own fills per coin, when the source
-	// exposes them (lead traders followed by fills). Two snapshots' totals
-	// differ by exactly the fills in between: their VWAP, last fill time and
-	// realised PnL. Nil when unknown.
-	Trades map[string]TradeCum `json:"-"`
-}
-
-// TradeCum accumulates fills: Qty in coins (absolute), Notional in quote.
-type TradeCum struct {
-	Qty      decimal.Decimal `json:"qty"`
-	Notional decimal.Decimal `json:"notional"`
-	Realized decimal.Decimal `json:"realized"`
-	LastTs   int64           `json:"last_ts"`
 }
 
 func (a *AccountSnapshot) Position(base string) decimal.Decimal {

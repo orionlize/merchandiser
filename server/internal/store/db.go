@@ -145,17 +145,13 @@ type SourceRow struct {
 	Address      *string `json:"address"`
 	Testnet      bool    `json:"testnet"`
 	CreatedAt    int64   `json:"created_at"`
-	// Lead traders: 'fills' = positions reconstructed from public fills.
-	LeadMode *string `json:"lead_mode"`
-	// 'fills' sources: NULL/'interval' or 'trigger' (see exchange.fillBook).
-	LeadPoll *string `json:"lead_poll"`
 }
 
-const sourceCols = "id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode, lead_poll"
+const sourceCols = "id, kind, name, platform, connection_id, address, testnet, created_at"
 
 func scanSource(s interface{ Scan(...any) error }) (SourceRow, error) {
 	var r SourceRow
-	err := s.Scan(&r.ID, &r.Kind, &r.Name, &r.Platform, &r.ConnectionID, &r.Address, &r.Testnet, &r.CreatedAt, &r.LeadMode, &r.LeadPoll)
+	err := s.Scan(&r.ID, &r.Kind, &r.Name, &r.Platform, &r.ConnectionID, &r.Address, &r.Testnet, &r.CreatedAt)
 	return r, err
 }
 
@@ -164,21 +160,6 @@ func (s *SourceRow) Addr() string {
 		return ""
 	}
 	return *s.Address
-}
-
-func (s *SourceRow) IsFills() bool { return s.LeadMode != nil && *s.LeadMode == "fills" }
-
-func (s *SourceRow) IsTrigger() bool { return s.LeadPoll != nil && *s.LeadPoll == "trigger" }
-
-// ValidLeadPoll reports whether v is a known lead_poll value.
-func ValidLeadPoll(v string) bool { return v == "interval" || v == "trigger" }
-
-// HidesEquity: the source's equity is unknown, so equity-ratio sizing cannot
-// work. OKX lead traders do not publish it; Binance traders who hide their
-// positions report a `marginBalance` that does not match their positions
-// (measured: 500 USDT against a 380k USDT 1× position).
-func (s *SourceRow) HidesEquity() bool {
-	return s.Kind == "lead_trader" && (s.Platform == "okx" || s.IsFills())
 }
 
 type TaskRow struct {

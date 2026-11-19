@@ -1,7 +1,6 @@
 import clsx from "clsx";
 import { Download, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { hasLeadPoll, LeadPollSwitch } from "../components/LeadPoll";
 import { PositionsTable } from "../components/Positions";
 import { fillLabel, TaskChart } from "../components/TaskChart";
 import { Button, Drawer, Empty, Loading, Modal, Radio, Seg, SideTag, Tabs } from "../components/ui";
@@ -9,7 +8,7 @@ import { api, errMsg, type ChartInterval, type LogFilter, type CompareRow, type 
 import { downloadText } from "../lib/files";
 import { ago, date, num, pnlClass, price, qty, signed, time } from "../lib/format";
 import { trNow, useTr } from "../lib/i18n";
-import { useAction, useSources, useTask, useTaskChart } from "../lib/queries";
+import { useAction, useTask, useTaskChart } from "../lib/queries";
 import { replay, type ReplayedFill } from "../lib/replay";
 import { useUi } from "../lib/store";
 import { sourceLabel } from "./Overview";
@@ -19,7 +18,6 @@ export function TaskDetail() {
   const tr = useTr();
   const { route, go } = useUi();
   const { data: t, isLoading } = useTask(route.id);
-  const { data: sources } = useSources();
   const [tab, setTab] = useState<"hold" | "pos" | "mirror" | "log">("hold");
   const [stopping, setStopping] = useState(false);
   const [rules, setRules] = useState(false);
@@ -73,15 +71,6 @@ export function TaskDetail() {
         </div>
         {t.pause_reason && t.status === "paused" ? <div className="mt-2 text-xs text-warning">{t.pause_reason}</div> : null}
         {live?.last_error ? <div className="mt-2 text-xs text-danger">{live.last_error}</div> : null}
-        {(() => {
-          const src = sources?.find((x) => x.id === t.source_id);
-          return hasLeadPoll(src) ? (
-            <div className="mt-3">
-              <LeadPollSwitch source={src} showHint={false} />
-            </div>
-          ) : null;
-        })()}
-
         <PnlHero t={t} />
         <ChartCard t={t} />
 
@@ -758,8 +747,8 @@ function AuditExportDialog({ task, onClose }: { task: TaskSummary; onClose: () =
       </dl>
       <p className="mt-4 text-xs text-muted-fg">
         {tr(
-          "非公开带单员按其成交记录计算，时间与价格为源的真实成交；其他信号源按持仓变化推算，减仓价取检测时标记价。我方持仓按本任务成交回放，不含任务启动前已有的仓位。升级前产生的信号没有源价格。",
-          "Private lead traders use their own fills, so source time and price are exact; other sources are inferred from position changes, with reduces priced at the mark when detected. Our side is replayed from this task's fills and excludes positions held before it started. Signals recorded before this update have no source price.",
+          "源价格按持仓变化推算，减仓价取检测时标记价。我方持仓按本任务成交回放，不含任务启动前已有的仓位。升级前产生的信号没有源价格。",
+          "Source prices are inferred from position changes, with reduces priced at the mark when detected. Our side is replayed from this task's fills and excludes positions held before it started. Signals recorded before this update have no source price.",
         )}
       </p>
     </Modal>

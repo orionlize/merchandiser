@@ -49,31 +49,6 @@ func validateRules(r *engine.Rules) error {
 	return nil
 }
 
-// checkSourceSizing: sources with unknown equity cannot use equity-ratio sizing.
-func checkSourceSizing(ctx context.Context, s *Server, sourceID string, rules *engine.Rules, followers []FollowerSpec) error {
-	src, err := store.Source(ctx, s.E.DB, sourceID)
-	if err != nil || src == nil {
-		return err
-	}
-	if !src.HidesEquity() {
-		return nil
-	}
-	bad := rules != nil && rules.Sizing.Mode == engine.EquityRatio
-	for _, f := range followers {
-		if f.Overrides != nil && f.Overrides.Sizing != nil && f.Overrides.Sizing.Mode == engine.EquityRatio {
-			bad = true
-		}
-	}
-	if bad {
-		who := "OKX 带单员不公开权益"
-		if src.IsFills() {
-			who = "隐藏持仓的币安带单员权益不可信"
-		}
-		return errs.Msg("%s，不能按权益比例跟单，请改用固定倍数或固定名义金额", who)
-	}
-	return nil
-}
-
 func overrideJSON(o *engine.FollowerOverride) (*string, error) {
 	if o == nil {
 		return nil, nil
@@ -109,9 +84,6 @@ func createTask(ctx context.Context, s *Server, body []byte) (any, error) {
 	}
 	if src == nil {
 		return nil, errs.Msg("信号源不存在")
-	}
-	if err := checkSourceSizing(ctx, s, in.SourceID, &in.Rules, in.Followers); err != nil {
-		return nil, err
 	}
 	for _, f := range in.Followers {
 		if src.ConnectionID != nil && *src.ConnectionID == f.ConnectionID {
@@ -170,29 +142,6 @@ func updateTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		return nil, err
 	}
 	u, id, db := a.Update, a.ID, s.E.DB
-	if u.Rules != nil || u.Followers != nil {
-		t, err := store.Task(ctx, db, id)
-		if err != nil {
-			return nil, err
-		}
-		if t == nil {
-			return nil, errs.Msg("任务不存在")
-		}
-		rules := u.Rules
-		if rules == nil {
-			rules = &engine.Rules{}
-			if err := json.Unmarshal([]byte(t.RulesJSON), rules); err != nil {
-				return nil, err
-			}
-		}
-		var fs []FollowerSpec
-		if u.Followers != nil {
-			fs = *u.Followers
-		}
-		if err := checkSourceSizing(ctx, s, t.SourceID, rules, fs); err != nil {
-			return nil, err
-		}
-	}
 	if u.Name != nil {
 		if _, err := db.ExecContext(ctx, "UPDATE tasks SET name=? WHERE id=?", strings.TrimSpace(*u.Name), id); err != nil {
 			return nil, err
