@@ -59,6 +59,8 @@ type rawPos struct {
 type rawSnap struct {
 	equity    decimal.Decimal
 	positions []rawPos
+	// Symbol → fill totals (fills mode only).
+	trades map[string]model.TradeCum
 }
 
 type cachedRaw struct {
@@ -553,7 +555,11 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 		}
 		positions = append(positions, rawPos{symbol: p.Symbol, units: p.Qty, entry: p.Entry, mark: mark, upnl: mark.Sub(p.Entry).Mul(p.Qty)})
 	}
-	raw := rawSnap{equity: equity, positions: positions}
+	trades := make(map[string]model.TradeCum, len(st.Cum))
+	for sym, c := range st.Cum {
+		trades[sym] = *c
+	}
+	raw := rawSnap{equity: equity, positions: positions, trades: trades}
 	b.cached = &cachedRaw{time.Now(), raw}
 	return raw, nil
 }
@@ -621,6 +627,29 @@ func leadResolve(r *rawPos, m *Markets) (string, decimal.Decimal, decimal.Decima
 	return base, mult, mult, true
 }
 
+// leadTrades converts per-symbol fill totals to coins and per-coin prices,
+// keyed by base.
+func leadTrades(raw *rawSnap, m *Markets) map[string]model.TradeCum {
+	if raw.trades == nil {
+		return nil
+	}
+	out := map[string]model.TradeCum{}
+	for sym, c := range raw.trades {
+		base, perUnit, _, ok := leadResolve(&rawPos{symbol: sym}, m)
+		if !ok {
+			continue
+		}
+		// Notional is units × venue price = quote, unchanged by unit conversion.
+		a := out[base]
+		a.Qty = a.Qty.Add(c.Qty.Mul(perUnit))
+		a.Notional = a.Notional.Add(c.Notional)
+		a.Realized = a.Realized.Add(c.Realized)
+		a.LastTs = max(a.LastTs, c.LastTs)
+		out[base] = a
+	}
+	return out
+}
+
 // leadAggregate merges sub-positions / hedge legs into one net position per coin.
 func leadAggregate(raw *rawSnap, m *Markets) []model.Position {
 	type acc struct {
@@ -686,7 +715,7 @@ func (l *LeadTrader) Snapshot(ctx context.Context, m *Markets, _ bool) (*model.A
 	if err != nil {
 		return nil, err
 	}
-	return &model.AccountSnapshot{Equity: raw.equity, Positions: leadAggregate(&raw, m), Orders: []model.OpenOrder{}, Ts: util.NowMs()}, nil
+	return &model.AccountSnapshot{Equity: raw.equity, Positions: leadAggregate(&raw, m), Orders: []model.OpenOrder{}, Ts: util.NowMs(), Trades: leadTrades(&raw, m)}, nil
 }
 
 func (l *LeadTrader) BBO(ctx context.Context, spec *model.ContractSpec) (decimal.Decimal, decimal.Decimal, error) {
