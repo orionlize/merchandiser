@@ -22,6 +22,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
+	"merchandiser/server/internal/model"
 	"merchandiser/server/internal/util"
 )
 
@@ -89,6 +90,8 @@ type FillState struct {
 	LastPx     map[string]decimal.Decimal `json:"last_px"`
 	LastFillAt *int64                     `json:"last_fill_at"`
 	Applied    uint64                     `json:"applied"`
+	// Symbol → running totals of applied fills (venue units / venue price).
+	Cum map[string]*model.TradeCum `json:"cum"`
 	// Legs zeroed because the position history says they were closed.
 	Corrected uint64 `json:"corrected"`
 }
@@ -108,6 +111,9 @@ func (s *FillState) init() {
 	}
 	if s.LastPx == nil {
 		s.LastPx = map[string]decimal.Decimal{}
+	}
+	if s.Cum == nil {
+		s.Cum = map[string]*model.TradeCum{}
 	}
 }
 
@@ -168,6 +174,17 @@ func (s *FillState) apply(f *Fill) {
 		s.LastFillAt = &t
 	}
 	s.Applied++
+	c, ok := s.Cum[f.Symbol]
+	if !ok {
+		c = &model.TradeCum{}
+		s.Cum[f.Symbol] = c
+	}
+	c.Qty = c.Qty.Add(f.Qty)
+	c.Notional = c.Notional.Add(f.Qty.Mul(f.Price))
+	c.Realized = c.Realized.Add(f.Realized)
+	if f.Time > c.LastTs {
+		c.LastTs = f.Time
+	}
 	key := f.Symbol + "|" + f.PosSide
 	leg, ok := s.Legs[key]
 	if !ok {

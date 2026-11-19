@@ -3,7 +3,8 @@ import clsx from "clsx";
 import { ChevronLeft, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button, Confirm, Dot, Empty, Field, Input, Loading, Modal, PlatformTag, Seg, SideTag, Toggle } from "../components/ui";
-import { api, errMsg, type LeadProbe, type LeadSummary, type Platform, type Source } from "../lib/api";
+import { LeadPollSwitch, leadPollOf, useLeadPollText } from "../components/LeadPoll";
+import { api, errMsg, type LeadOrder, type LeadPoll, type LeadProbe, type LeadSummary, type Platform, type Source } from "../lib/api";
 import { ago, num, pnlClass, price, qty, shortAddr, signed } from "../lib/format";
 import { useTr } from "../lib/i18n";
 import { useAction, useConnections, useSources } from "../lib/queries";
@@ -70,7 +71,7 @@ export function Sources() {
                   </div>
                   <div className="shrink-0 text-right text-xs text-muted-fg">
                     {s.testnet ? <div className="text-primary">{tr("测试网", "Testnet")}</div> : null}
-                    {s.lead_mode === "fills" ? <div className="text-warning">{tr("成交推算", "From fills")}</div> : null}
+                    {s.lead_mode === "fills" ? <div className="text-warning">{tr("成交推算", "From fills")}{leadPollOf(s) === "trigger" ? tr(" · 动作触发", " · on activity") : ""}</div> : null}
                     <div className="mt-0.5">{tr(`${s.task_count} 个任务`, `${s.task_count} tasks`)}</div>
                   </div>
                 </button>
@@ -164,7 +165,11 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
               </div>
               <div className="mt-1">
                 {tr("已计入成交", "Fills applied")} {data.fills?.applied ?? 0} · {tr("最近一笔", "latest")} {data.fills?.last_fill_at ? ago(data.fills.last_fill_at, lang === "en") : tr("暂无", "none yet")}
+                {data.fills?.last_trade_at ? ` · ${tr("带单员最近交易", "trader's last trade")} ${ago(data.fills.last_trade_at, lang === "en")}` : ""}
                 {data.fills?.corrected ? <span className="text-warning"> · {tr(`按历史仓位校正 ${data.fills.corrected} 次`, `${data.fills.corrected} corrected from position history`)}</span> : null}
+              </div>
+              <div className="mt-3">
+                <LeadPollSwitch source={s} />
               </div>
               <div className="mt-2 flex items-center gap-3">
                 {bf?.running ? (
@@ -232,6 +237,7 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
             </table>
             </div>
           )}
+          {data.lead_orders || data.lead_orders_error ? <LeadOrders orders={data.lead_orders} error={data.lead_orders_error} /> : null}
           {lead ? null : <h3 className="mt-8 mb-2 text-md font-semibold">{tr("未成交挂单", "Open orders")}</h3>}
           {lead ? null : data.orders.length === 0 ? (
             <div className="py-6 text-sm text-muted-fg">{tr("无挂单", "No open orders")}</div>
@@ -293,6 +299,65 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
         }}
       />
     </div>
+  );
+}
+
+/** What an order did to the trader's position. */
+function orderAction(o: LeadOrder, tr: (zh: string, en: string) => string) {
+  const pnl = Number(o.pnl);
+  if (o.pos_side === "LONG") return o.buy ? { text: tr("开多", "Open long"), open: true, long: true } : { text: tr("平多", "Close long"), open: false, long: true };
+  if (o.pos_side === "SHORT") return o.buy ? { text: tr("平空", "Close short"), open: false, long: false } : { text: tr("开空", "Open short"), open: true, long: false };
+  // One-way: an order that realised PnL closed something.
+  if (pnl !== 0) return { text: o.buy ? tr("平空", "Close short") : tr("平多", "Close long"), open: false, long: !o.buy };
+  return { text: o.buy ? tr("买入", "Buy") : tr("卖出", "Sell"), open: true, long: o.buy };
+}
+
+function LeadOrders({ orders, error }: { orders: LeadOrder[] | null; error: string | null }) {
+  const tr = useTr();
+  const lang = useUi((x) => x.lang);
+  return (
+    <>
+      <h3 className="mt-8 mb-1 text-md font-semibold">{tr("带单员最近订单", "Trader's recent orders")}</h3>
+      <p className="mb-2 text-xs text-muted-fg">{tr("来自币安公开的订单记录，含开仓和平仓，最新在上。仅供查看，任务仍按推算持仓跟单。", "From Binance's public order history, opens and closes, newest first. For reference; tasks still follow the reconstructed positions.")}</p>
+      {error ? <div className="py-2 text-xs text-danger">{error}</div> : null}
+      {orders && orders.length === 0 ? <div className="py-6 text-sm text-muted-fg">{tr("暂无订单", "No orders")}</div> : null}
+      {orders && orders.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs text-muted-fg">
+                <th className="py-2 text-left font-normal">{tr("时间", "Time")}</th>
+                <th className="text-left font-normal">{tr("品种", "Symbol")}</th>
+                <th className="text-left font-normal">{tr("动作", "Action")}</th>
+                <th className="text-right font-normal">{tr("数量", "Qty")}</th>
+                <th className="text-right font-normal">{tr("成交均价", "Avg price")}</th>
+                <th className="text-right font-normal">{tr("已实现盈亏", "Realised PnL")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((o, i) => {
+                const a = orderAction(o, tr);
+                return (
+                  <tr key={`${o.time}-${o.symbol}-${i}`} className="border-b border-border">
+                    <td className="num py-2.5 text-xs text-muted-fg" title={new Date(o.time).toLocaleString()}>
+                      {ago(o.time, lang === "en")}
+                    </td>
+                    <td>{o.symbol}</td>
+                    <td className={clsx(a.open ? "font-semibold" : "", a.long ? "text-success" : "text-danger")}>
+                      {a.text}
+                      <span className="ml-1.5 text-xs font-normal text-muted-fg">{o.type === "MARKET" ? tr("市价", "market") : o.type === "LIMIT" ? tr("限价", "limit") : o.type.toLowerCase()}</span>
+                    </td>
+                    <td className="num text-right">{qty(o.qty)}</td>
+                    <td className="num text-right">{price(o.avg_px)}</td>
+                    <td className={clsx("num text-right", Number(o.pnl) === 0 ? "text-muted-fg" : pnlClass(o.pnl))}>{Number(o.pnl) === 0 ? "—" : signed(o.pnl)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -363,7 +428,9 @@ function AddLeadModal({ open, onClose, onAdded }: { open: boolean; onClose: () =
     retry: 0,
     staleTime: 60_000,
   });
-  const add = useAction((mode: "fills" | null) => api.addSource({ kind: "lead_trader", name: name.trim(), platform: picked!.platform, address: picked!.id, lead_mode: mode }), { ok: tr("已添加", "Added"), invalidate: [["sources"]] });
+  const [poll, setPoll] = useState<LeadPoll>("trigger");
+  const pollText = useLeadPollText();
+  const add = useAction((mode: "fills" | null) => api.addSource({ kind: "lead_trader", name: name.trim(), platform: picked!.platform, address: picked!.id, lead_mode: mode, lead_poll: mode === "fills" ? poll : null }), { ok: tr("已添加", "Added"), invalidate: [["sources"]] });
   const [probing, setProbing] = useState(false);
   const [hidden, setHidden] = useState<LeadProbe | null>(null);
   const toast = useUi((x) => x.toast);
@@ -432,6 +499,21 @@ function AddLeadModal({ open, onClose, onAdded }: { open: boolean; onClose: () =
               <li>{tr("他公布的权益与持仓对不上，只能按固定倍数或固定名义金额跟单。", "The equity they report does not match their positions, so only fixed multiple or fixed notional sizing works.")}</li>
               <li>{tr("数据来自币安网页接口，可能随时失效。", "Data comes from Binance's website API and may stop working.")}</li>
             </ul>
+            <div className="mt-1 flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-fg">{tr("成交读取", "Fills polling")}</span>
+                <Seg
+                  size="sm"
+                  value={poll}
+                  onChange={setPoll}
+                  options={[
+                    { value: "trigger", label: pollText.trigger.label },
+                    { value: "interval", label: pollText.interval.label },
+                  ]}
+                />
+              </div>
+              <div className="text-xs text-muted-fg">{pollText[poll].hint}{tr("添加后也可以随时切换。", " You can switch any time later.")}</div>
+            </div>
             <p className="text-xs text-muted-fg">
               {tr("最近一笔成交", "Latest fill")} {hidden?.last_fill_ms ? ago(hidden.last_fill_ms, lang === "en") : "—"}
               {hidden?.equity ? ` · ${tr("权益", "equity")} ${num(hidden.equity, 0)} USDT` : ""}

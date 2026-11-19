@@ -20,6 +20,7 @@ type SourceInput struct {
 	Testnet      bool    `json:"testnet"`
 	Platform     *string `json:"platform"`
 	LeadMode     *string `json:"lead_mode"`
+	LeadPoll     *string `json:"lead_poll"`
 }
 
 func probeLeadTrader(ctx context.Context, s *Server, body []byte) (any, error) {
@@ -80,7 +81,7 @@ func addSource(ctx context.Context, s *Server, body []byte) (any, error) {
 	if strings.TrimSpace(in.Name) == "" {
 		return nil, errs.Msg("请填写名称")
 	}
-	var leadMode, conn, addr *string
+	var leadMode, leadPoll, conn, addr *string
 	var platform string
 	var testnet bool
 	switch in.Kind {
@@ -141,6 +142,13 @@ func addSource(ctx context.Context, s *Server, body []byte) (any, error) {
 				return nil, errs.Msg("该带单员未公开持仓，成交记录也不可见，无法跟随")
 			}
 			leadMode = util.Ptr("fills")
+			leadPoll = util.Ptr("interval")
+			if in.LeadPoll != nil {
+				if !store.ValidLeadPoll(*in.LeadPoll) {
+					return nil, errs.Msg("未知的成交记录读取方式")
+				}
+				leadPoll = in.LeadPoll
+			}
 		} else {
 			// Must be readable now.
 			m, err := s.E.Markets(ctx, lt)
@@ -165,8 +173,8 @@ func addSource(ctx context.Context, s *Server, body []byte) (any, error) {
 	id := util.NewUUID()
 	// created_at is the fill-reconstruction anchor until a history backfill
 	// moves it back.
-	if _, err := db.ExecContext(ctx, "INSERT INTO sources (id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode) VALUES (?,?,?,?,?,?,?,?,?)",
-		id, in.Kind, strings.TrimSpace(in.Name), platform, conn, addr, testnet, util.NowMs(), leadMode); err != nil {
+	if _, err := db.ExecContext(ctx, "INSERT INTO sources (id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode, lead_poll) VALUES (?,?,?,?,?,?,?,?,?,?)",
+		id, in.Kind, strings.TrimSpace(in.Name), platform, conn, addr, testnet, util.NowMs(), leadMode, leadPoll); err != nil {
 		return nil, err
 	}
 	s.E.Changed("sources")
@@ -203,6 +211,41 @@ func backfillSource(ctx context.Context, s *Server, body []byte) (any, error) {
 		return nil, errs.Msg("有 %d 个任务正在使用该信号源，请先停止再重建", n)
 	}
 	return nil, s.E.BackfillSource(ctx, src)
+}
+
+// setSourceLeadPoll switches how a 'fills' lead source reads the trade
+// history. Safe while tasks run: it changes only the polling cadence, not the
+// reconstruction, and running tasks pick it up on their next snapshot.
+func setSourceLeadPoll(ctx context.Context, s *Server, body []byte) (any, error) {
+	if err := s.guard(); err != nil {
+		return nil, err
+	}
+	a, err := bind[struct {
+		ID       string `json:"id"`
+		LeadPoll string `json:"lead_poll"`
+	}](body)
+	if err != nil {
+		return nil, err
+	}
+	if !store.ValidLeadPoll(a.LeadPoll) {
+		return nil, errs.Msg("未知的成交记录读取方式")
+	}
+	src, err := store.Source(ctx, s.E.DB, a.ID)
+	if err != nil {
+		return nil, err
+	}
+	if src == nil {
+		return nil, errs.Msg("信号源不存在")
+	}
+	if src.Kind != "lead_trader" || !src.IsFills() {
+		return nil, errs.Msg("只有按成交记录推算的带单员信号源可以切换读取方式")
+	}
+	if _, err := s.E.DB.ExecContext(ctx, "UPDATE sources SET lead_poll = ? WHERE id = ?", a.LeadPoll, a.ID); err != nil {
+		return nil, err
+	}
+	exchange.SetFillsTrigger(a.ID, a.LeadPoll == "trigger")
+	s.E.Changed("sources")
+	return nil, nil
 }
 
 func deleteSource(ctx context.Context, s *Server, body []byte) (any, error) {
@@ -275,11 +318,13 @@ type SourceOrderDto struct {
 }
 
 type FillInfoDto struct {
-	Anchor     int64              `json:"anchor"`
-	LastFillAt *int64             `json:"last_fill_at"`
-	Applied    uint64             `json:"applied"`
-	Corrected  uint64             `json:"corrected"`
-	Backfill   *exchange.Backfill `json:"backfill"`
+	Anchor     int64  `json:"anchor"`
+	LastFillAt *int64 `json:"last_fill_at"`
+	// The trader's own lastTradeTime, which trigger mode watches.
+	LastTradeAt *int64             `json:"last_trade_at"`
+	Applied     uint64             `json:"applied"`
+	Corrected   uint64             `json:"corrected"`
+	Backfill    *exchange.Backfill `json:"backfill"`
 }
 
 type SourceDetailDto struct {
@@ -289,6 +334,9 @@ type SourceDetailDto struct {
 	Orders    []SourceOrderDto `json:"orders"`
 	Ts        int64            `json:"ts"`
 	Fills     *FillInfoDto     `json:"fills"`
+	// Binance lead traders: newest public orders (opens and closes).
+	LeadOrders      []exchange.LeadOrder `json:"lead_orders"`
+	LeadOrdersError *string              `json:"lead_orders_error"`
 }
 
 func sourceDetail(ctx context.Context, s *Server, body []byte) (any, error) {
@@ -351,8 +399,20 @@ func sourceDetail(ctx context.Context, s *Server, body []byte) (any, error) {
 			fills.Anchor, fills.LastFillAt, fills.Applied, fills.Corrected = st.Anchor, st.LastFillAt, st.Applied, st.Corrected
 		}
 	}
-	return SourceDetailDto{
+	out := SourceDetailDto{
 		Equity: util.Fmt(snap.Equity.RoundBank(2)), Notional: util.Fmt(snap.Notional().RoundBank(2)),
 		Positions: positions, Orders: orders, Ts: snap.Ts, Fills: fills,
-	}, nil
+	}
+	if lt, ok := ex.(*exchange.LeadTrader); ok && lt.Platform() == model.Binance {
+		if fills != nil {
+			fills.LastTradeAt = lt.LastTrade(ctx)
+		}
+		// Shown only; failing to read them must not hide the positions.
+		if lo, err := lt.RecentOrders(ctx, a.ID); err != nil {
+			out.LeadOrdersError = util.Ptr(err.Error())
+		} else {
+			out.LeadOrders = lo
+		}
+	}
+	return out, nil
 }

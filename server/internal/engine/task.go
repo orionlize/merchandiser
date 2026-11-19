@@ -545,7 +545,7 @@ func (r *taskRunner) detectSignals(ctx context.Context, src *model.AccountSnapsh
 			plus = "+"
 		}
 		text := fmt.Sprintf("%s %s %s%s（%s → %s）", base, label, plus, util.Fmt(delta), util.Fmt(a), util.Fmt(b))
-		id, err := store.InsertSignal(ctx, r.e.DB, r.id, base, kind, &a, &b, text)
+		id, err := store.InsertSignal(ctx, r.e.DB, r.id, base, kind, &a, &b, text, signalSource(prev, src, base))
 		if err != nil {
 			slog.Error("signal insert", "err", err)
 			continue
@@ -555,6 +555,81 @@ func (r *taskRunner) detectSignals(ctx context.Context, src *model.AccountSnapsh
 	if len(out) > 0 {
 		r.saveBaseline(ctx)
 		r.e.Changed("signals")
+	}
+	return out
+}
+
+// posOf returns the net size and size-weighted entry / mark of a coin.
+func posOf(s *model.AccountSnapshot, base string) (size, entry, mark decimal.Decimal) {
+	var gross, en, mk decimal.Decimal
+	for _, p := range s.Positions {
+		if p.Base != base || p.Size.IsZero() {
+			continue
+		}
+		size = size.Add(p.Size)
+		gross = gross.Add(p.Size.Abs())
+		en = en.Add(p.Size.Abs().Mul(p.EntryPx))
+		mk = mk.Add(p.Size.Abs().Mul(p.MarkPx))
+	}
+	if gross.IsPositive() {
+		entry, mark = en.Div(gross), mk.Div(gross)
+	}
+	return
+}
+
+// signalSource records what the source itself did between two snapshots:
+// from its own fills when the source exposes them (exact price, venue time
+// and realised PnL), otherwise inferred from positions — the price of an
+// open / add follows from the entry change, a reduce takes the mark at
+// detection, and the time is the detection time.
+func signalSource(prev, cur *model.AccountSnapshot, base string) *store.SignalSrc {
+	a, ea, ma := posOf(prev, base)
+	b, eb, mb := posOf(cur, base)
+	out := &store.SignalSrc{}
+	dec := func(d decimal.Decimal) *string {
+		if !d.IsPositive() && !d.IsNegative() {
+			return nil
+		}
+		v := util.Fmt(d)
+		return &v
+	}
+	out.SrcEntry = dec(ea)
+	out.SrcEquity = dec(cur.Equity)
+	if pc, ok := prev.Trades[base]; ok {
+		if cc, ok := cur.Trades[base]; ok {
+			dq, dn := cc.Qty.Sub(pc.Qty), cc.Notional.Sub(pc.Notional)
+			// Totals go backwards when the source is rebuilt from history.
+			if dq.IsPositive() && dn.IsPositive() {
+				ts := cc.LastTs
+				out.SrcTs = &ts
+				out.SrcPx = dec(dn.Div(dq))
+				r := util.Fmt(cc.Realized.Sub(pc.Realized))
+				out.SrcRealized = &r
+				out.SrcBasis = util.Ptr("fills")
+				return out
+			}
+		}
+	}
+	out.SrcBasis = util.Ptr("positions")
+	switch {
+	case a.IsZero() || a.Sign() != b.Sign() && !b.IsZero():
+		// Open or flip: the new leg's entry is its fill price.
+		out.SrcPx = dec(eb)
+	case b.Abs().GreaterThan(a.Abs()):
+		// Add: entry_b·|b| = entry_a·|a| + px·(|b|−|a|).
+		if d := b.Abs().Sub(a.Abs()); d.IsPositive() && eb.IsPositive() && ea.IsPositive() {
+			px := eb.Mul(b.Abs()).Sub(ea.Mul(a.Abs())).Div(d)
+			if px.IsPositive() {
+				out.SrcPx = dec(px)
+			}
+		}
+	default:
+		// Reduce / close: only the mark is known.
+		if mb.IsPositive() {
+			out.SrcPx = dec(mb)
+		} else {
+			out.SrcPx = dec(ma)
+		}
 	}
 	return out
 }
@@ -1301,7 +1376,7 @@ func (r *taskRunner) closeFollower(ctx context.Context, f *followerCtx, why stri
 	if only != nil {
 		scope = "本任务跟随的"
 	}
-	_, _ = store.InsertSignal(ctx, r.e.DB, r.id, "*", "risk", nil, nil, fmt.Sprintf("%s：%s %s仓位市价平掉", why, f.alias, scope))
+	_, _ = store.InsertSignal(ctx, r.e.DB, r.id, "*", "risk", nil, nil, fmt.Sprintf("%s：%s %s仓位市价平掉", why, f.alias, scope), nil)
 }
 
 func (r *taskRunner) closeAllPositions(ctx context.Context, why string) {
@@ -1342,7 +1417,7 @@ func (r *taskRunner) checkLossLimits(ctx context.Context) {
 	r.paused = true
 	reason := why + "，已自动暂停"
 	_ = store.SetTaskStatus(ctx, r.e.DB, r.id, "paused", &reason)
-	_, _ = store.InsertSignal(ctx, r.e.DB, r.id, "*", "risk", nil, nil, "风控触发："+reason)
+	_, _ = store.InsertSignal(ctx, r.e.DB, r.id, "*", "risk", nil, nil, "风控触发："+reason, nil)
 	r.e.Alert("warn", &r.id, nil, r.name+" 亏损触及上限，任务已暂停", &why)
 	r.e.Changed("tasks")
 }
