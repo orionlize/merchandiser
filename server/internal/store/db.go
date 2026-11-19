@@ -67,6 +67,17 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	if has, err = hasColumn(db, "signals", "src_px"); err != nil {
+		return err
+	} else if !has {
+		m3, err := migrations.ReadFile("migrations/0003_signal_source.sql")
+		if err != nil {
+			return err
+		}
+		if _, err := db.Exec(string(m3)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -180,6 +191,17 @@ type SignalRow struct {
 	FromSize *string `json:"from_size"`
 	ToSize   *string `json:"to_size"`
 	Text     string  `json:"text"`
+	SignalSrc
+}
+
+// SignalSrc is what the source itself did at a signal (see migration 0003).
+type SignalSrc struct {
+	SrcTs       *int64  `json:"src_ts"`
+	SrcPx       *string `json:"src_px"`
+	SrcEntry    *string `json:"src_entry"`
+	SrcEquity   *string `json:"src_equity"`
+	SrcRealized *string `json:"src_realized"`
+	SrcBasis    *string `json:"src_basis"`
 }
 
 type OrderRow struct {
@@ -358,9 +380,9 @@ func Followers(ctx context.Context, db *sql.DB, taskID string) ([]FollowerRow, e
 func Signals(ctx context.Context, db *sql.DB, q string, args ...any) ([]SignalRow, error) {
 	return queryAll(ctx, db, func(s scanner) (SignalRow, error) {
 		var r SignalRow
-		err := s.Scan(&r.ID, &r.TaskID, &r.Ts, &r.Base, &r.Kind, &r.FromSize, &r.ToSize, &r.Text)
+		err := s.Scan(&r.ID, &r.TaskID, &r.Ts, &r.Base, &r.Kind, &r.FromSize, &r.ToSize, &r.Text, &r.SrcTs, &r.SrcPx, &r.SrcEntry, &r.SrcEquity, &r.SrcRealized, &r.SrcBasis)
 		return r, err
-	}, "SELECT id, task_id, ts, base, kind, from_size, to_size, text FROM signals "+q, args...)
+	}, "SELECT id, task_id, ts, base, kind, from_size, to_size, text, src_ts, src_px, src_entry, src_equity, src_realized, src_basis FROM signals "+q, args...)
 }
 
 func Orders(ctx context.Context, db *sql.DB, q string, args ...any) ([]OrderRow, error) {
@@ -401,9 +423,12 @@ func decStr(d *decimal.Decimal) *string {
 	return &s
 }
 
-func InsertSignal(ctx context.Context, db *sql.DB, taskID, base, kind string, from, to *decimal.Decimal, text string) (int64, error) {
-	r, err := db.ExecContext(ctx, "INSERT INTO signals (task_id, ts, base, kind, from_size, to_size, text) VALUES (?, ?, ?, ?, ?, ?, ?)",
-		taskID, util.NowMs(), base, kind, decStr(from), decStr(to), text)
+func InsertSignal(ctx context.Context, db *sql.DB, taskID, base, kind string, from, to *decimal.Decimal, text string, src *SignalSrc) (int64, error) {
+	if src == nil {
+		src = &SignalSrc{}
+	}
+	r, err := db.ExecContext(ctx, "INSERT INTO signals (task_id, ts, base, kind, from_size, to_size, text, src_ts, src_px, src_entry, src_equity, src_realized, src_basis) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		taskID, util.NowMs(), base, kind, decStr(from), decStr(to), text, src.SrcTs, src.SrcPx, src.SrcEntry, src.SrcEquity, src.SrcRealized, src.SrcBasis)
 	if err != nil {
 		return 0, err
 	}

@@ -580,6 +580,8 @@ export const api = {
   alerts: (limit = 50) => invoke<Alert[]>("list_alerts", { limit }),
   logs: (filter: LogFilter) => invoke<LogPage>("query_logs", { filter }),
   exportCsv: (filter: LogFilter) => invoke<{ csv: string; rows: number }>("export_logs_csv", { filter }),
+  /** Per-signal source vs. follower deviations (time, position share, price, return) as CSV. */
+  exportTaskAudit: (taskId: string, range: LogFilter["range"]) => invoke<{ csv: string; rows: number; name: string }>("export_task_audit", { task_id: taskId, range }),
   pnl: (range: LogFilter["range"]) => invoke<PnlRow[]>("pnl_report", { range }),
   taskChart: (args: { taskId: string; base?: string; interval: ChartInterval; connectionId?: string }) =>
     invoke<TaskChart>("task_chart", { task_id: args.taskId, base: args.base ?? "", interval: args.interval, connection_id: args.connectionId ?? null }),
