@@ -149,6 +149,19 @@ type AccountSnapshot struct {
 	Positions []Position      `json:"positions"`
 	Orders    []OpenOrder     `json:"orders"`
 	Ts        int64           `json:"ts"`
+	// Running totals of the account's own fills per coin, when the source
+	// exposes them (lead traders followed by fills). Two snapshots' totals
+	// differ by exactly the fills in between: their VWAP, last fill time and
+	// realised PnL. Nil when unknown.
+	Trades map[string]TradeCum `json:"-"`
+}
+
+// TradeCum accumulates fills: Qty in coins (absolute), Notional in quote.
+type TradeCum struct {
+	Qty      decimal.Decimal `json:"qty"`
+	Notional decimal.Decimal `json:"notional"`
+	Realized decimal.Decimal `json:"realized"`
+	LastTs   int64           `json:"last_ts"`
 }
 
 func (a *AccountSnapshot) Position(base string) decimal.Decimal {

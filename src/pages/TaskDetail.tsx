@@ -1,11 +1,12 @@
 import clsx from "clsx";
-import { RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Download, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { hasLeadPoll, LeadPollSwitch } from "../components/LeadPoll";
 import { PositionsTable } from "../components/Positions";
 import { fillLabel, TaskChart } from "../components/TaskChart";
 import { Button, Drawer, Empty, Loading, Modal, Radio, Seg, SideTag, Tabs } from "../components/ui";
-import { api, type ChartInterval, type CompareRow, type Mirror, type Risk, type TaskDetail as TD, type TaskSummary } from "../lib/api";
+import { api, errMsg, type ChartInterval, type LogFilter, type CompareRow, type Mirror, type Risk, type TaskDetail as TD, type TaskSummary } from "../lib/api";
+import { downloadText } from "../lib/files";
 import { ago, date, num, pnlClass, price, qty, signed, time } from "../lib/format";
 import { trNow, useTr } from "../lib/i18n";
 import { useAction, useSources, useTask, useTaskChart } from "../lib/queries";
@@ -22,6 +23,7 @@ export function TaskDetail() {
   const [tab, setTab] = useState<"hold" | "pos" | "mirror" | "log">("hold");
   const [stopping, setStopping] = useState(false);
   const [rules, setRules] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const act = useAction(({ a }: { a: "start" | "resume" | "pause" | "reconcile" }) => api.taskAction(route.id!, a), { invalidate: [["task"], ["tasks"]] });
 
   if (isLoading || !t) return <Loading />;
@@ -57,6 +59,10 @@ export function TaskDetail() {
             <Button disabled={t.status !== "running"} onClick={() => act.mutate({ a: "reconcile" })}>
               <RefreshCw size={14} />
               {tr("立即对账", "Reconcile now")}
+            </Button>
+            <Button onClick={() => setExporting(true)}>
+              <Download size={14} />
+              {tr("导出偏差数据", "Export deviations")}
             </Button>
             {t.status !== "stopped" ? (
               <Button variant="danger-text" onClick={() => setStopping(true)}>
@@ -120,6 +126,10 @@ export function TaskDetail() {
           <RefreshCw size={14} />
           <span className="max-sm:hidden">{tr("对账", "Reconcile")}</span>
         </Button>
+        <Button onClick={() => setExporting(true)} aria-label={tr("导出偏差数据", "Export deviations")}>
+          <Download size={14} />
+          <span className="max-sm:hidden">{tr("导出", "Export")}</span>
+        </Button>
         {t.status !== "stopped" ? (
           <Button variant="danger-text" onClick={() => setStopping(true)}>
             {tr("停止", "Stop")}
@@ -136,6 +146,7 @@ export function TaskDetail() {
         )}
       </div>
       {stopping ? <StopDialog task={t} onClose={() => setStopping(false)} /> : null}
+      {exporting ? <AuditExportDialog task={t} onClose={() => setExporting(false)} /> : null}
     </div>
   );
 }
@@ -235,6 +246,7 @@ function ChartCard({ t }: { t: TD }) {
   const upnlPct = r.avg > 0 && r.pos !== 0 && mark != null ? ((mark - r.avg) / r.avg) * 100 * Math.sign(r.pos) : null;
   const adds = r.fills.filter((f) => f.kind === "add").length;
   const sel = r.fills.find((f) => f.id === selected) ?? null;
+  const phone = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <div className="mt-4 border border-border bg-card max-md:-mx-4 max-md:border-x-0">
@@ -275,9 +287,21 @@ function ChartCard({ t }: { t: TD }) {
       </div>
 
       {data.candle_error ? <div className="border-b border-border px-4 py-2 text-xs text-warning">{data.candle_error}</div> : null}
-      <div className="relative px-1 pt-2">
-        <TaskChart candles={data.candles} fills={r.fills} interval={data.interval} avg={r.avg} pos={r.pos} selected={selected} onSelect={setSelected} viewKey={`${cur}:${data.interval}`} height={typeof window !== "undefined" && window.innerWidth < 768 ? 300 : 420} />
-        <div className="pointer-events-none absolute top-3 left-4 flex gap-4 text-xs text-muted-fg">
+      <TaskChart
+        candles={data.candles}
+        fills={r.fills}
+        interval={data.interval}
+        avg={r.avg}
+        pos={r.pos}
+        selected={selected}
+        onSelect={setSelected}
+        viewKey={`${cur}:${data.interval}`}
+        drawKey={`${t.id}:${cur}`}
+        compact={phone}
+        height={phone ? 300 : 420}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-border px-4 py-2 text-xs text-muted-fg">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className="flex items-center gap-1.5">
             <span>
               <span className="text-success">▲</span>
@@ -297,6 +321,7 @@ function ChartCard({ t }: { t: TD }) {
             {tr("持仓均价", "Avg entry")}
           </span>
         </div>
+        <span className="max-md:hidden">{tr("画线按币种保存 · Delete 删除选中 · Esc 取消", "Drawings saved per coin · Delete removes · Esc cancels")}</span>
       </div>
 
       {sel ? <FillCard f={sel} alias={alias(sel.connection_id)} onClose={() => setSelected(null)} /> : null}
@@ -662,6 +687,82 @@ function Meter({ label, value, max }: { label: string; value: number; max: numbe
         <div className={clsx("h-full", pct > 0.85 ? "bg-primary" : "bg-fg")} style={{ width: `${pct * 100}%` }} />
       </div>
     </div>
+  );
+}
+
+function AuditExportDialog({ task, onClose }: { task: TaskSummary; onClose: () => void }) {
+  const tr = useTr();
+  const toast = useUi((s) => s.toast);
+  const [range, setRange] = useState<LogFilter["range"]>("all");
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try {
+      const { csv, rows } = await api.exportTaskAudit(task.id, range);
+      const safe = task.name.replace(/[\\/:*?"<>|\s]+/g, "_");
+      downloadText(`merchandiser-audit-${safe}-${new Date().toISOString().slice(0, 10)}.csv`, csv, "text/csv");
+      toast(tr(`已导出 ${rows} 条`, `Exported ${rows} rows`));
+      onClose();
+    } catch (e) {
+      toast(errMsg(e), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const fields: [string, string][] = [
+    [tr("时间", "Time"), tr("源成交时间、信号检测时间、我方成交时间，检测延迟与时间偏差（毫秒）", "Source fill, detection and our fill times; detection delay and time gap (ms)")],
+    [tr("仓位", "Position"), tr("双方仓位前后、变动比例与占权益百分比，及其偏差（百分点）", "Size before / after, change ratio and share of equity on both sides, with the gap (pp)")],
+    [tr("价格", "Price"), tr("源成交价与我方成交均价，价格偏差为正表示我方成交更差", "Source price vs. our average fill; a positive gap means we filled worse")],
+    [tr("盈利", "Return"), tr("减仓 / 平仓时双方相对持仓均价的收益率与已实现盈亏", "On reduces and closes: return against average entry, and realised PnL, for both sides")],
+  ];
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      width={520}
+      title={tr("导出偏差数据", "Export deviations")}
+      footer={
+        <>
+          <Button onClick={onClose}>{tr("取消", "Cancel")}</Button>
+          <Button variant="primary" loading={busy} onClick={run}>
+            <Download size={14} />
+            {tr("导出 CSV", "Export CSV")}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-sm text-muted-fg">
+        {tr("每个信号源动作 × 每个跟单账户一行，对比信号源与我方的实际执行，用于数据校验。", "One row per source action and follower, comparing what the source did with what we did, for verification.")}
+      </p>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <span className="text-sm">{tr("时间范围", "Range")}</span>
+        <Seg
+          size="sm"
+          value={range}
+          onChange={setRange}
+          options={[
+            { value: "today", label: tr("今日", "Today") },
+            { value: "7d", label: tr("7 天", "7d") },
+            { value: "30d", label: tr("30 天", "30d") },
+            { value: "all", label: tr("全部", "All") },
+          ]}
+        />
+      </div>
+      <dl className="mt-4 flex flex-col gap-2 border-t border-border pt-4 text-xs">
+        {fields.map(([k, v]) => (
+          <div key={k} className="flex gap-3">
+            <dt className="w-10 shrink-0 text-fg">{k}</dt>
+            <dd className="text-muted-fg">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-4 text-xs text-muted-fg">
+        {tr(
+          "非公开带单员按其成交记录计算，时间与价格为源的真实成交；其他信号源按持仓变化推算，减仓价取检测时标记价。我方持仓按本任务成交回放，不含任务启动前已有的仓位。升级前产生的信号没有源价格。",
+          "Private lead traders use their own fills, so source time and price are exact; other sources are inferred from position changes, with reduces priced at the mark when detected. Our side is replayed from this task's fills and excludes positions held before it started. Signals recorded before this update have no source price.",
+        )}
+      </p>
+    </Modal>
   );
 }
 
