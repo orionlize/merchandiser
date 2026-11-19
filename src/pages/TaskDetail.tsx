@@ -225,6 +225,7 @@ function ChartCard({ t }: { t: TD }) {
   const upnlPct = r.avg > 0 && r.pos !== 0 && mark != null ? ((mark - r.avg) / r.avg) * 100 * Math.sign(r.pos) : null;
   const adds = r.fills.filter((f) => f.kind === "add").length;
   const sel = r.fills.find((f) => f.id === selected) ?? null;
+  const phone = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <div className="mt-4 border border-border bg-card max-md:-mx-4 max-md:border-x-0">
@@ -265,9 +266,21 @@ function ChartCard({ t }: { t: TD }) {
       </div>
 
       {data.candle_error ? <div className="border-b border-border px-4 py-2 text-xs text-warning">{data.candle_error}</div> : null}
-      <div className="relative px-1 pt-2">
-        <TaskChart candles={data.candles} fills={r.fills} interval={data.interval} avg={r.avg} pos={r.pos} selected={selected} onSelect={setSelected} viewKey={`${cur}:${data.interval}`} height={typeof window !== "undefined" && window.innerWidth < 768 ? 300 : 420} />
-        <div className="pointer-events-none absolute top-3 left-4 flex gap-4 text-xs text-muted-fg">
+      <TaskChart
+        candles={data.candles}
+        fills={r.fills}
+        interval={data.interval}
+        avg={r.avg}
+        pos={r.pos}
+        selected={selected}
+        onSelect={setSelected}
+        viewKey={`${cur}:${data.interval}`}
+        drawKey={`${t.id}:${cur}`}
+        compact={phone}
+        height={phone ? 300 : 420}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-border px-4 py-2 text-xs text-muted-fg">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className="flex items-center gap-1.5">
             <span>
               <span className="text-success">▲</span>
@@ -287,6 +300,7 @@ function ChartCard({ t }: { t: TD }) {
             {tr("持仓均价", "Avg entry")}
           </span>
         </div>
+        <span className="max-md:hidden">{tr("画线按币种保存 · Delete 删除选中 · Esc 取消", "Drawings saved per coin · Delete removes · Esc cancels")}</span>
       </div>
 
       {sel ? <FillCard f={sel} alias={alias(sel.connection_id)} onClose={() => setSelected(null)} /> : null}
