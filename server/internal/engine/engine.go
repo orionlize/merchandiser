@@ -256,7 +256,7 @@ func (e *Engine) SourceAdapter(ctx context.Context, s *store.SourceRow) (exchang
 			return nil, err
 		}
 		if s.IsFills() {
-			return lt.WithFills(s.ID, e.DB, s.CreatedAt)
+			return lt.WithFills(s.ID, e.DB, s.CreatedAt, s.IsTrigger())
 		}
 		return lt, nil
 	}

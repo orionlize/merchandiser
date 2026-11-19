@@ -266,6 +266,7 @@ func (l *LeadTrader) backfill(ctx context.Context) (int64, error) {
 	// Later polls page back from the newest fill seen here.
 	b.state = st
 	b.cached = nil
+	b.polledAt, b.seenTrade, b.pendingSince = time.Time{}, 0, time.Time{}
 	return from, nil
 }
 

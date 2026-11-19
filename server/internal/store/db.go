@@ -67,6 +67,19 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	has, err = hasColumn(db, "sources", "lead_poll")
+	if err != nil {
+		return err
+	}
+	if !has {
+		m3, err := migrations.ReadFile("migrations/0003_lead_poll.sql")
+		if err != nil {
+			return err
+		}
+		if _, err := db.Exec(string(m3)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -123,13 +136,15 @@ type SourceRow struct {
 	CreatedAt    int64   `json:"created_at"`
 	// Lead traders: 'fills' = positions reconstructed from public fills.
 	LeadMode *string `json:"lead_mode"`
+	// 'fills' sources: NULL/'interval' or 'trigger' (see exchange.fillBook).
+	LeadPoll *string `json:"lead_poll"`
 }
 
-const sourceCols = "id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode"
+const sourceCols = "id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode, lead_poll"
 
 func scanSource(s interface{ Scan(...any) error }) (SourceRow, error) {
 	var r SourceRow
-	err := s.Scan(&r.ID, &r.Kind, &r.Name, &r.Platform, &r.ConnectionID, &r.Address, &r.Testnet, &r.CreatedAt, &r.LeadMode)
+	err := s.Scan(&r.ID, &r.Kind, &r.Name, &r.Platform, &r.ConnectionID, &r.Address, &r.Testnet, &r.CreatedAt, &r.LeadMode, &r.LeadPoll)
 	return r, err
 }
 
@@ -141,6 +156,11 @@ func (s *SourceRow) Addr() string {
 }
 
 func (s *SourceRow) IsFills() bool { return s.LeadMode != nil && *s.LeadMode == "fills" }
+
+func (s *SourceRow) IsTrigger() bool { return s.LeadPoll != nil && *s.LeadPoll == "trigger" }
+
+// ValidLeadPoll reports whether v is a known lead_poll value.
+func ValidLeadPoll(v string) bool { return v == "interval" || v == "trigger" }
 
 type TaskRow struct {
 	ID           string  `json:"id"`

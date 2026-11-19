@@ -101,6 +101,23 @@ export interface Source {
   url: string | null;
   /** Lead traders: "fills" = positions reconstructed from public fills. */
   lead_mode: "positions" | "fills" | null;
+  /** "fills" sources: how the trade history is read (null = "interval"). */
+  lead_poll: LeadPoll | null;
+}
+
+/** interval: read the trade history every 6 s; trigger: only when the trader's lastTradeTime moves. */
+export type LeadPoll = "interval" | "trigger";
+
+/** One order from a Binance lead trader's public order history. */
+export interface LeadOrder {
+  time: number;
+  symbol: string;
+  buy: boolean;
+  pos_side: "LONG" | "SHORT" | "BOTH";
+  type: string;
+  qty: string;
+  avg_px: string;
+  pnl: string;
 }
 
 export interface LeadProbe {
@@ -171,7 +188,10 @@ export interface SourceDetail {
   orders: OpenOrder[];
   ts: number;
   /** Fill reconstruction progress ("fills" lead traders). */
-  fills: { anchor: number; last_fill_at: number | null; applied: number; backfill: Backfill | null } | null;
+  fills: { anchor: number; last_fill_at: number | null; last_trade_at: number | null; applied: number; backfill: Backfill | null } | null;
+  /** Binance lead traders: newest public orders. */
+  lead_orders: LeadOrder[] | null;
+  lead_orders_error: string | null;
 }
 
 export type SizingMode = "equity_ratio" | "fixed_multiple" | "fixed_notional";
@@ -557,7 +577,9 @@ export const api = {
   deleteConnection: (id: string) => invoke<void>("delete_connection", { id }),
 
   sources: () => invoke<Source[]>("list_sources"),
-  addSource: (input: { kind: Source["kind"]; name: string; connection_id?: string | null; address?: string | null; testnet?: boolean; platform?: Platform | null; lead_mode?: "fills" | null }) => invoke<string>("add_source", { input }),
+  addSource: (input: { kind: Source["kind"]; name: string; connection_id?: string | null; address?: string | null; testnet?: boolean; platform?: Platform | null; lead_mode?: "fills" | null; lead_poll?: LeadPoll | null }) => invoke<string>("add_source", { input }),
+  /** Switch how a "fills" lead source reads the trade history; applies to running tasks at once. */
+  setSourceLeadPoll: (args: { id: string; lead_poll: LeadPoll }) => invoke<void>("set_source_lead_poll", args),
   probeLeadTrader: (platform: Platform, id: string) => invoke<LeadProbe>("probe_lead_trader", { platform, id }),
   searchLeadTraders: (platform: Platform, query: string, page?: number) => invoke<LeadSummary[]>("search_lead_traders", { platform, query, page: page ?? null }),
   deleteSource: (id: string) => invoke<void>("delete_source", { id }),

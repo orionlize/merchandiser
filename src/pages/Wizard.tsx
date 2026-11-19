@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { AlertTriangle, Check, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { hasLeadPoll, LeadPollSwitch, leadPollOf } from "../components/LeadPoll";
 import { Button, Checkbox, Confirm, Field, Input, Loading, NumInput, PlatformTag, Radio, Seg, Spinner, Toggle } from "../components/ui";
 import { api, errMsg, type FollowerSpec, type Risk, type Rules } from "../lib/api";
 import { num, shortAddr } from "../lib/format";
@@ -231,7 +232,7 @@ function SourceStep({ sourceId, setSourceId, disabled }: { sourceId: string; set
               <PlatformTag platform={s.platform} testnet={s.testnet} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold">{s.name}</div>
-                <div className="num mt-0.5 truncate text-xs text-muted-fg">{s.kind === "hl_address" ? s.address : s.kind === "lead_trader" ? `${tr("带单员", "Lead trader")} · ${s.address}${s.lead_mode === "fills" ? tr(" · 成交推算（晚约 2 分钟）", " · from fills (~2 min behind)") : ""}` : s.platform === "paper" ? `${tr("模拟账户", "Paper account")} · ${s.connection_alias}` : `${tr("只读 API", "Read-only API")} · ${s.connection_alias}`}</div>
+                <div className="num mt-0.5 truncate text-xs text-muted-fg">{s.kind === "hl_address" ? s.address : s.kind === "lead_trader" ? `${tr("带单员", "Lead trader")} · ${s.address}${s.lead_mode === "fills" ? tr(" · 成交推算（晚约 2 分钟）", " · from fills (~2 min behind)") + (leadPollOf(s) === "trigger" ? tr(" · 动作触发", " · on activity") : "") : ""}` : s.platform === "paper" ? `${tr("模拟账户", "Paper account")} · ${s.connection_alias}` : `${tr("只读 API", "Read-only API")} · ${s.connection_alias}`}</div>
               </div>
               <span className="text-xs text-muted-fg">{s.task_count ? tr(`${s.task_count} 个任务`, `${s.task_count} tasks`) : ""}</span>
             </button>
@@ -239,6 +240,15 @@ function SourceStep({ sourceId, setSourceId, disabled }: { sourceId: string; set
         </div>
       )}
       {disabled ? <p className="mt-3 text-xs text-muted-fg">{tr("已有任务不能更换信号源；如需更换请新建任务。", "A task's source cannot change; create a new task instead.")}</p> : null}
+      {(() => {
+        const sel = sources?.find((x) => x.id === sourceId);
+        return hasLeadPoll(sel) ? (
+          <div className="mt-4 rounded-lg border border-border px-4 py-3">
+            <LeadPollSwitch source={sel} />
+            <p className="mt-1.5 text-xs text-muted-fg">{tr("设置属于信号源：使用它的所有任务一起生效，任务运行中也能在任务详情里切换。", "This belongs to the source: every task using it follows the switch, and you can change it from the task page while it runs.")}</p>
+          </div>
+        ) : null;
+      })()}
     </div>
   );
 }
