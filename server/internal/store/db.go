@@ -173,6 +173,14 @@ func (s *SourceRow) IsTrigger() bool { return s.LeadPoll != nil && *s.LeadPoll =
 // ValidLeadPoll reports whether v is a known lead_poll value.
 func ValidLeadPoll(v string) bool { return v == "interval" || v == "trigger" }
 
+// HidesEquity: the source's equity is unknown, so equity-ratio sizing cannot
+// work. OKX lead traders do not publish it; Binance traders who hide their
+// positions report a `marginBalance` that does not match their positions
+// (measured: 500 USDT against a 380k USDT 1× position).
+func (s *SourceRow) HidesEquity() bool {
+	return s.Kind == "lead_trader" && (s.Platform == "okx" || s.IsFills())
+}
+
 type TaskRow struct {
 	ID           string  `json:"id"`
 	Name         string  `json:"name"`

@@ -16,6 +16,10 @@ package exchange
 //     two months (see leadfills.go, leadbackfill.go); that feed is ~2 minutes
 //     behind the trader. A fills source polls that history either on a timer
 //     or, in trigger mode, only when the trader's `lastTradeTime` moves.
+//     A hidden trader's `marginBalance` does not match the positions
+//     (measured 500 USDT against a 380k USDT 1× position), so `fills` mode
+//     reports equity as 0, like OKX. The public position history (closed
+//     positions only) supplies leverage and corrects legs the fills missed.
 //   - Gate: its web endpoints sit behind a bot wall, so it is not supported.
 //
 // Snapshots are cached per trader for a few seconds and shared by every task
@@ -74,6 +78,9 @@ type fillBook struct {
 	mu     sync.Mutex
 	state  *FillState
 	cached *cachedRaw
+	// Latest page of the public position history.
+	hist   []HistPos
+	histAt time.Time
 	// Trigger mode: watch the trader's lastTradeTime (a cheap GET outside the
 	// POST "system busy" budget) and read the trade history only when it
 	// moves, plus a slow safety poll.
@@ -117,6 +124,10 @@ func SetFillsTrigger(sourceID string, on bool) {
 		b.mu.Unlock()
 	}
 }
+
+// The position history only changes when a position closes; it serves
+// leverage and corrections, so a slow refresh is enough.
+const histEvery = time.Minute
 
 type leadCache struct {
 	snapMu  sync.Mutex // held across a fetch so concurrent callers wait for one request
@@ -297,7 +308,8 @@ func (l *LeadTrader) Probe(ctx context.Context) (*LeadProbe, error) {
 			t := page[0].Time
 			p.LastFillMs = &t
 		}
-		if e := d.JStr("marginBalance"); e != "" {
+		// A hidden trader's marginBalance does not match the positions.
+		if e := d.JStr("marginBalance"); e != "" && p.PositionsPublic {
 			p.Equity = &e
 		}
 		return p, nil
@@ -558,13 +570,10 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 			b.state = st
 		}
 	}
+	// Fails when the trader is gone. Equity is unreliable (see top).
 	d, err := l.bnDetailAge(ctx, detailAge)
 	if err != nil {
 		return rawSnap{}, err
-	}
-	equity := d.JDec("marginBalance")
-	if !equity.IsPositive() {
-		return rawSnap{}, errs.Msg("无法读取币安带单员权益")
 	}
 	st := b.state
 	poll := true
@@ -574,7 +583,7 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 		poll = b.needPoll(lastTrade)
 	}
 	if poll {
-		if err := l.pollFills(ctx, st); err != nil {
+		if err := l.pollFills(ctx, b, st); err != nil {
 			return rawSnap{}, err
 		}
 		b.polledAt = time.Now()
@@ -582,7 +591,7 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 			b.afterPoll(st, lastTrade)
 		}
 	}
-	raw := l.reconRaw(ctx, st, equity)
+	raw := l.reconRaw(ctx, b, st)
 	b.cached = &cachedRaw{time.Now(), raw}
 	return raw, nil
 }
@@ -620,9 +629,9 @@ func (b *fillBook) afterPoll(st *FillState, lastTrade int64) {
 	b.pendingSince = time.Time{}
 }
 
-// pollFills reads the trade history back to fills already processed and
-// applies the new ones.
-func (l *LeadTrader) pollFills(ctx context.Context, st *FillState) error {
+// pollFills reads the trade history back to fills already processed,
+// applies the new ones and corrects legs per the position history.
+func (l *LeadTrader) pollFills(ctx context.Context, b *fillBook, st *FillState) error {
 	fs := l.fills
 	var fills []Fill
 	for page := 1; page <= 40; page++ {
@@ -644,7 +653,20 @@ func (l *LeadTrader) pollFills(ctx context.Context, st *FillState) error {
 	}
 	beforeTs, beforeLen := st.LastTs, len(st.Window)
 	applied := st.Ingest(fills)
-	if applied > 0 || st.LastTs != beforeTs || len(st.Window) != beforeLen {
+	if time.Since(b.histAt) >= histEvery {
+		// Best effort: positions still come from the fills without it.
+		if h, err := l.bnPositionHistory(ctx); err != nil {
+			slog.Warn("lead position history", "id", l.id, "err", err)
+		} else {
+			b.hist = h
+		}
+		b.histAt = time.Now()
+	}
+	corrected := st.Correct(b.hist)
+	if len(corrected) > 0 {
+		slog.Warn("lead fills: legs closed per position history", "id", l.id, "legs", corrected)
+	}
+	if applied > 0 || len(corrected) > 0 || st.LastTs != beforeTs || len(st.Window) != beforeLen {
 		j, err := json.Marshal(st)
 		if err != nil {
 			return err
@@ -657,8 +679,9 @@ func (l *LeadTrader) pollFills(ctx context.Context, st *FillState) error {
 }
 
 // reconRaw prices the reconstructed positions at the live mark.
-func (l *LeadTrader) reconRaw(ctx context.Context, st *FillState, equity decimal.Decimal) rawSnap {
+func (l *LeadTrader) reconRaw(ctx context.Context, b *fillBook, st *FillState) rawSnap {
 	recon := st.Positions()
+	lev := HistLeverage(b.hist)
 	// The trader's last fill price can be days old; prefer the live mark.
 	var marks map[string]decimal.Decimal
 	if len(recon) > 0 {
@@ -670,13 +693,17 @@ func (l *LeadTrader) reconRaw(ctx context.Context, st *FillState, equity decimal
 		if m, ok := marks[p.Symbol]; ok && m.IsPositive() {
 			mark = m
 		}
-		positions = append(positions, rawPos{symbol: p.Symbol, units: p.Qty, entry: p.Entry, mark: mark, upnl: mark.Sub(p.Entry).Mul(p.Qty)})
+		rp := rawPos{symbol: p.Symbol, units: p.Qty, entry: p.Entry, mark: mark, upnl: mark.Sub(p.Entry).Mul(p.Qty)}
+		if v, ok := lev[p.Symbol]; ok {
+			rp.leverage = decPtr(v)
+		}
+		positions = append(positions, rp)
 	}
 	trades := make(map[string]model.TradeCum, len(st.Cum))
 	for sym, c := range st.Cum {
 		trades[sym] = *c
 	}
-	return rawSnap{equity: equity, positions: positions, trades: trades}
+	return rawSnap{equity: decimal.Zero, positions: positions, trades: trades}
 }
 
 // LeadOrder is one order from a Binance lead trader's public order history.
@@ -762,6 +789,37 @@ func (l *LeadTrader) RecentOrders(ctx context.Context, sourceID string) ([]LeadO
 		out = append(out, LeadOrder{Time: t, Symbol: x.JStr("symbol"), Buy: x.JStr("side") == "BUY", PosSide: ps, Type: x.JStr("type"), Qty: x.JDec("executedQty"), AvgPx: x.JDec("avgPrice"), Pnl: x.JDec("totalPnl")})
 	}
 	b.orders = &cachedOrders{at: time.Now(), trade: trade, list: out}
+	return out, nil
+}
+
+// bnPositionHistory returns the newest page of fully closed positions.
+func (l *LeadTrader) bnPositionHistory(ctx context.Context) ([]HistPos, error) {
+	if err := lc.bnBucket.Acquire(ctx, 1, false); err != nil {
+		return nil, err
+	}
+	body, _ := json.Marshal(map[string]any{"pageNumber": 1, "pageSize": 50, "portfolioId": l.id})
+	req, err := newReq(ctx, http.MethodPost, bnCopy+"/lead-portfolio/position-history", string(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	v, err := SendJSON(l.client, model.Binance, req)
+	if err != nil {
+		return nil, err
+	}
+	if !v.Get("success").BoolOr(false) {
+		msg, ok := v.Get("message").AsStr()
+		if !ok {
+			msg = "请求失败"
+		}
+		return nil, &errs.Exchange{Code: v.JStr("code"), Msg: "币安带单：" + msg}
+	}
+	var out []HistPos
+	for _, x := range v.Get("data").Get("list").Arr() {
+		if h := ParseHistPos(x); h != nil {
+			out = append(out, *h)
+		}
+	}
 	return out, nil
 }
 

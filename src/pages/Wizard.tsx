@@ -70,8 +70,9 @@ export function Wizard() {
   }, [existing, loaded]);
 
   const source = sources?.find((s) => s.id === sourceId);
-  // OKX lead traders publish no equity, so equity-ratio sizing is unavailable.
-  const noSourceEquity = source?.kind === "lead_trader" && source.platform === "okx";
+  // OKX lead traders publish no equity, and hidden Binance traders report one
+  // that does not match their positions: equity-ratio sizing is unavailable.
+  const noSourceEquity = source?.kind === "lead_trader" && (source.platform === "okx" || source.lead_mode === "fills");
   useEffect(() => {
     if (noSourceEquity && rules.sizing.mode === "equity_ratio") setRules((r) => ({ ...r, sizing: { ...r.sizing, mode: "fixed_multiple" } }));
   }, [noSourceEquity, rules.sizing.mode]);
@@ -308,7 +309,7 @@ function RulesStep({ rules, setRules, kInvalid, nInvalid, supportsMirror, noSour
             <button
               key={m.v}
               disabled={noSourceEquity && m.v === "equity_ratio"}
-              title={noSourceEquity && m.v === "equity_ratio" ? tr("OKX 带单员不公开权益", "OKX lead traders do not publish equity") : undefined}
+              title={noSourceEquity && m.v === "equity_ratio" ? tr("信号源权益未知", "Source equity unknown") : undefined}
               onClick={() => set({ sizing: { ...rules.sizing, mode: m.v } })}
               className={clsx("rounded-md border px-3 py-2.5 text-left transition-[border-color,background-color,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-40", rules.sizing.mode === m.v ? "border-fg bg-muted" : "border-border hover:bg-muted/50")}
             >
@@ -329,7 +330,7 @@ function RulesStep({ rules, setRules, kInvalid, nInvalid, supportsMirror, noSour
           )}
         </div>
         <p className="mt-2 text-xs text-muted-fg">{tr("每个跟单账户可在确认页单独覆盖。", "Each follower can override this on the confirm step.")}</p>
-        {noSourceEquity ? <p className="mt-1 text-xs text-muted-fg">{tr("OKX 带单员不公开自身权益，「按权益比例」不可用。固定倍数按带单员的币数乘以 k。", "OKX lead traders do not publish their equity, so equity ratio is unavailable. Fixed multiple uses the trader's coin size × k.")}</p> : null}
+        {noSourceEquity ? <p className="mt-1 text-xs text-muted-fg">{tr("OKX 带单员不公开自身权益，隐藏持仓的币安带单员公布的权益与持仓对不上，「按权益比例」不可用。固定倍数按带单员的币数乘以 k。", "OKX lead traders do not publish equity, and hidden Binance traders report an equity that does not match their positions, so equity ratio is unavailable. Fixed multiple uses the trader's coin size × k.")}</p> : null}
       </section>
 
       <section className="grid grid-cols-2 gap-8">

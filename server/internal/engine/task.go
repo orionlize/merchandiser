@@ -129,14 +129,16 @@ type followerCtx struct {
 }
 
 type taskRunner struct {
-	e                   *Engine
-	id                  string
-	name                string
-	rules               Rules
-	risk                Risk
-	source              exchange.Exchange
-	sourceMarkets       *exchange.Markets
-	sourceKind          string
+	e             *Engine
+	id            string
+	name          string
+	rules         Rules
+	risk          Risk
+	source        exchange.Exchange
+	sourceMarkets *exchange.Markets
+	sourceKind    string
+	// Source equity is unknown (see store.SourceRow.HidesEquity).
+	hidesEquity         bool
 	sourceAddress       string
 	sourceTestnet       bool
 	followers           []*followerCtx
@@ -254,7 +256,7 @@ func prepareRunner(ctx context.Context, e *Engine, taskID string, freshStart boo
 	}
 	return &taskRunner{
 		e: e, id: t.ID, name: t.Name, rules: rules, risk: risk, source: source, sourceMarkets: sourceMarkets,
-		sourceKind: src.Kind, sourceAddress: addr, sourceTestnet: src.Testnet, followers: followers,
+		sourceKind: src.Kind, hidesEquity: src.HidesEquity(), sourceAddress: addr, sourceTestnet: src.Testnet, followers: followers,
 		baseline: baseline, lastSourceOk: util.NowMs(), alerted: map[string]int64{},
 	}, nil
 }

@@ -323,6 +323,7 @@ type FillInfoDto struct {
 	// The trader's own lastTradeTime, which trigger mode watches.
 	LastTradeAt *int64             `json:"last_trade_at"`
 	Applied     uint64             `json:"applied"`
+	Corrected   uint64             `json:"corrected"`
 	Backfill    *exchange.Backfill `json:"backfill"`
 }
 
@@ -359,7 +360,7 @@ func sourceDetail(ctx context.Context, s *Server, body []byte) (any, error) {
 			return nil, err
 		}
 		if st != nil {
-			fills.Anchor, fills.LastFillAt, fills.Applied = st.Anchor, st.LastFillAt, st.Applied
+			fills.Anchor, fills.LastFillAt, fills.Applied, fills.Corrected = st.Anchor, st.LastFillAt, st.Applied, st.Corrected
 		}
 		if fills.Backfill != nil && fills.Backfill.Running {
 			return SourceDetailDto{Equity: "0", Notional: "0", Positions: []model.Position{}, Orders: []SourceOrderDto{}, Ts: util.NowMs(), Fills: fills}, nil
@@ -377,7 +378,9 @@ func sourceDetail(ctx context.Context, s *Server, body []byte) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, _ = db.ExecContext(ctx, "INSERT INTO source_equity (source_id, ts, equity) VALUES (?,?,?)", a.ID, util.NowMs(), snap.Equity.String())
+	if snap.Equity.IsPositive() {
+		_, _ = db.ExecContext(ctx, "INSERT INTO source_equity (source_id, ts, equity) VALUES (?,?,?)", a.ID, util.NowMs(), snap.Equity.String())
+	}
 	orders := []SourceOrderDto{}
 	for _, o := range snap.Orders {
 		n, err := store.Count(ctx, db, "SELECT COUNT(*) FROM mirrors m JOIN tasks t ON t.id = m.task_id WHERE t.source_id = ? AND m.source_order_id = ? AND m.status IN ('live','filled')", a.ID, o.ID)
@@ -393,7 +396,7 @@ func sourceDetail(ctx context.Context, s *Server, body []byte) (any, error) {
 	if fills != nil {
 		// The snapshot may have advanced the state.
 		if st, err := exchange.LoadFillState(ctx, db, a.ID); err == nil && st != nil {
-			fills.Anchor, fills.LastFillAt, fills.Applied = st.Anchor, st.LastFillAt, st.Applied
+			fills.Anchor, fills.LastFillAt, fills.Applied, fills.Corrected = st.Anchor, st.LastFillAt, st.Applied, st.Corrected
 		}
 	}
 	out := SourceDetailDto{

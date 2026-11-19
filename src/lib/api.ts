@@ -188,7 +188,7 @@ export interface SourceDetail {
   orders: OpenOrder[];
   ts: number;
   /** Fill reconstruction progress ("fills" lead traders). */
-  fills: { anchor: number; last_fill_at: number | null; last_trade_at: number | null; applied: number; backfill: Backfill | null } | null;
+  fills: { anchor: number; last_fill_at: number | null; last_trade_at: number | null; applied: number; corrected: number; backfill: Backfill | null } | null;
   /** Binance lead traders: newest public orders. */
   lead_orders: LeadOrder[] | null;
   lead_orders_error: string | null;
