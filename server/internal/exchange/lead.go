@@ -14,7 +14,11 @@ package exchange
 //     fills stay public, so a source may instead run in `fills` mode, which
 //     reconstructs positions from the public trade history, about the last
 //     two months (see leadfills.go, leadbackfill.go); that feed is ~2 minutes
-//     behind the trader.
+//     behind the trader. A hidden trader's `marginBalance` does not match
+//     the positions (measured 500 USDT against a 380k USDT 1× position), so
+//     `fills` mode reports equity as 0, like OKX. The public position
+//     history (closed positions only) supplies leverage and corrects legs
+//     the fills missed.
 //   - Gate: its web endpoints sit behind a bot wall, so it is not supported.
 //
 // Snapshots are cached per trader for a few seconds and shared by every task
@@ -70,7 +74,14 @@ type fillBook struct {
 	mu     sync.Mutex
 	state  *FillState
 	cached *cachedRaw
+	// Latest page of the public position history.
+	hist   []HistPos
+	histAt time.Time
 }
+
+// The position history only changes when a position closes; it serves
+// leverage and corrections, so a slow refresh is enough.
+const histEvery = time.Minute
 
 type leadCache struct {
 	snapMu  sync.Mutex // held across a fetch so concurrent callers wait for one request
@@ -249,7 +260,8 @@ func (l *LeadTrader) Probe(ctx context.Context) (*LeadProbe, error) {
 			t := page[0].Time
 			p.LastFillMs = &t
 		}
-		if e := d.JStr("marginBalance"); e != "" {
+		// A hidden trader's marginBalance does not match the positions.
+		if e := d.JStr("marginBalance"); e != "" && p.PositionsPublic {
 			p.Equity = &e
 		}
 		return p, nil
@@ -500,13 +512,9 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 			b.state = st
 		}
 	}
-	d, err := l.bnDetail(ctx)
-	if err != nil {
+	// Fails when the trader is gone; equity is unreliable (see top).
+	if _, err := l.bnDetail(ctx); err != nil {
 		return rawSnap{}, err
-	}
-	equity := d.JDec("marginBalance")
-	if !equity.IsPositive() {
-		return rawSnap{}, errs.Msg("无法读取币安带单员权益")
 	}
 	// Page back until we touch fills already processed.
 	var fills []Fill
@@ -530,7 +538,20 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 	}
 	beforeTs, beforeLen := st.LastTs, len(st.Window)
 	applied := st.Ingest(fills)
-	if applied > 0 || st.LastTs != beforeTs || len(st.Window) != beforeLen {
+	if time.Since(b.histAt) >= histEvery {
+		// Best effort: positions still come from the fills without it.
+		if h, err := l.bnPositionHistory(ctx); err != nil {
+			slog.Warn("lead position history", "id", l.id, "err", err)
+		} else {
+			b.hist = h
+		}
+		b.histAt = time.Now()
+	}
+	corrected := st.Correct(b.hist)
+	if len(corrected) > 0 {
+		slog.Warn("lead fills: legs closed per position history", "id", l.id, "legs", corrected)
+	}
+	if applied > 0 || len(corrected) > 0 || st.LastTs != beforeTs || len(st.Window) != beforeLen {
 		j, err := json.Marshal(st)
 		if err != nil {
 			return rawSnap{}, err
@@ -540,6 +561,7 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 		}
 	}
 	recon := st.Positions()
+	lev := HistLeverage(b.hist)
 	// The trader's last fill price can be days old; prefer the live mark.
 	var marks map[string]decimal.Decimal
 	if len(recon) > 0 {
@@ -551,11 +573,46 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 		if m, ok := marks[p.Symbol]; ok && m.IsPositive() {
 			mark = m
 		}
-		positions = append(positions, rawPos{symbol: p.Symbol, units: p.Qty, entry: p.Entry, mark: mark, upnl: mark.Sub(p.Entry).Mul(p.Qty)})
+		rp := rawPos{symbol: p.Symbol, units: p.Qty, entry: p.Entry, mark: mark, upnl: mark.Sub(p.Entry).Mul(p.Qty)}
+		if v, ok := lev[p.Symbol]; ok {
+			rp.leverage = decPtr(v)
+		}
+		positions = append(positions, rp)
 	}
-	raw := rawSnap{equity: equity, positions: positions}
+	raw := rawSnap{equity: decimal.Zero, positions: positions}
 	b.cached = &cachedRaw{time.Now(), raw}
 	return raw, nil
+}
+
+// bnPositionHistory returns the newest page of fully closed positions.
+func (l *LeadTrader) bnPositionHistory(ctx context.Context) ([]HistPos, error) {
+	if err := lc.bnBucket.Acquire(ctx, 1, false); err != nil {
+		return nil, err
+	}
+	body, _ := json.Marshal(map[string]any{"pageNumber": 1, "pageSize": 50, "portfolioId": l.id})
+	req, err := newReq(ctx, http.MethodPost, bnCopy+"/lead-portfolio/position-history", string(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	v, err := SendJSON(l.client, model.Binance, req)
+	if err != nil {
+		return nil, err
+	}
+	if !v.Get("success").BoolOr(false) {
+		msg, ok := v.Get("message").AsStr()
+		if !ok {
+			msg = "请求失败"
+		}
+		return nil, &errs.Exchange{Code: v.JStr("code"), Msg: "币安带单：" + msg}
+	}
+	var out []HistPos
+	for _, x := range v.Get("data").Get("list").Arr() {
+		if h := ParseHistPos(x); h != nil {
+			out = append(out, *h)
+		}
+	}
+	return out, nil
 }
 
 // bnMarks returns live mark prices by symbol, or nil when unreachable.

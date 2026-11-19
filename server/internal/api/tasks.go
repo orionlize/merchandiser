@@ -49,13 +49,13 @@ func validateRules(r *engine.Rules) error {
 	return nil
 }
 
-// checkSourceSizing: OKX lead traders expose no equity, so equity-ratio sizing cannot work.
+// checkSourceSizing: sources with unknown equity cannot use equity-ratio sizing.
 func checkSourceSizing(ctx context.Context, s *Server, sourceID string, rules *engine.Rules, followers []FollowerSpec) error {
 	src, err := store.Source(ctx, s.E.DB, sourceID)
 	if err != nil || src == nil {
 		return err
 	}
-	if !(src.Kind == "lead_trader" && src.Platform == "okx") {
+	if !src.HidesEquity() {
 		return nil
 	}
 	bad := rules != nil && rules.Sizing.Mode == engine.EquityRatio
@@ -65,7 +65,11 @@ func checkSourceSizing(ctx context.Context, s *Server, sourceID string, rules *e
 		}
 	}
 	if bad {
-		return errs.Msg("OKX 带单员不公开权益，不能按权益比例跟单，请改用固定倍数或固定名义金额")
+		who := "OKX 带单员不公开权益"
+		if src.IsFills() {
+			who = "隐藏持仓的币安带单员权益不可信"
+		}
+		return errs.Msg("%s，不能按权益比例跟单，请改用固定倍数或固定名义金额", who)
 	}
 	return nil
 }

@@ -408,6 +408,15 @@ func (e *Engine) StartTask(ctx context.Context, taskID string, freshStart bool) 
 	if err != nil {
 		return err
 	}
+	// Tasks created before the source's equity was found unreliable would
+	// otherwise skip every signal.
+	if tr.hidesEquity {
+		for _, f := range tr.followers {
+			if f.sizing.Mode == EquityRatio {
+				return errs.Msg("信号源权益未知，%s 不能按权益比例跟单，请编辑任务改用固定倍数或固定名义金额", f.alias)
+			}
+		}
+	}
 	if err := store.SetTaskStatus(ctx, e.DB, taskID, "running", nil); err != nil {
 		return err
 	}

@@ -72,6 +72,8 @@ type Leg struct {
 	// Signed size in venue units (LONG ≥ 0, SHORT ≤ 0, BOTH either).
 	Qty   decimal.Decimal `json:"qty"`
 	Entry decimal.Decimal `json:"entry"`
+	// Venue time of the last fill applied (0 in states saved before it existed).
+	At int64 `json:"at,omitempty"`
 }
 
 type FillState struct {
@@ -87,6 +89,8 @@ type FillState struct {
 	LastPx     map[string]decimal.Decimal `json:"last_px"`
 	LastFillAt *int64                     `json:"last_fill_at"`
 	Applied    uint64                     `json:"applied"`
+	// Legs zeroed because the position history says they were closed.
+	Corrected uint64 `json:"corrected"`
 }
 
 func NewFillState(anchor int64) *FillState {
@@ -170,6 +174,7 @@ func (s *FillState) apply(f *Fill) {
 		leg = &Leg{}
 		s.Legs[key] = leg
 	}
+	leg.At = f.Time
 	dir := util.One
 	if !f.Buy {
 		dir = util.One.Neg()
@@ -255,5 +260,73 @@ func (s *FillState) Positions() []ReconPos {
 		out = append(out, ReconPos{sym, l.Qty, l.Entry, px})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Symbol < out[j].Symbol })
+	return out
+}
+
+// HistPos is one fully closed position from the public position history.
+type HistPos struct {
+	Symbol string
+	// LONG / SHORT.
+	Side string
+	// Venue time (ms) of the closing fill.
+	Closed   int64
+	Leverage decimal.Decimal
+}
+
+func ParseHistPos(v util.J) *HistPos {
+	if v.JStr("status") != "All Closed" {
+		return nil
+	}
+	closed, ok := v.Get("closed").Int()
+	sym := v.JStr("symbol")
+	side := strings.ToUpper(v.JStr("side"))
+	if !ok || closed <= 0 || sym == "" || (side != "LONG" && side != "SHORT") {
+		return nil
+	}
+	return &HistPos{Symbol: sym, Side: side, Closed: closed, Leverage: v.JDec("leverage")}
+}
+
+// HistLeverage is each symbol's leverage on its latest closed position.
+// Binance leverage is a per-symbol setting, so it usually carries over to
+// the position open now.
+func HistLeverage(hist []HistPos) map[string]decimal.Decimal {
+	out := map[string]decimal.Decimal{}
+	at := map[string]int64{}
+	for _, h := range hist {
+		if h.Leverage.IsPositive() && h.Closed > at[h.Symbol] {
+			out[h.Symbol], at[h.Symbol] = h.Leverage, h.Closed
+		}
+	}
+	return out
+}
+
+// Correct zeroes legs that the position history says were fully closed after
+// their last fill (fills we missed). Fill times are whole seconds while
+// `closed` has milliseconds, so only a leg last filled in an earlier second
+// than the close counts: a reopen in the same second must survive. Legs
+// without a fill time (older saved states) are left alone. Returns the
+// corrected leg keys.
+func (s *FillState) Correct(hist []HistPos) []string {
+	var out []string
+	for _, h := range hist {
+		if h.Closed < s.Anchor {
+			continue
+		}
+		closeSec := h.Closed - h.Closed%1000
+		for _, ps := range []string{h.Side, "BOTH"} {
+			key := h.Symbol + "|" + ps
+			leg, ok := s.Legs[key]
+			if !ok || leg.Qty.IsZero() || leg.At == 0 || leg.At >= closeSec {
+				continue
+			}
+			if ps == "BOTH" && (leg.Qty.IsPositive() != (h.Side == "LONG")) {
+				continue
+			}
+			delete(s.Legs, key)
+			s.Corrected++
+			out = append(out, key)
+		}
+	}
+	sort.Strings(out)
 	return out
 }

@@ -171,7 +171,7 @@ export interface SourceDetail {
   orders: OpenOrder[];
   ts: number;
   /** Fill reconstruction progress ("fills" lead traders). */
-  fills: { anchor: number; last_fill_at: number | null; applied: number; backfill: Backfill | null } | null;
+  fills: { anchor: number; last_fill_at: number | null; applied: number; corrected: number; backfill: Backfill | null } | null;
 }
 
 export type SizingMode = "equity_ratio" | "fixed_multiple" | "fixed_notional";

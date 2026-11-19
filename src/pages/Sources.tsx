@@ -110,8 +110,8 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
   const delMut = useAction(api.deleteSource, { ok: tr("已删除", "Deleted"), invalidate: [["sources"]] });
   const paper = s.platform === "paper" && !!s.connection_id;
   const lead = s.kind === "lead_trader";
-  const equityHidden = lead && s.platform === "okx";
   const fillsMode = s.lead_mode === "fills";
+  const equityHidden = lead && (s.platform === "okx" || fillsMode);
   const trade = useAction(api.paperTrade, { ok: tr("已提交", "Submitted"), invalidate: [["source", s.id], ["connections"]] });
   const [rebuild, setRebuild] = useState(false);
   const backfillMut = useAction(api.backfillSource, { ok: tr("开始重建", "Rebuild started"), invalidate: [["source", s.id]] });
@@ -138,7 +138,7 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
         <div className="flex gap-8 text-right max-md:text-left">
           <div>
             <div className="text-xs text-muted-fg">{tr("权益", "Equity")} {s.platform === "hyperliquid" ? "USDC" : "USDT"}</div>
-            <div className="num mt-1 text-xl" title={equityHidden ? tr("OKX 不公开带单员权益", "OKX does not publish lead trader equity") : undefined}>
+            <div className="num mt-1 text-xl" title={equityHidden ? (fillsMode ? tr("隐藏持仓的带单员公布的权益与持仓对不上，不采用", "A hidden trader's reported equity does not match the positions, so it is not used") : tr("OKX 不公开带单员权益", "OKX does not publish lead trader equity")) : undefined}>
               {equityHidden ? tr("未公开", "Hidden") : num(data?.equity, 0)}
             </div>
           </div>
@@ -158,12 +158,13 @@ function SourceDetailView({ s, onDeleted }: { s: Source; onDeleted: () => void }
               <div className="font-semibold">{tr("该带单员未公开持仓，以下仓位由公开成交记录推算", "Positions are hidden; the positions below are reconstructed from public fills")}</div>
               <div className="mt-1">
                 {tr(
-                  `只计入 ${new Date(data.fills?.anchor ?? s.created_at).toLocaleString()} 之后的成交，之前已有的仓位看不到；比带单员实际成交晚约 2 分钟；杠杆未知，「跟随信号源杠杆」会改用任务里的固定值。`,
-                  `Only fills after ${new Date(data.fills?.anchor ?? s.created_at).toLocaleString()} count; earlier positions are invisible. About 2 minutes behind the trader. Leverage is unknown, so "follow source leverage" falls back to the task's fixed value.`,
+                  `只计入 ${new Date(data.fills?.anchor ?? s.created_at).toLocaleString()} 之后的成交，之前已有的仓位看不到；比带单员实际成交晚约 2 分钟。杠杆取该品种最近一次平仓的杠杆，没有平仓记录的品种按任务里的固定值。公开的历史仓位里已全部平掉、但推算仍未归零的仓位会自动清零。权益不可信，不能按权益比例跟单。`,
+                  `Only fills after ${new Date(data.fills?.anchor ?? s.created_at).toLocaleString()} count; earlier positions are invisible. About 2 minutes behind the trader. Leverage comes from the coin's latest closed position; coins with none use the task's fixed value. Positions the public position history shows as fully closed are zeroed if the reconstruction missed the close. Equity is unreliable, so equity-ratio sizing is unavailable.`,
                 )}
               </div>
               <div className="mt-1">
                 {tr("已计入成交", "Fills applied")} {data.fills?.applied ?? 0} · {tr("最近一笔", "latest")} {data.fills?.last_fill_at ? ago(data.fills.last_fill_at, lang === "en") : tr("暂无", "none yet")}
+                {data.fills?.corrected ? <span className="text-warning"> · {tr(`按历史仓位校正 ${data.fills.corrected} 次`, `${data.fills.corrected} corrected from position history`)}</span> : null}
               </div>
               <div className="mt-2 flex items-center gap-3">
                 {bf?.running ? (
@@ -427,7 +428,8 @@ function AddLeadModal({ open, onClose, onAdded }: { open: boolean; onClose: () =
             <ul className="list-disc pl-5 text-muted-fg">
               <li>{tr("比带单员实际成交晚约 2 分钟（实测 122–135 秒），进出频繁的带单员不适合跟。", "About 2 minutes behind the trader (measured 122–135 s); a poor fit for fast in-and-out traders.")}</li>
               <li>{tr("添加后会用公开的历史成交（约最近 2 个月，成交多的只有最近约 6000 笔）推算当前仓位；更早开的仓位看不到。", "After adding, current positions are rebuilt from the public history (about the last 2 months, or the latest ~6000 fills for very active traders); older positions are invisible.")}</li>
-              <li>{tr("推算可能与真实持仓不同（例如他平掉历史之前开的仓位时）；杠杆未知。", "The reconstruction can differ from the real positions (e.g. when closing positions older than the history); leverage is unknown.")}</li>
+              <li>{tr("推算可能与真实持仓不同（例如他平掉历史之前开的仓位时）；杠杆取该品种最近一次平仓的杠杆。", "The reconstruction can differ from the real positions (e.g. when closing positions older than the history); leverage comes from the coin's latest closed position.")}</li>
+              <li>{tr("他公布的权益与持仓对不上，只能按固定倍数或固定名义金额跟单。", "The equity they report does not match their positions, so only fixed multiple or fixed notional sizing works.")}</li>
               <li>{tr("数据来自币安网页接口，可能随时失效。", "Data comes from Binance's website API and may stop working.")}</li>
             </ul>
             <p className="text-xs text-muted-fg">
