@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { Download, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
+import { hasLeadPoll, LeadPollSwitch } from "../components/LeadPoll";
 import { PositionsTable } from "../components/Positions";
 import { fillLabel, TaskChart } from "../components/TaskChart";
 import { Button, Drawer, Empty, Loading, Modal, Radio, Seg, SideTag, Tabs } from "../components/ui";
@@ -8,7 +9,7 @@ import { api, errMsg, type ChartInterval, type LogFilter, type CompareRow, type 
 import { downloadText } from "../lib/files";
 import { ago, date, num, pnlClass, price, qty, signed, time } from "../lib/format";
 import { trNow, useTr } from "../lib/i18n";
-import { useAction, useTask, useTaskChart } from "../lib/queries";
+import { useAction, useSources, useTask, useTaskChart } from "../lib/queries";
 import { replay, type ReplayedFill } from "../lib/replay";
 import { useUi } from "../lib/store";
 import { sourceLabel } from "./Overview";
@@ -18,6 +19,7 @@ export function TaskDetail() {
   const tr = useTr();
   const { route, go } = useUi();
   const { data: t, isLoading } = useTask(route.id);
+  const { data: sources } = useSources();
   const [tab, setTab] = useState<"hold" | "pos" | "mirror" | "log">("hold");
   const [stopping, setStopping] = useState(false);
   const [rules, setRules] = useState(false);
@@ -71,6 +73,14 @@ export function TaskDetail() {
         </div>
         {t.pause_reason && t.status === "paused" ? <div className="mt-2 text-xs text-warning">{t.pause_reason}</div> : null}
         {live?.last_error ? <div className="mt-2 text-xs text-danger">{live.last_error}</div> : null}
+        {(() => {
+          const src = sources?.find((x) => x.id === t.source_id);
+          return hasLeadPoll(src) ? (
+            <div className="mt-3">
+              <LeadPollSwitch source={src} showHint={false} />
+            </div>
+          ) : null;
+        })()}
 
         <PnlHero t={t} />
         <ChartCard t={t} />

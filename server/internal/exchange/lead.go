@@ -14,7 +14,8 @@ package exchange
 //     fills stay public, so a source may instead run in `fills` mode, which
 //     reconstructs positions from the public trade history, about the last
 //     two months (see leadfills.go, leadbackfill.go); that feed is ~2 minutes
-//     behind the trader.
+//     behind the trader. A fills source polls that history either on a timer
+//     or, in trigger mode, only when the trader's `lastTradeTime` moves.
 //   - Gate: its web endpoints sit behind a bot wall, so it is not supported.
 //
 // Snapshots are cached per trader for a few seconds and shared by every task
@@ -30,6 +31,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -72,6 +74,48 @@ type fillBook struct {
 	mu     sync.Mutex
 	state  *FillState
 	cached *cachedRaw
+	// Trigger mode: watch the trader's lastTradeTime (a cheap GET outside the
+	// POST "system busy" budget) and read the trade history only when it
+	// moves, plus a slow safety poll.
+	trigger atomic.Bool
+	// Last trade-history read.
+	polledAt time.Time
+	// lastTradeTime the fills have caught up with.
+	seenTrade int64
+	// When lastTradeTime first ran ahead of the fills, while it still does.
+	pendingSince time.Time
+	ordersMu     sync.Mutex
+	orders       *cachedOrders
+}
+
+type cachedOrders struct {
+	at    time.Time
+	trade int64
+	list  []LeadOrder
+}
+
+const (
+	// Interval mode: read the trade history this often.
+	fillsPollEvery = 6 * time.Second
+	// Trigger mode: check lastTradeTime this often.
+	triggerCheckEvery = 2 * time.Second
+	// Trigger mode: read the trade history at least this often anyway.
+	triggerSafetyPoll = 30 * time.Second
+	// lastTradeTime runs ~1 s after the fill time it reports.
+	tradeSlackMs = 10_000
+	// Stop chasing a lastTradeTime the trade history never shows.
+	triggerPendingMax = 3 * time.Minute
+)
+
+// SetFillsTrigger switches a fills source between interval polling and
+// trigger mode; running tasks pick it up on their next snapshot.
+func SetFillsTrigger(sourceID string, on bool) {
+	b := bookOf(sourceID)
+	if b.trigger.Swap(on) != on {
+		b.mu.Lock()
+		b.cached = nil
+		b.mu.Unlock()
+	}
 }
 
 type leadCache struct {
@@ -228,11 +272,13 @@ func NewLeadTrader(venue model.Platform, id, proxy string) (*LeadTrader, error) 
 }
 
 // WithFills follows by reconstructing positions from fills (Binance only).
-func (l *LeadTrader) WithFills(sourceID string, db *sql.DB, anchor int64) (*LeadTrader, error) {
+// trigger selects how the trade history is polled (see fillBook).
+func (l *LeadTrader) WithFills(sourceID string, db *sql.DB, anchor int64, trigger bool) (*LeadTrader, error) {
 	if l.venue != model.Binance {
 		return nil, errs.Msg("只有币安带单员支持按成交记录推算")
 	}
 	l.fills = &fillsSrc{sourceID: sourceID, db: db, anchor: anchor}
+	SetFillsTrigger(sourceID, trigger)
 	return l, nil
 }
 
@@ -367,9 +413,14 @@ func (l *LeadTrader) bnGet(ctx context.Context, path string) (util.J, error) {
 }
 
 func (l *LeadTrader) bnDetail(ctx context.Context) (util.J, error) {
+	return l.bnDetailAge(ctx, time.Minute)
+}
+
+// bnDetailAge returns the portfolio detail, at most maxAge old.
+func (l *LeadTrader) bnDetailAge(ctx context.Context, maxAge time.Duration) (util.J, error) {
 	lc.detMu.Lock()
 	defer lc.detMu.Unlock()
-	if d, ok := lc.details[l.id]; ok && time.Since(d.at) < time.Minute {
+	if d, ok := lc.details[l.id]; ok && time.Since(d.at) < maxAge {
 		return d.v, nil
 	}
 	v, err := l.bnGet(ctx, "lead-portfolio/detail?portfolioId="+l.id)
@@ -479,7 +530,12 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 	// One poll per source at a time; others reuse the result.
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.cached != nil && time.Since(b.cached.at) < 6*time.Second {
+	trigger := b.trigger.Load()
+	ttl, detailAge := fillsPollEvery, time.Minute
+	if trigger {
+		ttl, detailAge = triggerCheckEvery, triggerCheckEvery
+	}
+	if b.cached != nil && time.Since(b.cached.at) < ttl {
 		return b.cached.raw, nil
 	}
 	if bf := backfillOf(fs.sourceID); bf != nil && bf.Running {
@@ -502,7 +558,7 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 			b.state = st
 		}
 	}
-	d, err := l.bnDetail(ctx)
+	d, err := l.bnDetailAge(ctx, detailAge)
 	if err != nil {
 		return rawSnap{}, err
 	}
@@ -510,16 +566,72 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 	if !equity.IsPositive() {
 		return rawSnap{}, errs.Msg("无法读取币安带单员权益")
 	}
-	// Page back until we touch fills already processed.
-	var fills []Fill
 	st := b.state
+	poll := true
+	var lastTrade int64
+	if trigger {
+		lastTrade, _ = d.Get("lastTradeTime").Int()
+		poll = b.needPoll(lastTrade)
+	}
+	if poll {
+		if err := l.pollFills(ctx, st); err != nil {
+			return rawSnap{}, err
+		}
+		b.polledAt = time.Now()
+		if trigger {
+			b.afterPoll(st, lastTrade)
+		}
+	}
+	raw := l.reconRaw(ctx, st, equity)
+	b.cached = &cachedRaw{time.Now(), raw}
+	return raw, nil
+}
+
+// needPoll: whether trigger mode should read the trade history now.
+func (b *fillBook) needPoll(lastTrade int64) bool {
+	switch {
+	case lastTrade <= 0:
+		// The venue stopped reporting it: fall back to interval polling.
+		return time.Since(b.polledAt) >= fillsPollEvery
+	case b.polledAt.IsZero(), time.Since(b.polledAt) >= triggerSafetyPoll:
+		return true
+	}
+	return lastTrade != b.seenTrade
+}
+
+// afterPoll records whether the fills have caught up with lastTradeTime.
+// Until they do, needPoll keeps answering yes (the trade-history bucket
+// spaces those reads 3 s apart).
+func (b *fillBook) afterPoll(st *FillState, lastTrade int64) {
+	switch {
+	case lastTrade <= 0 || lastTrade == b.seenTrade:
+	case st.LastTs >= lastTrade-tradeSlackMs:
+		b.seenTrade = lastTrade
+	default:
+		if b.pendingSince.IsZero() {
+			b.pendingSince = time.Now()
+		}
+		if time.Since(b.pendingSince) < triggerPendingMax {
+			return
+		}
+		slog.Warn("binance lead trader: lastTradeTime never showed up in the trade history", "last_trade", lastTrade)
+		b.seenTrade = lastTrade
+	}
+	b.pendingSince = time.Time{}
+}
+
+// pollFills reads the trade history back to fills already processed and
+// applies the new ones.
+func (l *LeadTrader) pollFills(ctx context.Context, st *FillState) error {
+	fs := l.fills
+	var fills []Fill
 	for page := 1; page <= 40; page++ {
 		p, err := l.bnFillsPage(ctx, page)
 		if err != nil {
-			return rawSnap{}, err
+			return err
 		}
 		if page == 1 && len(p) == 0 {
-			return rawSnap{}, errs.Msg("币安带单员成交记录不可见")
+			return errs.Msg("币安带单员成交记录不可见")
 		}
 		done := len(p) < 50 || st.PageReachesKnown(p)
 		fills = append(fills, p...)
@@ -527,7 +639,7 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 			break
 		}
 		if page == 40 {
-			return rawSnap{}, errs.Msg("币安带单员短时间成交过多，无法确认是否漏单")
+			return errs.Msg("币安带单员短时间成交过多，无法确认是否漏单")
 		}
 	}
 	beforeTs, beforeLen := st.LastTs, len(st.Window)
@@ -535,12 +647,17 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 	if applied > 0 || st.LastTs != beforeTs || len(st.Window) != beforeLen {
 		j, err := json.Marshal(st)
 		if err != nil {
-			return rawSnap{}, err
+			return err
 		}
 		if _, err := fs.db.ExecContext(ctx, "INSERT INTO lead_fill_state (source_id, json) VALUES (?, ?) ON CONFLICT(source_id) DO UPDATE SET json = excluded.json", fs.sourceID, string(j)); err != nil {
-			return rawSnap{}, err
+			return err
 		}
 	}
+	return nil
+}
+
+// reconRaw prices the reconstructed positions at the live mark.
+func (l *LeadTrader) reconRaw(ctx context.Context, st *FillState, equity decimal.Decimal) rawSnap {
 	recon := st.Positions()
 	// The trader's last fill price can be days old; prefer the live mark.
 	var marks map[string]decimal.Decimal
@@ -559,9 +676,93 @@ func (l *LeadTrader) fetchFills(ctx context.Context) (rawSnap, error) {
 	for sym, c := range st.Cum {
 		trades[sym] = *c
 	}
-	raw := rawSnap{equity: equity, positions: positions, trades: trades}
-	b.cached = &cachedRaw{time.Now(), raw}
-	return raw, nil
+	return rawSnap{equity: equity, positions: positions, trades: trades}
+}
+
+// LeadOrder is one order from a Binance lead trader's public order history.
+type LeadOrder struct {
+	Time    int64           `json:"time"`
+	Symbol  string          `json:"symbol"`
+	Buy     bool            `json:"buy"`
+	PosSide string          `json:"pos_side"` // LONG / SHORT / BOTH
+	Type    string          `json:"type"`     // MARKET / LIMIT / ...
+	Qty     decimal.Decimal `json:"qty"`
+	AvgPx   decimal.Decimal `json:"avg_px"`
+	Pnl     decimal.Decimal `json:"pnl"`
+}
+
+// LastTrade is the trader's lastTradeTime as last read (ms), if known.
+func (l *LeadTrader) LastTrade(ctx context.Context) *int64 {
+	if l.venue != model.Binance {
+		return nil
+	}
+	d, err := l.bnDetail(ctx)
+	if err != nil {
+		return nil
+	}
+	if t, ok := d.Get("lastTradeTime").Int(); ok && t > 0 {
+		return &t
+	}
+	return nil
+}
+
+// RecentOrders returns the newest orders of a Binance lead trader. It shares
+// the trade history's request budget, so it is cached: refreshed at most
+// every 10 s, and kept up to a minute while lastTradeTime stays put.
+func (l *LeadTrader) RecentOrders(ctx context.Context, sourceID string) ([]LeadOrder, error) {
+	if l.venue != model.Binance {
+		return nil, errs.Msg("只有币安带单员公开订单记录")
+	}
+	var trade int64
+	if t := l.LastTrade(ctx); t != nil {
+		trade = *t
+	}
+	b := bookOf(sourceID)
+	b.ordersMu.Lock()
+	defer b.ordersMu.Unlock()
+	if c := b.orders; c != nil {
+		age := time.Since(c.at)
+		if age < 10*time.Second || (c.trade == trade && trade > 0 && age < time.Minute) {
+			return c.list, nil
+		}
+	}
+	if err := lc.bnFillsBucket.Acquire(ctx, 1, true); err != nil {
+		return nil, err
+	}
+	body, _ := json.Marshal(map[string]any{"pageNumber": 1, "pageSize": 20, "portfolioId": l.id})
+	req, err := newReq(ctx, http.MethodPost, bnCopy+"/lead-portfolio/order-history", string(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	v, err := SendJSON(l.client, model.Binance, req)
+	if err != nil {
+		return nil, err
+	}
+	if !v.Get("success").BoolOr(false) {
+		if v.JStr("code") == "11012005" {
+			return nil, &errs.RateLimited{Msg: "币安订单记录接口繁忙"}
+		}
+		msg, ok := v.Get("message").AsStr()
+		if !ok {
+			msg = "请求失败"
+		}
+		return nil, &errs.Exchange{Code: v.JStr("code"), Msg: "币安带单：" + msg}
+	}
+	out := []LeadOrder{}
+	for _, x := range v.Get("data").Get("list").Arr() {
+		t, ok := x.Get("orderTime").Int()
+		if !ok {
+			continue
+		}
+		ps := x.JStr("positionSide")
+		if ps != "LONG" && ps != "SHORT" {
+			ps = "BOTH"
+		}
+		out = append(out, LeadOrder{Time: t, Symbol: x.JStr("symbol"), Buy: x.JStr("side") == "BUY", PosSide: ps, Type: x.JStr("type"), Qty: x.JDec("executedQty"), AvgPx: x.JDec("avgPrice"), Pnl: x.JDec("totalPnl")})
+	}
+	b.orders = &cachedOrders{at: time.Now(), trade: trade, list: out}
+	return out, nil
 }
 
 // bnMarks returns live mark prices by symbol, or nil when unreachable.

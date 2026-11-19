@@ -933,8 +933,8 @@ func importConfig(ctx context.Context, s *Server, body []byte) (any, error) {
 		if src.IsFills() {
 			created = util.NowMs()
 		}
-		if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO sources (id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode) VALUES (?,?,?,?,?,?,?,?,?)",
-			src.ID, src.Kind, src.Name, src.Platform, src.ConnectionID, src.Address, src.Testnet, created, src.LeadMode); err != nil {
+		if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO sources (id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode, lead_poll) VALUES (?,?,?,?,?,?,?,?,?,?)",
+			src.ID, src.Kind, src.Name, src.Platform, src.ConnectionID, src.Address, src.Testnet, created, src.LeadMode, src.LeadPoll); err != nil {
 			return nil, err
 		}
 	}
@@ -980,14 +980,15 @@ func init() {
 		"switch_one_way":      switchOneWay,
 		"delete_connection":   deleteConnection,
 
-		"list_sources":        listSources,
-		"add_source":          addSource,
-		"probe_lead_trader":   probeLeadTrader,
-		"search_lead_traders": searchLeadTraders,
-		"delete_source":       deleteSource,
-		"backfill_source":     backfillSource,
-		"source_detail":       sourceDetail,
-		"paper_trade":         paperTrade,
+		"list_sources":         listSources,
+		"add_source":           addSource,
+		"probe_lead_trader":    probeLeadTrader,
+		"search_lead_traders":  searchLeadTraders,
+		"delete_source":        deleteSource,
+		"backfill_source":      backfillSource,
+		"set_source_lead_poll": setSourceLeadPoll,
+		"source_detail":        sourceDetail,
+		"paper_trade":          paperTrade,
 
 		"list_tasks":   listTasks,
 		"get_task":     getTask,
