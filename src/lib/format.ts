@@ -81,18 +81,21 @@ export function shortAddr(a: string | null | undefined) {
   return a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a;
 }
 
-export const platformLabel: Record<Platform, [string, string]> = {
-  okx: ["OKX", "OKX"],
-  binance: ["币安", "Binance"],
-  gate: ["Gate", "Gate"],
+const platformLabels: Record<Platform, [string, string]> = {
   hyperliquid: ["Hyperliquid", "Hyperliquid"],
   paper: ["模拟", "Paper"],
 };
 
-export const platformTag: Record<Platform, string> = {
-  okx: "OKX",
-  binance: "BN",
-  gate: "Gate",
+const platformTags: Record<Platform, string> = {
   hyperliquid: "HL",
   paper: "模拟",
 };
+
+/** Display name; platforms no longer supported (old data) show as stored. */
+export function platformLabel(p: string, en: boolean): string {
+  return platformLabels[p as Platform]?.[en ? 1 : 0] ?? p;
+}
+
+export function platformTag(p: string): string {
+  return platformTags[p as Platform] ?? p;
+}

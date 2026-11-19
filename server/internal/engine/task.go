@@ -129,16 +129,14 @@ type followerCtx struct {
 }
 
 type taskRunner struct {
-	e             *Engine
-	id            string
-	name          string
-	rules         Rules
-	risk          Risk
-	source        exchange.Exchange
-	sourceMarkets *exchange.Markets
-	sourceKind    string
-	// Source equity is unknown (see store.SourceRow.HidesEquity).
-	hidesEquity         bool
+	e                   *Engine
+	id                  string
+	name                string
+	rules               Rules
+	risk                Risk
+	source              exchange.Exchange
+	sourceMarkets       *exchange.Markets
+	sourceKind          string
 	sourceAddress       string
 	sourceTestnet       bool
 	followers           []*followerCtx
@@ -148,7 +146,6 @@ type taskRunner struct {
 	lostHandled         bool
 	lastReconcile       int64
 	lastFollowerRefresh int64
-	loops               uint64
 	alerted             map[string]int64
 	paused              bool
 }
@@ -256,7 +253,7 @@ func prepareRunner(ctx context.Context, e *Engine, taskID string, freshStart boo
 	}
 	return &taskRunner{
 		e: e, id: t.ID, name: t.Name, rules: rules, risk: risk, source: source, sourceMarkets: sourceMarkets,
-		sourceKind: src.Kind, hidesEquity: src.HidesEquity(), sourceAddress: addr, sourceTestnet: src.Testnet, followers: followers,
+		sourceKind: src.Kind, sourceAddress: addr, sourceTestnet: src.Testnet, followers: followers,
 		baseline: baseline, lastSourceOk: util.NowMs(), alerted: map[string]int64{},
 	}, nil
 }
@@ -306,7 +303,6 @@ func (r *taskRunner) run(ctx context.Context, cmds <-chan taskCmd) {
 			}
 			cancel()
 			force = false
-			r.loops++
 		}
 		doStep = true
 		select {
@@ -362,17 +358,9 @@ func (r *taskRunner) publishPaused() {
 	r.e.Changed("tasks")
 }
 
-func (r *taskRunner) supportsOrders() bool { return r.sourceKind != "lead_trader" }
-
 func (r *taskRunner) step(ctx context.Context, force, wsOk bool) error {
 	now := util.NowMs()
-	// Binance openOrders is heavy (weight 40): poll it every 5th loop.
-	ordersEvery := uint64(1)
-	if r.source.Platform() == model.Binance {
-		ordersEvery = 5
-	}
-	wantOrders := r.rules.Mirror.Enabled && r.supportsOrders() && (r.loops%ordersEvery == 0 || force)
-	src, err := r.source.Snapshot(ctx, r.sourceMarkets, wantOrders)
+	src, err := r.source.Snapshot(ctx, r.sourceMarkets, r.rules.Mirror.Enabled)
 	if err != nil {
 		r.onSourceLost(ctx, now, err.Error())
 		return err
@@ -384,10 +372,6 @@ func (r *taskRunner) step(ctx context.Context, force, wsOk bool) error {
 	r.lostHandled = false
 	if !wsOk && now-r.lastSourceOk > int64(r.risk.SourceLostSecs)*1000 {
 		r.onSourceLost(ctx, now, "WebSocket 断线")
-	}
-	// Keep previous orders when we skipped fetching them this loop.
-	if !wantOrders && r.prev != nil {
-		src.Orders = r.prev.Orders
 	}
 
 	if !r.baseline.Initialized {
@@ -447,7 +431,7 @@ func (r *taskRunner) step(ctx context.Context, force, wsOk bool) error {
 	}
 	r.lastFollowerRefresh = now
 
-	if r.rules.Mirror.Enabled && r.supportsOrders() {
+	if r.rules.Mirror.Enabled {
 		r.syncMirrors(ctx, src)
 	}
 
@@ -595,21 +579,6 @@ func signalSource(prev, cur *model.AccountSnapshot, base string) *store.SignalSr
 	}
 	out.SrcEntry = dec(ea)
 	out.SrcEquity = dec(cur.Equity)
-	if pc, ok := prev.Trades[base]; ok {
-		if cc, ok := cur.Trades[base]; ok {
-			dq, dn := cc.Qty.Sub(pc.Qty), cc.Notional.Sub(pc.Notional)
-			// Totals go backwards when the source is rebuilt from history.
-			if dq.IsPositive() && dn.IsPositive() {
-				ts := cc.LastTs
-				out.SrcTs = &ts
-				out.SrcPx = dec(dn.Div(dq))
-				r := util.Fmt(cc.Realized.Sub(pc.Realized))
-				out.SrcRealized = &r
-				out.SrcBasis = util.Ptr("fills")
-				return out
-			}
-		}
-	}
 	out.SrcBasis = util.Ptr("positions")
 	switch {
 	case a.IsZero() || a.Sign() != b.Sign() && !b.IsZero():

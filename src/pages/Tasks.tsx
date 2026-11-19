@@ -31,7 +31,7 @@ export function followersLabel(t: TaskSummary) {
 }
 
 function platName(p: string) {
-  return ({ okx: "OKX", binance: trNow("币安", "Binance"), gate: "Gate", hyperliquid: "HL", paper: trNow("模拟", "Paper") } as Record<string, string>)[p] ?? p;
+  return ({ hyperliquid: "HL", paper: trNow("模拟", "Paper") } as Record<string, string>)[p] ?? p;
 }
 
 

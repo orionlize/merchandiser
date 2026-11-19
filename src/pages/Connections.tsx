@@ -30,7 +30,7 @@ export function Connections() {
   };
   const role = (c: Connection) => {
     const env = c.platform === "paper" ? "" : c.testnet ? tr("测试网", "testnet") : tr("实盘", "live");
-    const parts = [platformLabel[c.platform][lang === "en" ? 1 : 0] + (env ? ` ${env}` : "")];
+    const parts = [platformLabel(c.platform, lang === "en") + (env ? ` ${env}` : "")];
     if (c.source_count) parts.push(tr("信号源", "source"));
     if (c.proxy) parts.push(c.proxy.startsWith("socks") ? tr("代理 SOCKS5", "SOCKS5 proxy") : tr("代理 HTTP", "HTTP proxy"));
     return parts.join(tr("，", ", "));
@@ -83,7 +83,7 @@ export function Connections() {
         <div className="rounded-lg border border-border">
           <Empty
             title={tr("还没有连接", "No connections")}
-            hint={tr("添加 OKX、币安、Gate 的 API Key，Hyperliquid 的 API 钱包，或一个模拟账户先试跑。", "Add an OKX / Binance / Gate API key, a Hyperliquid API wallet, or a paper account to try things out.")}
+            hint={tr("添加 Hyperliquid 的 API 钱包，或一个模拟账户先试跑。", "Add a Hyperliquid API wallet, or a paper account to try things out.")}
           />
         </div>
       ) : (
@@ -202,7 +202,7 @@ export function Connections() {
   );
 }
 
-const EMPTY: ConnectionInput = { platform: "okx", alias: "", testnet: false, api_key: "", secret: "", passphrase: "", proxy: "", paper_initial: "10000" };
+const EMPTY: ConnectionInput = { platform: "hyperliquid", alias: "", testnet: false, api_key: "", secret: "", proxy: "", paper_initial: "10000" };
 
 function ConnectionDrawer({ open, edit, onClose }: { open: boolean; edit?: Connection; onClose: () => void }) {
   const tr = useTr();
@@ -217,7 +217,7 @@ function ConnectionDrawer({ open, edit, onClose }: { open: boolean; edit?: Conne
     if (!open) return;
     setV(null);
     if (edit) {
-      setF({ id: edit.id, platform: edit.platform, alias: edit.alias, testnet: edit.testnet, api_key: "", secret: "", passphrase: "", proxy: edit.proxy ?? "", paper_initial: null });
+      setF({ id: edit.id, platform: edit.platform, alias: edit.alias, testnet: edit.testnet, api_key: "", secret: "", proxy: edit.proxy ?? "", paper_initial: null });
       setShowProxy(!!edit.proxy);
     } else {
       setF(EMPTY);
@@ -229,10 +229,9 @@ function ConnectionDrawer({ open, edit, onClose }: { open: boolean; edit?: Conne
     setF((x) => ({ ...x, ...p }));
     setV(null);
   };
-  const isHl = f.platform === "hyperliquid";
   const isPaper = f.platform === "paper";
   const needSecrets = !edit || !!f.secret;
-  const complete = f.alias.trim() && (isPaper || !needSecrets || (f.api_key.trim() && f.secret.trim() && (f.platform !== "okx" || f.passphrase?.trim())));
+  const complete = f.alias.trim() && (isPaper || !needSecrets || (f.api_key.trim() && f.secret.trim()));
 
   const runCheck = async () => {
     setChecking(true);
@@ -271,9 +270,6 @@ function ConnectionDrawer({ open, edit, onClose }: { open: boolean; edit?: Conne
   };
 
   const platforms: { value: Platform; label: string }[] = [
-    { value: "okx", label: "OKX" },
-    { value: "binance", label: tr("币安", "Binance") },
-    { value: "gate", label: "Gate" },
     { value: "hyperliquid", label: "Hyperliquid" },
     { value: "paper", label: tr("模拟", "Paper") },
   ];
@@ -305,12 +301,12 @@ function ConnectionDrawer({ open, edit, onClose }: { open: boolean; edit?: Conne
         </Field>
         <div className="flex gap-4">
           <Field label={tr("别名", "Alias")} className="flex-1">
-            <Input value={f.alias} onChange={(e) => set({ alias: e.target.value })} placeholder={tr("如：okx-follow-02", "e.g. okx-follow-02")} />
+            <Input value={f.alias} onChange={(e) => set({ alias: e.target.value })} placeholder={tr("如：hl-follow-02", "e.g. hl-follow-02")} />
           </Field>
           {!isPaper ? (
             <Field label={tr("环境", "Environment")}>
               <div className="flex h-9 items-center">
-                <Toggle checked={f.testnet} onChange={(t) => set({ testnet: t })} label={f.platform === "okx" ? tr("模拟盘", "Demo") : tr("测试网", "Testnet")} />
+                <Toggle checked={f.testnet} onChange={(t) => set({ testnet: t })} label={tr("测试网", "Testnet")} />
               </div>
             </Field>
           ) : null}
@@ -319,7 +315,7 @@ function ConnectionDrawer({ open, edit, onClose }: { open: boolean; edit?: Conne
           <Field label={tr("初始资金", "Starting balance")} hint={tr("用 Hyperliquid 实时行情虚拟撮合，不发真实订单。", "Virtual fills on live Hyperliquid prices; no real orders.")}>
             <Input value={f.paper_initial ?? ""} onChange={(e) => set({ paper_initial: e.target.value.replace(/[^0-9.]/g, "") })} suffix="USDT" />
           </Field>
-        ) : isHl ? (
+        ) : (
           <>
             <Field label={tr("主账户地址", "Main account address")}>
               <Input className="num" value={f.api_key} onChange={(e) => set({ api_key: e.target.value.trim() })} placeholder={edit ? tr("留空则不修改", "Leave empty to keep") : "0x…"} />
@@ -331,20 +327,6 @@ function ConnectionDrawer({ open, edit, onClose }: { open: boolean; edit?: Conne
               <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warning" />
               <span>{tr("只填写在 Hyperliquid「API」页创建的 API 钱包私钥，它无法提款。不要输入主钱包私钥。", "Only enter an API wallet key created on Hyperliquid's API page — it cannot withdraw. Never enter your main wallet key.")}</span>
             </div>
-          </>
-        ) : (
-          <>
-            <Field label="API Key">
-              <Input className="num" value={f.api_key} onChange={(e) => set({ api_key: e.target.value.trim() })} placeholder={edit ? tr("留空则不修改", "Leave empty to keep") : ""} />
-            </Field>
-            <Field label={f.platform === "binance" ? tr("Secret / 私钥", "Secret / private key") : "Secret"}>
-              <Input type="password" className="num" value={f.secret} onChange={(e) => set({ secret: e.target.value.trim() })} placeholder={edit ? tr("留空则不修改", "Leave empty to keep") : f.platform === "binance" ? tr("系统生成 Key 填 Secret；Ed25519 / RSA Key 填私钥", "Secret for system keys; private key for Ed25519 / RSA") : ""} />
-            </Field>
-            {f.platform === "okx" ? (
-              <Field label="Passphrase">
-                <Input type="password" value={f.passphrase ?? ""} onChange={(e) => set({ passphrase: e.target.value })} placeholder={edit ? tr("留空则不修改", "Leave empty to keep") : ""} />
-              </Field>
-            ) : null}
           </>
         )}
         {!isPaper ? (

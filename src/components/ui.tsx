@@ -214,7 +214,7 @@ export function PlatformTag({ platform, testnet }: { platform: Platform; testnet
   return (
     <span className="inline-flex items-center gap-1">
       <span className={clsx("inline-flex h-[18px] min-w-[28px] items-center justify-center px-1 text-[11px] leading-none", platform === "paper" ? "bg-primary-soft text-primary" : "border border-border text-muted-fg")}>
-        {platform === "paper" ? tr("模拟", "Paper") : platformTag[platform]}
+        {platform === "paper" ? tr("模拟", "Paper") : platformTag(platform)}
       </span>
       {testnet ? <span className="bg-primary-soft px-1 text-[11px] leading-[18px] text-primary">{tr("测试网", "Testnet")}</span> : null}
     </span>

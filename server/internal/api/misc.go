@@ -915,8 +915,17 @@ func importConfig(ctx context.Context, s *Server, body []byte) (any, error) {
 		}
 		return nil
 	}
-	var nConn int64
+	// Only Hyperliquid (and paper) is supported: drop everything else, and
+	// the tasks that depend on it.
+	skippedConn := map[string]bool{}
+	var nConn, nSrc, nTask int64
 	for _, c := range cfg.Connections {
+		if p, _ := c["platform"].(string); !supportedPlatform(p) {
+			if id, ok := c["id"].(string); ok {
+				skippedConn[id] = true
+			}
+			continue
+		}
 		testnet, _ := c["testnet"].(bool)
 		r, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO connections (id, platform, alias, testnet, key_hint, proxy, paper_initial, created_at) VALUES (?,?,?,?,'',?,?,?)",
 			str(c, "id"), str(c, "platform"), str(c, "alias"), testnet, str(c, "proxy"), str(c, "paper_initial"), util.NowMs())
@@ -926,30 +935,42 @@ func importConfig(ctx context.Context, s *Server, body []byte) (any, error) {
 		n, _ := r.RowsAffected()
 		nConn += n
 	}
+	skippedSrc := map[string]bool{}
 	for _, src := range cfg.Sources {
-		// Fill-reconstruction state is not exported: an imported 'fills'
-		// source starts from the import time, never from the old anchor.
-		created := src.CreatedAt
-		if src.IsFills() {
-			created = util.NowMs()
+		if (src.Kind != "hl_address" && src.Kind != "api") || !supportedPlatform(src.Platform) || (src.ConnectionID != nil && skippedConn[*src.ConnectionID]) {
+			skippedSrc[src.ID] = true
+			continue
 		}
-		if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO sources (id, kind, name, platform, connection_id, address, testnet, created_at, lead_mode, lead_poll) VALUES (?,?,?,?,?,?,?,?,?,?)",
-			src.ID, src.Kind, src.Name, src.Platform, src.ConnectionID, src.Address, src.Testnet, created, src.LeadMode, src.LeadPoll); err != nil {
+		if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO sources (id, kind, name, platform, connection_id, address, testnet, created_at) VALUES (?,?,?,?,?,?,?,?)",
+			src.ID, src.Kind, src.Name, src.Platform, src.ConnectionID, src.Address, src.Testnet, src.CreatedAt); err != nil {
 			return nil, err
 		}
+		nSrc++
 	}
+	skippedTask := map[string]bool{}
 	for _, t := range cfg.Tasks {
+		if skippedSrc[t.SourceID] {
+			skippedTask[t.ID] = true
+			continue
+		}
+		nTask++
 		if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO tasks (id, name, source_id, status, rules_json, risk_json, pause_reason, created_at) VALUES (?,?,?,'stopped',?,?,?,?)",
 			t.ID, t.Name, t.SourceID, t.RulesJSON, t.RiskJSON, "导入的任务", t.CreatedAt); err != nil {
 			return nil, err
 		}
 	}
 	for _, f := range cfg.Followers {
+		if skippedTask[f.TaskID] || skippedConn[f.ConnectionID] {
+			continue
+		}
 		if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO task_followers (task_id, connection_id, override_json) VALUES (?,?,?)", f.TaskID, f.ConnectionID, f.OverrideJSON); err != nil {
 			return nil, err
 		}
 	}
 	for _, o := range cfg.SymbolMap {
+		if !supportedPlatform(o.Platform) {
+			continue
+		}
 		if _, err := tx.ExecContext(ctx, "INSERT OR REPLACE INTO symbol_map (base, platform, symbol, disabled) VALUES (?,?,?,?)", o.Base, o.Platform, o.Symbol, o.Disabled); err != nil {
 			return nil, err
 		}
@@ -959,7 +980,16 @@ func importConfig(ctx context.Context, s *Server, body []byte) (any, error) {
 	}
 	s.E.InvalidateMarkets()
 	s.E.Changed("all")
-	return fmt.Sprintf("已导入 %d 个连接（需重新填写密钥）、%d 个信号源、%d 个任务（均为已停止状态）", nConn, len(cfg.Sources), len(cfg.Tasks)), nil
+	msg := fmt.Sprintf("已导入 %d 个连接（需重新填写密钥）、%d 个信号源、%d 个任务（均为已停止状态）", nConn, nSrc, nTask)
+	if n := len(skippedConn) + len(skippedSrc) + len(skippedTask); n > 0 {
+		msg += fmt.Sprintf("；跳过 %d 项非 Hyperliquid 的连接 / 信号源 / 任务", n)
+	}
+	return msg, nil
+}
+
+func supportedPlatform(p string) bool {
+	_, ok := model.ParsePlatform(p)
+	return ok
 }
 
 // ===================== registry =====================
@@ -980,15 +1010,15 @@ func init() {
 		"switch_one_way":      switchOneWay,
 		"delete_connection":   deleteConnection,
 
-		"list_sources":         listSources,
-		"add_source":           addSource,
-		"probe_lead_trader":    probeLeadTrader,
-		"search_lead_traders":  searchLeadTraders,
-		"delete_source":        deleteSource,
-		"backfill_source":      backfillSource,
-		"set_source_lead_poll": setSourceLeadPoll,
-		"source_detail":        sourceDetail,
-		"paper_trade":          paperTrade,
+		"list_sources":  listSources,
+		"add_source":    addSource,
+		"delete_source": deleteSource,
+		"source_detail": sourceDetail,
+
+		"plaza_list":     plazaList,
+		"plaza_wallet":   plazaWallet,
+		"plaza_favorite": plazaFavorite,
+		"paper_trade":    paperTrade,
 
 		"list_tasks":   listTasks,
 		"get_task":     getTask,

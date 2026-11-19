@@ -76,6 +76,10 @@ export const useTaskChart = (taskId: string | undefined, base: string | undefine
 export const usePnlCurve = (range: PnlRange) => useQuery({ queryKey: ["pnl-curve", range], queryFn: () => api.pnlCurve(range), refetchInterval: 60000, placeholderData: keepPreviousData });
 export const useConnections = () => useQuery({ queryKey: ["connections"], queryFn: api.connections, refetchInterval: 30000 });
 export const useSources = () => useQuery({ queryKey: ["sources"], queryFn: api.sources });
+// The server crawls progressively; poll faster until every wallet is scored.
+export const usePlaza = () =>
+  useQuery({ queryKey: ["plaza"], queryFn: api.plaza, refetchInterval: (q) => (q.state.data && q.state.data.status.analyzed >= q.state.data.status.total ? 120_000 : 10_000) });
+export const usePlazaWallet = (address: string | null) => useQuery({ queryKey: ["plaza-wallet", address], queryFn: () => api.plazaWallet(address!), enabled: !!address, staleTime: 30_000 });
 export const useSettings = () => useQuery({ queryKey: ["settings"], queryFn: api.settings });
 
 /** Mutation with toast on error and query invalidation on success. */

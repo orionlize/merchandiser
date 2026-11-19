@@ -1,0 +1,579 @@
+import clsx from "clsx";
+import { ArrowUpDown, Check, Copy, CopyPlus, ExternalLink, Info, Search, Star, TriangleAlert, X } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { PnlCurveChart } from "../components/Charts";
+import { Button, Empty, Loading, Select, Spinner } from "../components/ui";
+import { api, errMsg, type PlazaFactors, type PlazaWallet, type PlazaWindow } from "../lib/api";
+import { ago, num, price, qty, shortAddr, signed } from "../lib/format";
+import { useTr } from "../lib/i18n";
+import { qc, usePlaza, usePlazaWallet, useSources } from "../lib/queries";
+import { useUi } from "../lib/store";
+
+// 跟单员广场: public Hyperliquid wallets ranked by copy-fit score.
+
+type Sort = "score" | "pnl" | "roi";
+
+const isAddr = (s: string) => /^0x[0-9a-fA-F]{40}$/.test(s);
+
+/** $4.82M / $640K / $9.1K */
+export function usd(v: number) {
+  const a = Math.abs(v);
+  const s = a >= 1e9 ? `${(a / 1e9).toFixed(2)}B` : a >= 1e6 ? `${(a / 1e6).toFixed(2)}M` : a >= 1e3 ? `${(a / 1e3).toFixed(a >= 1e5 ? 0 : 1)}K` : a.toFixed(0);
+  return `${v < 0 ? "−" : ""}$${s}`;
+}
+
+const pct = (v: number | null | undefined, dp = 1) => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(dp)}%`);
+const signedPct = (v: number | undefined) => (v === undefined ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v * 100).toFixed(1)}%`);
+
+function holdText(sec: number | null, en: boolean) {
+  // Analysed but no fills in the last 7 days.
+  if (sec === null) return en ? "idle" : "未交易";
+  if (sec < 3600) return en ? `${Math.max(1, Math.round(sec / 60))} min` : `${Math.max(1, Math.round(sec / 60))} 分钟`;
+  if (sec < 86400) return en ? `${Math.round(sec / 3600)} h` : `${Math.round(sec / 3600)} 小时`;
+  return en ? `${(sec / 86400).toFixed(1)} d` : `${(sec / 86400).toFixed(1)} 天`;
+}
+
+const scoreTone = (s: number) => (s >= 75 ? "success" : s >= 50 ? "primary" : "danger");
+const toneText = { success: "text-success", primary: "text-primary", danger: "text-danger" } as const;
+const toneBg = { success: "bg-success-soft text-success", primary: "bg-primary-soft text-primary", danger: "bg-danger-soft text-danger" } as const;
+
+const label = (w: PlazaWallet) => w.name ?? shortAddr(w.address);
+
+/** Cumulative PnL sparkline. */
+function Curve({ points, width = 96, height = 28 }: { points?: [number, number][]; width?: number; height?: number }) {
+  if (!points || points.length < 2) return <svg width={width} height={height} aria-hidden />;
+  const vs = points.map((p) => p[1]);
+  const lo = Math.min(...vs);
+  const hi = Math.max(...vs);
+  const span = hi - lo || 1;
+  const pts = vs.map((v, i) => `${((i / (vs.length - 1)) * (width - 2) + 1).toFixed(1)},${(height - 2 - ((v - lo) / span) * (height - 4)).toFixed(1)}`);
+  const last = vs[vs.length - 1] - vs[0];
+  return (
+    <svg width={width} height={height} aria-hidden>
+      <polyline points={pts.join(" ")} fill="none" stroke={last >= 0 ? "var(--success)" : "var(--danger)"} strokeWidth={1.5} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ScoreBadge({ w, win }: { w: PlazaWallet; win: PlazaWindow }) {
+  const tr = useTr();
+  if (!w.analyzed) return <span className="text-xs whitespace-nowrap text-muted-fg">{w.error ? tr("失败", "failed") : tr("计算中", "scoring")}</span>;
+  const s = w.scores[win]?.score ?? 0;
+  return <span className={clsx("num inline-flex h-5 min-w-8 items-center justify-center px-1.5 text-xs font-semibold", toneBg[scoreTone(s)])}>{s}</span>;
+}
+
+function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" aria-pressed={on} onClick={onClick} className={clsx("inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs transition-colors duration-150", on ? "bg-primary-soft text-primary" : "bg-muted text-muted-fg hover:text-fg")}>
+      {on ? <Check size={12} /> : null}
+      {children}
+    </button>
+  );
+}
+
+/** Phone: the plaza and "my sources" share the Sources tab. */
+export function SourcesSeg({ active }: { active: "plaza" | "mine" }) {
+  const tr = useTr();
+  const go = useUi((s) => s.go);
+  const { data: sources } = useSources();
+  const opts = [
+    { v: "plaza" as const, l: tr("跟单员广场", "Trader plaza"), to: "plaza" as const },
+    { v: "mine" as const, l: `${tr("我的信号源", "My sources")} ${sources?.length ?? ""}`, to: "sources" as const },
+  ];
+  return (
+    <div className="px-4 pt-3 pb-1 md:hidden">
+      <div className="flex rounded-md bg-muted p-0.5">
+        {opts.map((o) => (
+          <button key={o.v} onClick={() => o.v !== active && go(o.to)} className={clsx("h-8 flex-1 rounded-[3px] text-sm transition-colors duration-150", o.v === active ? "bg-card text-fg" : "text-muted-fg")}>
+            {o.l}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function Plaza() {
+  const tr = useTr();
+  const en = useUi((s) => s.lang) === "en";
+  const { data, isLoading, error } = usePlaza();
+  const [win, setWin] = useState<PlazaWindow>("30d");
+  const [sort, setSort] = useState<Sort>("score");
+  const [q, setQ] = useState("");
+  const [fDD, setFDD] = useState(false);
+  const [fNoHft, setFNoHft] = useState(false);
+  const [fBig, setFBig] = useState(false);
+  const [fFav, setFFav] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
+  // Phones show details in a bottom sheet.
+  const [sheet, setSheet] = useState(false);
+
+  const wallets = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const list = (data?.wallets ?? []).filter((w) => {
+      if (needle && !w.address.includes(needle) && !(w.name ?? "").toLowerCase().includes(needle)) return false;
+      if (fDD && !(w.analyzed && (w.max_dd[win] ?? 1) <= 0.2)) return false;
+      if (fNoHft && w.hft) return false;
+      if (fBig && w.equity < 1e6) return false;
+      if (fFav && !w.favorite) return false;
+      return true;
+    });
+    const key = (w: PlazaWallet) => (sort === "score" ? (w.analyzed ? (w.scores[win]?.score ?? 0) : -1) : sort === "pnl" ? (w.perf[win]?.pnl ?? -Infinity) : (w.perf[win]?.roi ?? -Infinity));
+    return list.sort((a, b) => key(b) - key(a) || (b.perf[win]?.pnl ?? 0) - (a.perf[win]?.pnl ?? 0));
+  }, [data, q, fDD, fNoHft, fBig, fFav, win, sort]);
+
+  // Desktop keeps a wallet selected.
+  useEffect(() => {
+    if (!sel && wallets.length) setSel(wallets[0].address);
+  }, [wallets, sel]);
+
+  const pasted = q.trim().toLowerCase();
+  const lookup = isAddr(pasted) && !wallets.some((w) => w.address === pasted) ? pasted : null;
+  const pick = (a: string) => {
+    setSel(a);
+    setSheet(true);
+  };
+
+  if (isLoading) return <Loading />;
+  const st = data?.status;
+
+  return (
+    <div className="flex h-full min-h-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <SourcesSeg active="plaza" />
+        <div className="flex flex-col gap-3 px-6 pt-5 pb-3 max-md:px-4 max-md:pt-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-[360px] items-center max-md:w-full gap-2 rounded-md border border-input bg-bg px-3 focus-within:border-ring">
+              <Search size={14} className="shrink-0 text-muted-fg" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("搜索名称，或粘贴任意 0x 地址", "Search, or paste any 0x address")} className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-fg" />
+              {q ? (
+                <button onClick={() => setQ("")} className="text-muted-fg hover:text-fg" aria-label={tr("清除", "Clear")}>
+                  <X size={14} />
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-fg max-md:hidden">
+            <Info size={14} className="mt-px shrink-0" />
+            <span>
+              {tr(
+                "「跟单适配度」综合回撤控制、持仓时长、收益稳定与资金规模（各 25 分）。持仓几分钟的高频钱包会被重罚——跟单延迟会吃掉它们的利润。数据来自 Hyperliquid 公开排行榜与链上成交。",
+                "Copy-fit blends drawdown control, holding time, stability and size (25 pts each). High-frequency wallets are heavily penalised — copy latency eats their edge. Data: Hyperliquid public leaderboard and fills.",
+              )}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex gap-1">
+              {(["7d", "30d", "all"] as const).map((w) => (
+                <button key={w} onClick={() => setWin(w)} className={clsx("relative flex h-9 min-w-11 items-center justify-center px-2 text-sm transition-colors duration-150", win === w ? "text-fg" : "text-muted-fg hover:text-fg")}>
+                  {{ "7d": tr("7 天", "7D"), "30d": tr("30 天", "30D"), all: tr("全部", "All") }[w]}
+                  {win === w ? <span className="absolute right-2 bottom-0 left-2 h-0.5 bg-primary" /> : null}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <ArrowUpDown size={14} className="text-muted-fg max-md:hidden" />
+              <Select<Sort>
+                value={sort}
+                onChange={setSort}
+                options={[
+                  { value: "score", label: tr("按适配度", "By copy-fit") },
+                  { value: "pnl", label: tr("按收益额", "By PnL") },
+                  { value: "roi", label: tr("按收益率", "By ROI") },
+                ]}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 overflow-x-auto">
+            <Chip on={fDD} onClick={() => setFDD(!fDD)}>
+              {tr("回撤 ≤ 20%", "DD ≤ 20%")}
+            </Chip>
+            <Chip on={fNoHft} onClick={() => setFNoHft(!fNoHft)}>
+              {tr("排除高频", "No HFT")}
+            </Chip>
+            <Chip on={fBig} onClick={() => setFBig(!fBig)}>
+              {tr("账户 ≥ $1M", "Equity ≥ $1M")}
+            </Chip>
+            <Chip on={fFav} onClick={() => setFFav(!fFav)}>
+              <Star size={12} />
+              {tr("只看关注", "Starred")}
+            </Chip>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-fg">
+            <span>{tr(`${wallets.length} 个钱包`, `${wallets.length} wallets`)}</span>
+            {st && st.analyzed < st.total ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Spinner />
+                {tr(`正在评分 ${st.analyzed}/${st.total}`, `Scoring ${st.analyzed}/${st.total}`)}
+              </span>
+            ) : null}
+            {st?.updated_at ? <span>{tr(`排行榜更新于 ${ago(st.updated_at)}`, `Leaderboard ${ago(st.updated_at, true)}`)}</span> : null}
+          </div>
+          {st?.error || error ? <div className="rounded-md bg-danger-soft px-3 py-2 text-xs text-danger">{st?.error || errMsg(error)}</div> : null}
+        </div>
+
+        {lookup ? (
+          <button onClick={() => pick(lookup)} className="mx-6 mb-3 flex items-center gap-2 rounded-md border border-border px-2 py-2.5 text-left text-sm hover:bg-muted max-md:mx-4">
+            <Search size={14} className="text-muted-fg" />
+            {tr("查看地址", "Look up")} <span className="num">{shortAddr(lookup)}</span>
+          </button>
+        ) : null}
+
+        {wallets.length === 0 && !lookup ? (
+          <Empty title={(data?.wallets.length ?? 0) === 0 ? tr("正在获取排行榜…", "Fetching leaderboard…") : tr("没有符合筛选的钱包", "No wallets match")} hint={(data?.wallets.length ?? 0) === 0 ? tr("首次打开需要几秒钟", "Takes a few seconds the first time") : undefined} />
+        ) : (
+          <>
+            <WalletTable wallets={wallets} win={win} sel={sel} onPick={pick} en={en} />
+            <WalletCards wallets={wallets} win={win} onPick={pick} en={en} />
+          </>
+        )}
+      </div>
+      {sel ? <Detail key={sel} address={sel} win={win} sheet={sheet} onClose={() => setSheet(false)} /> : null}
+    </div>
+  );
+}
+
+function Fav({ w }: { w: PlazaWallet }) {
+  const tr = useTr();
+  return (
+    <button
+      onClick={async (e) => {
+        e.stopPropagation();
+        try {
+          await api.plazaFavorite(w.address, !w.favorite);
+        } finally {
+          qc.invalidateQueries({ queryKey: ["plaza"] });
+          qc.invalidateQueries({ queryKey: ["plaza-wallet", w.address] });
+        }
+      }}
+      className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+      aria-label={w.favorite ? tr("取消关注", "Unstar") : tr("关注", "Star")}
+      aria-pressed={w.favorite}
+    >
+      <Star size={14} className={w.favorite ? "fill-primary text-primary" : "text-muted-fg"} />
+    </button>
+  );
+}
+
+function Tags({ w }: { w: PlazaWallet }) {
+  const tr = useTr();
+  return (
+    <>
+      {w.task_id ? <span className="bg-success-soft px-1.5 text-xs text-success">{tr("跟单中", "Copying")}</span> : null}
+      {w.hft ? <span className="bg-primary-soft px-1.5 text-xs text-warning">{tr("高频", "HFT")}</span> : null}
+    </>
+  );
+}
+
+function WalletTable({ wallets, win, sel, onPick, en }: { wallets: PlazaWallet[]; win: PlazaWindow; sel: string | null; onPick: (a: string) => void; en: boolean }) {
+  const tr = useTr();
+  const th = "px-2 py-2 text-left text-xs font-normal text-muted-fg whitespace-nowrap";
+  return (
+    <div className="overflow-x-auto px-6 pb-6 max-md:hidden">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="border-b border-border">
+            <th className={clsx(th, "w-10")}>#</th>
+            <th className={th}>{tr("钱包", "Wallet")}</th>
+            <th className={clsx(th, "text-right")}>{tr("收益", "PnL")}</th>
+            <th className={clsx(th, "text-right")}>{tr("收益率", "ROI")}</th>
+            <th className={clsx(th, "text-right")}>{tr("权益", "Equity")}</th>
+            <th className={clsx(th, "text-right")}>{tr("最大回撤", "Max DD")}</th>
+            <th className={clsx(th, "text-right")}>{tr("平均持仓", "Avg hold")}</th>
+            <th className={th}>{tr("曲线", "Curve")}</th>
+            <th className={clsx(th, "text-right")}>{tr("适配度", "Fit")}</th>
+            <th className="w-10" />
+          </tr>
+        </thead>
+        <tbody>
+          {wallets.map((w, i) => {
+            const p = w.perf[win];
+            const dd = w.max_dd[win];
+            return (
+              <tr key={w.address} onClick={() => onPick(w.address)} className={clsx("cursor-pointer border-b border-border transition-colors duration-150", sel === w.address ? "bg-card" : "hover:bg-card/60")}>
+                <td className="num px-2 py-2.5 text-xs text-muted-fg">{i + 1}</td>
+                <td className="px-2 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm">{label(w)}</span>
+                    <Tags w={w} />
+                  </div>
+                  {w.name ? <div className="num text-xs text-muted-fg">{shortAddr(w.address)}</div> : null}
+                </td>
+                <td className={clsx("num px-2 py-2.5 text-right text-sm", (p?.pnl ?? 0) >= 0 ? "text-success" : "text-danger")}>{p ? signed(p.pnl, 0) : "—"}</td>
+                <td className={clsx("num px-2 py-2.5 text-right text-sm", (p?.roi ?? 0) >= 0 ? "text-success" : "text-danger")}>{signedPct(p?.roi)}</td>
+                <td className="num px-2 py-2.5 text-right text-sm">{usd(w.equity)}</td>
+                <td className={clsx("num px-2 py-2.5 text-right text-sm", (dd ?? 0) > 0.25 && "text-warning")}>{w.analyzed ? pct(dd) : "—"}</td>
+                <td className={clsx("px-2 py-2.5 text-right text-sm whitespace-nowrap", w.hft && "text-warning")}>{w.analyzed ? holdText(w.avg_hold_sec, en) : "—"}</td>
+                <td className="px-2 py-1">
+                  <Curve points={w.curves[win]} width={72} />
+                </td>
+                <td className="px-2 py-2.5 text-right">
+                  <ScoreBadge w={w} win={win} />
+                </td>
+                <td className="px-1">
+                  <Fav w={w} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function WalletCards({ wallets, win, onPick, en }: { wallets: PlazaWallet[]; win: PlazaWindow; onPick: (a: string) => void; en: boolean }) {
+  const tr = useTr();
+  return (
+    <div className="md:hidden">
+      {wallets.map((w) => {
+        const p = w.perf[win];
+        return (
+          <button key={w.address} onClick={() => onPick(w.address)} className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left">
+            <span className="num flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-xs text-muted-fg">{w.address.slice(2, 4)}</span>
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-semibold">{label(w)}</span>
+                <Tags w={w} />
+              </span>
+              <span className="flex items-center gap-2 text-xs text-muted-fg">
+                <ScoreBadge w={w} win={win} />
+                {w.analyzed ? (
+                  <>
+                    <span className={clsx((w.max_dd[win] ?? 0) > 0.25 && "text-warning")}>
+                      {tr("回撤", "DD")} {pct(w.max_dd[win])}
+                    </span>
+                    <span className={clsx(w.hft && "text-warning")}>
+                      {tr("持仓", "Hold")} {holdText(w.avg_hold_sec, en)}
+                    </span>
+                  </>
+                ) : null}
+              </span>
+            </span>
+            <span className="flex shrink-0 flex-col items-end">
+              <span className={clsx("num text-md font-semibold", (p?.roi ?? 0) >= 0 ? "text-success" : "text-danger")}>{signedPct(p?.roi)}</span>
+              <span className="num text-xs text-muted-fg">{p ? signed(p.pnl, 0) : "—"}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function FactorBar({ name, v }: { name: string; v: number }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-16 shrink-0 text-xs text-muted-fg">{name}</span>
+      <span className="h-1.5 flex-1 bg-muted">
+        <span className="block h-full bg-primary" style={{ width: `${(v / 25) * 100}%` }} />
+      </span>
+      <span className="num w-10 text-right text-xs">{Math.round(v)}/25</span>
+    </div>
+  );
+}
+
+function Stat({ k, v, tone }: { k: string; v: ReactNode; tone?: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-xs text-muted-fg">{k}</span>
+      <span className={clsx("num text-sm font-semibold", tone)}>{v}</span>
+    </div>
+  );
+}
+
+function Detail({ address, win, sheet, onClose }: { address: string; win: PlazaWindow; sheet: boolean; onClose: () => void }) {
+  const tr = useTr();
+  const en = useUi((s) => s.lang) === "en";
+  const { go, toast } = useUi();
+  const { data: w, isLoading, error } = usePlazaWallet(address);
+  const [busy, setBusy] = useState<"follow" | "add" | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const ensureSource = async (d: PlazaWallet) => {
+    if (d.source_id) return d.source_id;
+    const id = await api.addSource({ kind: "hl_address", name: d.name ?? `HL ${shortAddr(d.address)}`, address: d.address, testnet: false });
+    qc.invalidateQueries({ queryKey: ["sources"] });
+    qc.invalidateQueries({ queryKey: ["plaza"] });
+    qc.invalidateQueries({ queryKey: ["plaza-wallet", d.address] });
+    return id;
+  };
+
+  const body = (() => {
+    if (isLoading)
+      return (
+        <div className="flex flex-col items-center gap-2 py-16 text-xs text-muted-fg">
+          <Spinner />
+          {tr("正在分析该地址的曲线与成交…", "Analysing curve and fills…")}
+        </div>
+      );
+    if (error || !w) return <div className="py-10 text-center text-sm text-danger">{errMsg(error)}</div>;
+    const sc = w.scores[win];
+    const p = w.perf[win];
+    const f: PlazaFactors = sc?.factors ?? { dd: 0, hold: 0, stable: 0, size: 0 };
+    const odd = w.coins.filter((c) => c.includes(":") || c.startsWith("@"));
+    return (
+      <div className="flex flex-col gap-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-lg font-semibold">{label(w)}</span>
+              <Tags w={w} />
+            </div>
+            <div className="mt-1 flex items-center gap-1 text-xs text-muted-fg">
+              <span className="num">{shortAddr(w.address)}</span>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(w.address);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                }}
+                className="flex h-6 w-6 items-center justify-center hover:text-fg"
+                aria-label={tr("复制地址", "Copy address")}
+              >
+                {copied ? <Check size={12} /> : <Copy size={12} />}
+              </button>
+              <a href={`https://app.hyperliquid.xyz/explorer/address/${w.address}`} target="_blank" rel="noreferrer" className="flex h-6 w-6 items-center justify-center hover:text-fg" aria-label={tr("在 Hyperliquid 查看", "View on Hyperliquid")}>
+                <ExternalLink size={12} />
+              </a>
+              <Fav w={w} />
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end">
+            <span className="text-xs text-muted-fg">{tr("跟单适配度", "Copy-fit")}</span>
+            <span className={clsx("num text-2xl font-semibold", toneText[scoreTone(sc?.score ?? 0)])}>{sc?.score ?? "—"}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <FactorBar name={tr("回撤控制", "Drawdown")} v={f.dd} />
+          <FactorBar name={tr("持仓时长", "Holding")} v={f.hold} />
+          <FactorBar name={tr("收益稳定", "Stability")} v={f.stable} />
+          <FactorBar name={tr("资金规模", "Size")} v={f.size} />
+        </div>
+
+        <div className="grid grid-cols-3 gap-x-3 gap-y-4 rounded-md bg-muted p-3">
+          <Stat k={tr("收益", "PnL")} v={p ? signed(p.pnl, 0) : "—"} tone={(p?.pnl ?? 0) >= 0 ? "text-success" : "text-danger"} />
+          <Stat k={tr("收益率", "ROI")} v={signedPct(p?.roi)} tone={(p?.roi ?? 0) >= 0 ? "text-success" : "text-danger"} />
+          <Stat k={tr("账户权益", "Equity")} v={usd(w.equity)} />
+          <Stat k={tr("最大回撤", "Max DD")} v={pct(w.max_dd[win])} tone={(w.max_dd[win] ?? 0) > 0.25 ? "text-warning" : undefined} />
+          <Stat k={tr("平均持仓", "Avg hold")} v={holdText(w.avg_hold_sec, en)} tone={w.hft ? "text-warning" : undefined} />
+          <Stat k={tr("日均成交", "Fills/day")} v={num(w.trades_per_day, w.trades_per_day < 10 ? 1 : 0)} tone={w.hft ? "text-warning" : undefined} />
+          <Stat k={tr("胜率 (7天)", "Win rate (7D)")} v={pct(w.win_rate, 0)} />
+        </div>
+
+        <div>
+          <div className="mb-1 text-xs text-muted-fg">{tr("累计收益", "Cumulative PnL")}</div>
+          {(w.curves[win]?.length ?? 0) > 1 ? <PnlCurveChart points={w.curves[win]!} height={160} compact /> : <div className="py-6 text-center text-xs text-muted-fg">—</div>}
+        </div>
+
+        <div>
+          <div className="mb-2 text-xs text-muted-fg">{tr(`当前持仓 ${w.positions.length}`, `Positions ${w.positions.length}`)}</div>
+          {w.positions_error ? <div className="text-xs text-danger">{w.positions_error}</div> : null}
+          {w.positions.length === 0 && !w.positions_error ? <div className="text-xs text-muted-fg">{tr("暂无持仓", "No positions")}</div> : null}
+          {w.positions.slice(0, 8).map((ps) => (
+            <div key={ps.coin} className="flex items-center justify-between border-b border-border py-2 text-sm">
+              <span className="flex items-center gap-2">
+                <span className={clsx("px-1 text-xs", ps.size > 0 ? "bg-success-soft text-success" : "bg-danger-soft text-danger")}>{ps.size > 0 ? tr("多", "L") : tr("空", "S")}</span>
+                {ps.coin}
+                <span className="num text-xs text-muted-fg">{ps.leverage}x</span>
+              </span>
+              <span className="num text-xs text-muted-fg">
+                {qty(Math.abs(ps.size))} @ {price(ps.entry_px)}
+              </span>
+              <span className={clsx("num text-xs", ps.upnl >= 0 ? "text-success" : "text-danger")}>{signed(ps.upnl, 0)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className={clsx("flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-xs", w.hft ? "text-warning" : "text-muted-fg")}>
+          {w.hft ? <TriangleAlert size={14} className="mt-px shrink-0" /> : <Info size={14} className="mt-px shrink-0" />}
+          <span>
+            {w.hft
+              ? tr(`平均持仓仅 ${holdText(w.avg_hold_sec, false)}、日均 ${num(w.trades_per_day, 0)} 笔成交，跟单延迟会吃掉大部分利润，不支持一键跟单。`, "Positions last minutes; copy latency would eat most of the edge, so one-click copy is disabled.")
+              : w.task_id
+                ? tr("你已有任务在跟这个地址，再建一个会重复下单。", "A task already follows this address; another would double the orders.")
+                : tr("按仓位镜像该地址的公开持仓，下一步在任务向导里设置资金比例与风控。", "Mirrors this address's public positions; set sizing and risk in the task wizard next.")}
+            {odd.length && !w.hft ? tr(` 其中 ${odd.slice(0, 3).join("、")} 等非标准合约不会被跟随。`, ` Non-standard markets (${odd.slice(0, 3).join(", ")}) are not copied.`) : ""}
+          </span>
+        </div>
+      </div>
+    );
+  })();
+
+  const cta = w ? (
+    <div className="flex flex-col gap-2">
+      {w.task_id ? (
+        <Button variant="primary" className="h-11 w-full text-md" onClick={() => go("task", w.task_id!)}>
+          {tr("查看跟单任务", "View copy task")}
+        </Button>
+      ) : (
+        <Button
+          variant="primary"
+          className="h-11 w-full text-md"
+          disabled={w.hft}
+          loading={busy === "follow"}
+          onClick={async () => {
+            setBusy("follow");
+            try {
+              const sid = await ensureSource(w);
+              go("wizard", undefined, sid);
+            } catch (e) {
+              toast(errMsg(e), "error");
+            } finally {
+              setBusy(null);
+            }
+          }}
+        >
+          {w.hft ? null : <CopyPlus size={16} />}
+          {w.hft ? tr("高频钱包不支持一键跟单", "HFT wallets can't be copied") : tr("跟单此钱包", "Copy this wallet")}
+        </Button>
+      )}
+      {!w.task_id ? (
+        w.source_id ? (
+          <div className="py-1 text-center text-xs text-muted-fg">{tr("已在「我的信号源」中", "Already in My sources")}</div>
+        ) : (
+          <Button
+            variant="ghost"
+            className="h-10 w-full text-muted-fg"
+            loading={busy === "add"}
+            onClick={async () => {
+              setBusy("add");
+              try {
+                await ensureSource(w);
+                toast(tr("已添加为信号源", "Added as a source"));
+              } catch (e) {
+                toast(errMsg(e), "error");
+              } finally {
+                setBusy(null);
+              }
+            }}
+          >
+            {tr("只添加为信号源", "Only add as source")}
+          </Button>
+        )
+      ) : null}
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <aside className="flex w-[392px] shrink-0 flex-col border-l border-border bg-card max-md:hidden">
+        <div className="flex-1 overflow-y-auto p-5">{body}</div>
+        {cta ? <div className="border-t border-border p-4">{cta}</div> : null}
+      </aside>
+      {sheet ? (
+        <div className="anim-fade fixed inset-0 z-50 flex flex-col justify-end bg-black/60 md:hidden" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+          <div className="flex max-h-[88vh] flex-col rounded-t-xl bg-card">
+            <div className="flex justify-center pt-2 pb-1">
+              <span className="h-1 w-9 rounded bg-border" />
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4">{body}</div>
+            {cta ? <div className="border-t border-border px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">{cta}</div> : null}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+

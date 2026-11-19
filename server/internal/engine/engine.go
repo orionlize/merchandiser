@@ -184,12 +184,6 @@ func (e *Engine) BuildAdapter(ctx context.Context, row *store.ConnectionRow, cre
 		}
 	}
 	switch p {
-	case model.Okx:
-		return exchange.NewOkx(c, row.Testnet, proxy)
-	case model.Binance:
-		return exchange.NewBinance(c, row.Testnet, proxy)
-	case model.Gate:
-		return exchange.NewGate(c, row.Testnet, proxy)
 	case model.Hyperliquid:
 		return exchange.NewHyperliquidTrading(c, row.Testnet, proxy)
 	default:
@@ -246,42 +240,8 @@ func (e *Engine) SourceAdapter(ctx context.Context, s *store.SourceRow) (exchang
 		return e.Adapter(ctx, *s.ConnectionID)
 	case "hl_address":
 		return exchange.NewHyperliquidPublic(s.Addr(), s.Testnet, "")
-	case "lead_trader":
-		p, ok := model.ParsePlatform(s.Platform)
-		if !ok {
-			return nil, errs.Msg("未知平台")
-		}
-		lt, err := exchange.NewLeadTrader(p, s.Addr(), "")
-		if err != nil {
-			return nil, err
-		}
-		if s.IsFills() {
-			return lt.WithFills(s.ID, e.DB, s.CreatedAt, s.IsTrigger())
-		}
-		return lt, nil
 	}
 	return nil, errs.Msg("未知信号源类型")
-}
-
-// BackfillSource rebuilds a `fills` lead source from its whole public trade
-// history in the background (see exchange/leadbackfill.go).
-func (e *Engine) BackfillSource(ctx context.Context, s *store.SourceRow) error {
-	if s.Kind != "lead_trader" || !s.IsFills() {
-		return errs.Msg("只有按成交记录推算的带单员信号源可以重建历史")
-	}
-	ex, err := e.SourceAdapter(ctx, s)
-	if err != nil {
-		return err
-	}
-	lt, ok := ex.(*exchange.LeadTrader)
-	if !ok {
-		return errs.Msg("未知信号源类型")
-	}
-	if err := lt.StartBackfill(e.ctx, func() { e.Changed("sources") }); err != nil {
-		return err
-	}
-	e.Changed("sources")
-	return nil
 }
 
 // ---------- markets ----------
@@ -349,17 +309,7 @@ func (e *Engine) InvalidateMarkets() {
 
 // AllMarkets returns contract maps for every live platform (public endpoints only).
 func (e *Engine) AllMarkets(ctx context.Context) map[model.Platform]*exchange.Markets {
-	dummy := model.Credentials{}
 	var exs []exchange.Exchange
-	if x, err := exchange.NewOkx(model.Credentials{Passphrase: util.Ptr("-")}, false, ""); err == nil {
-		exs = append(exs, x)
-	}
-	if x, err := exchange.NewBinance(dummy, false, ""); err == nil {
-		exs = append(exs, x)
-	}
-	if x, err := exchange.NewGate(dummy, false, ""); err == nil {
-		exs = append(exs, x)
-	}
 	if x, err := exchange.NewHyperliquidPublic("0x0000000000000000000000000000000000000000", false, ""); err == nil {
 		exs = append(exs, x)
 	}
@@ -400,22 +350,9 @@ func (e *Engine) StartTask(ctx context.Context, taskID string, freshStart bool) 
 		e.Changed("tasks")
 		return nil
 	}
-	var sourceID string
-	if err := e.DB.QueryRowContext(ctx, "SELECT source_id FROM tasks WHERE id = ?", taskID).Scan(&sourceID); err == nil && exchange.BackfillRunning(sourceID) {
-		return errs.Msg("信号源正在从历史成交重建仓位，完成后再启动")
-	}
 	tr, err := prepareRunner(ctx, e, taskID, freshStart)
 	if err != nil {
 		return err
-	}
-	// Tasks created before the source's equity was found unreliable would
-	// otherwise skip every signal.
-	if tr.hidesEquity {
-		for _, f := range tr.followers {
-			if f.sizing.Mode == EquityRatio {
-				return errs.Msg("信号源权益未知，%s 不能按权益比例跟单，请编辑任务改用固定倍数或固定名义金额", f.alias)
-			}
-		}
 	}
 	if err := store.SetTaskStatus(ctx, e.DB, taskID, "running", nil); err != nil {
 		return err

@@ -4,10 +4,6 @@ package exchange
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"crypto/sha512"
-
 	"github.com/shopspring/decimal"
 
 	"merchandiser/server/internal/model"
@@ -85,46 +81,12 @@ func (m *Markets) Clone() *Markets {
 	return out
 }
 
-func HmacSHA256(secret, msg []byte) []byte {
-	h := hmac.New(sha256.New, secret)
-	h.Write(msg)
-	return h.Sum(nil)
-}
-
-func HmacSHA512(secret, msg []byte) []byte {
-	h := hmac.New(sha512.New, secret)
-	h.Write(msg)
-	return h.Sum(nil)
-}
-
 // AggressivePx is the price bound for market emulation / IOC limits: ref ± slip.
 func AggressivePx(ref decimal.Decimal, buy bool, slip decimal.Decimal) decimal.Decimal {
 	if buy {
 		return ref.Mul(util.One.Add(slip))
 	}
 	return ref.Mul(util.One.Sub(slip))
-}
-
-// roundTick rounds a per-coin price to the venue tick, up or down.
-func roundTick(spec *model.ContractSpec, pxCoin decimal.Decimal, up bool) decimal.Decimal {
-	p := spec.VenuePx(pxCoin)
-	if spec.Tick.IsZero() {
-		return p
-	}
-	n := p.Div(spec.Tick)
-	if up {
-		n = n.Ceil()
-	} else {
-		n = n.Floor()
-	}
-	return n.Mul(spec.Tick)
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 func decPtr(d decimal.Decimal) *decimal.Decimal { return &d }

@@ -281,7 +281,7 @@ function PasswordModal({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-const PLATS: Platform[] = ["okx", "binance", "gate", "hyperliquid"];
+const PLATS: Platform[] = ["hyperliquid"];
 
 function Symbols() {
   const tr = useTr();
@@ -298,7 +298,7 @@ function Symbols() {
     const cpu = Number(c.coin_per_unit);
     const pxu = Number(c.px_unit);
     let suffix = "";
-    if (p === "okx" || p === "gate") suffix = cpu !== 1 ? ` × ${fmtMult(cpu)}` : "";
+    if (cpu !== 1) suffix = ` × ${fmtMult(cpu)}`;
     else if (pxu !== 1) suffix = ` ÷ ${fmtMult(pxu)}`;
     return (
       <span className={clsx(c.manual && "text-primary")}>
@@ -338,7 +338,7 @@ function Symbols() {
         </div>
       </div>
       <p className="mb-4 text-xs text-muted-fg">
-        {tr("启动时从各平台拉取合约列表自动生成，内部统一用币的数量。点击单元格可手动修正。", "Built from each venue's contract list; quantities are normalised to coins internally. Click a cell to correct it.")}
+        {tr("启动时从 Hyperliquid 拉取合约列表自动生成，内部统一用币的数量。点击单元格可手动修正。", "Built from Hyperliquid's contract list; quantities are normalised to coins internally. Click a cell to correct it.")}
         {updated ? tr(` 上次更新 ${time(updated)}。`, ` Updated ${time(updated)}.`) : ""}
       </p>
       {isFetching && !data ? (
@@ -349,9 +349,6 @@ function Symbols() {
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-fg">
                 <th className="px-4 py-2.5 font-normal">{tr("基础币种", "Base")}</th>
-                <th className="px-2 font-normal">{tr("OKX（面值）", "OKX (ct val)")}</th>
-                <th className="px-2 font-normal">{tr("币安", "Binance")}</th>
-                <th className="px-2 font-normal">{tr("Gate（乘数）", "Gate (mult)")}</th>
                 <th className="px-2 font-normal">Hyperliquid</th>
               </tr>
             </thead>
