@@ -46,7 +46,7 @@ type TaskPnl struct {
 	Name        string  `json:"name"`
 	Status      string  `json:"status"`
 	PauseReason *string `json:"pause_reason"`
-	// Equity change of the task's followers over the range.
+	// The task's own PnL over the range (realised + unrealised on its ledger shares).
 	Pnl         float64 `json:"pnl"`
 	StartEquity float64 `json:"start_equity"`
 	// Daily PnL for the last 14 days, oldest first: [day start ms, pnl].
@@ -192,18 +192,32 @@ func pnlCurve(ctx context.Context, s *Server, body []byte) (any, error) {
 			end = *t.StoppedAt
 		}
 		if b, ok := sum(ids, from); ok {
-			e, _ := sum(ids, end)
-			tp.StartEquity, tp.Pnl = round2(b), round2(e-b)
+			tp.StartEquity = round2(b)
 		}
+		// The task's own PnL (ledger), not its accounts' equity change: tasks
+		// sharing an account would otherwise all show the same number.
+		pts, err := store.TaskPnlSeries(ctx, db, t.ID, min(from, sparkFrom))
+		if err != nil {
+			return nil, err
+		}
+		cur, _ := s.E.TaskPnl(t.ID)
+		nowPnl, _ := cur.Float64()
+		at := func(ts int64) float64 {
+			if ts >= now {
+				return nowPnl
+			}
+			i := sort.Search(len(pts), func(i int) bool { return pts[i].Ts > ts })
+			if i == 0 {
+				return 0
+			}
+			return pts[i-1].Pnl
+		}
+		tp.Pnl = round2(at(end) - at(from))
 		for d := sparkFrom; d <= today; d += 86_400_000 {
 			lo, hi := max(d, from), min(d+86_400_000, end)
 			v := 0.0
 			if hi > lo {
-				b, ok1 := sum(ids, lo)
-				e, ok2 := sum(ids, hi)
-				if ok1 && ok2 {
-					v = round2(e - b)
-				}
+				v = round2(at(hi) - at(lo))
 			}
 			tp.Daily = append(tp.Daily, [2]float64{float64(d), v})
 		}

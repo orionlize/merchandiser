@@ -91,6 +91,17 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	if has, err = hasColumn(db, "task_positions", "realized"); err != nil {
+		return err
+	} else if !has {
+		m5, err := migrations.ReadFile("migrations/0005_task_ledger.sql")
+		if err != nil {
+			return err
+		}
+		if _, err := db.Exec(string(m5)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -505,7 +516,7 @@ func EquityBounds(ctx context.Context, db *sql.DB, conn string, since int64) (*E
 
 func Prune(ctx context.Context, db *sql.DB, retentionDays int64) error {
 	cutoff := util.NowMs() - retentionDays*86_400_000
-	for _, t := range []string{"signals", "orders", "alerts", "equity_snapshots", "source_equity"} {
+	for _, t := range []string{"signals", "orders", "alerts", "equity_snapshots", "source_equity", "task_pnl"} {
 		if _, err := db.ExecContext(ctx, "DELETE FROM "+t+" WHERE ts < ?", cutoff); err != nil {
 			return err
 		}

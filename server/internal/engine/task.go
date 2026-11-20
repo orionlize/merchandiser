@@ -110,6 +110,8 @@ type Baseline struct {
 	// Source size at open per coin (fixed-notional sizing).
 	OpenSizes   map[string]decimal.Decimal `json:"open_sizes"`
 	Initialized bool                       `json:"initialized"`
+	// The task's ledger shares were seeded from the accounts (ledger.go).
+	LedgerInit bool `json:"ledger_init"`
 }
 
 func newBaseline() Baseline {
@@ -430,6 +432,12 @@ func (r *taskRunner) step(ctx context.Context, force, wsOk bool) error {
 		}
 	}
 	r.lastFollowerRefresh = now
+	for _, f := range r.followers {
+		r.e.reconcileLedger(f.connID, f.snap, func(base string) decimal.Decimal { return r.refPx(src, f.snap, base) })
+	}
+	if !r.baseline.LedgerInit {
+		r.seedLedger(ctx, src)
+	}
 
 	if r.rules.Mirror.Enabled {
 		r.syncMirrors(ctx, src)
@@ -443,7 +451,7 @@ func (r *taskRunner) step(ctx context.Context, force, wsOk bool) error {
 		}
 	}
 	r.checkLossLimits(ctx)
-	r.publish(src)
+	r.publish(ctx, src)
 	r.prev = src
 	return nil
 }
@@ -652,11 +660,13 @@ type planned struct {
 	purpose  string
 	leverage *uint32
 	signalID *int64
+	// Book the fill to this task's ledger share (false for account-wide closes).
+	book bool
 }
 
 func newPlanned(base string, spec *model.ContractSpec, buy bool, qty decimal.Decimal, reduceOnly bool, refPx decimal.Decimal, purpose string, lev *uint32) *planned {
 	return &planned{
-		base: base, spec: *spec, purpose: purpose, leverage: lev,
+		base: base, spec: *spec, purpose: purpose, leverage: lev, book: true,
 		req: model.OrderRequest{Buy: buy, Qty: qty, Type: model.OrderType{Kind: model.OrderMarket}, ReduceOnly: reduceOnly, ClientID: util.NewClientID(), RefPx: refPx},
 	}
 }
@@ -666,18 +676,19 @@ func (r *taskRunner) syncPositions(ctx context.Context, src *model.AccountSnapsh
 	for _, p := range src.Positions {
 		bases[p.Base] = struct{}{}
 	}
+	owned := map[string]bool{}
 	for _, f := range r.followers {
-		if f.snap != nil {
-			for _, p := range f.snap.Positions {
-				bases[p.Base] = struct{}{}
-			}
+		for _, h := range r.e.heldOn(r.id, f.connID) {
+			bases[h.base] = struct{}{}
+			owned[h.base] = true
 		}
 	}
-	// Only coins the source has touched since start are ours to manage.
+	// Only coins the source has touched since start, or that this task still
+	// holds a share of, are ours to manage.
 	for b := range bases {
 		_, open := r.baseline.OpenSizes[b]
 		_, sig := signals[b]
-		if !open && src.Position(b).IsZero() && !sig {
+		if !open && src.Position(b).IsZero() && !sig && !owned[b] {
 			delete(bases, b)
 		}
 	}
@@ -805,6 +816,63 @@ func (r *taskRunner) srcRefPx(src *model.AccountSnapshot, base string) decimal.D
 	return decimal.Zero
 }
 
+// refPx prices a coin: the source's mark, else the follower account's.
+func (r *taskRunner) refPx(src, fs *model.AccountSnapshot, base string) decimal.Decimal {
+	if px := r.srcRefPx(src, base); px.IsPositive() {
+		return px
+	}
+	if fs != nil {
+		for _, p := range fs.Positions {
+			if p.Base == base && p.MarkPx.IsPositive() {
+				return p.MarkPx
+			}
+		}
+	}
+	return decimal.Zero
+}
+
+// held is this task's own share of a coin on a follower account.
+func (r *taskRunner) held(f *followerCtx, base string) decimal.Decimal {
+	return r.e.Held(r.id, f.connID, base)
+}
+
+// seedLedger gives the task its share of positions already on the accounts
+// the first time it runs with the ledger: tasks that predate it, or a task
+// starting on an account that already holds the coin.
+func (r *taskRunner) seedLedger(ctx context.Context, src *model.AccountSnapshot) {
+	for _, f := range r.followers {
+		if f.snap == nil {
+			return // retry next step with every account read
+		}
+	}
+	for _, f := range r.followers {
+		for base := range r.managedBases() {
+			if !r.rules.Allows(base) || f.markets.Base(base) == nil {
+				continue
+			}
+			px := r.refPx(src, f.snap, base)
+			if px.IsZero() {
+				continue
+			}
+			entry := px
+			for _, p := range f.snap.Positions {
+				if p.Base == base && p.EntryPx.IsPositive() {
+					entry = p.EntryPx
+				}
+			}
+			r.e.claimShare(r.id, f.connID, base, r.targetFor(f, f.snap, src, base, px), f.snap.Position(base), entry)
+		}
+	}
+	r.baseline.LedgerInit = true
+	r.saveBaseline(ctx)
+}
+
+// reduceOnly: an order cutting the task's share can only be reduce-only when
+// it also cuts the account's position (other tasks may hold the other side).
+func reduceOnly(acct, cur, qty decimal.Decimal) bool {
+	return !cur.IsZero() && acct.Sign() == cur.Sign() && acct.Abs().GreaterThanOrEqual(qty)
+}
+
 // targetFor returns the target coins for one follower and coin.
 func (r *taskRunner) targetFor(f *followerCtx, fs, src *model.AccountSnapshot, base string, px decimal.Decimal) decimal.Decimal {
 	raw := r.rules.Directional(src.Position(base))
@@ -823,13 +891,19 @@ func (r *taskRunner) targetFor(f *followerCtx, fs, src *model.AccountSnapshot, b
 		}
 		if c := r.risk.MaxTotalNotional; c != nil {
 			others := decimal.Zero
-			for _, p := range fs.Positions {
-				if p.Base != base {
-					others = others.Add(p.Size.Mul(p.MarkPx).Abs())
+			for _, h := range r.e.heldOn(r.id, f.connID) {
+				if h.base != base {
+					hp := h.avgPx
+					for _, p := range fs.Positions {
+						if p.Base == h.base && p.MarkPx.IsPositive() {
+							hp = p.MarkPx
+						}
+					}
+					others = others.Add(h.size.Mul(hp).Abs())
 				}
 			}
 			room := util.MaxD(c.Sub(others).Div(px), decimal.Zero)
-			cur := fs.Position(base)
+			cur := r.held(f, base)
 			// Never force a reduction purely because of the total cap; just block growth.
 			allowed := util.MaxD(room, util.MinD(cur.Abs(), t.Abs()))
 			if t.Abs().GreaterThan(allowed) {
@@ -868,7 +942,8 @@ func (r *taskRunner) planOne(f *followerCtx, fs, src *model.AccountSnapshot, bas
 		return plan{kind: planSkip, text: "无参考价格"}
 	}
 	tgt := r.targetFor(f, fs, src, base, px)
-	actual := fs.Position(base)
+	actual := r.held(f, base)
+	acct := fs.Position(base)
 	cur := actual.Sub(expectedDev)
 	delta := tgt.Sub(cur)
 	if delta.IsZero() {
@@ -901,7 +976,7 @@ func (r *taskRunner) planOne(f *followerCtx, fs, src *model.AccountSnapshot, bas
 	var out []*planned
 	flip := !cur.IsZero() && !tgt.IsZero() && cur.Sign() != tgt.Sign()
 	if flip {
-		out = append(out, newPlanned(base, spec, cur.IsNegative(), cur.Abs(), true, px, purpose, nil))
+		out = append(out, newPlanned(base, spec, cur.IsNegative(), cur.Abs(), reduceOnly(acct, cur, cur.Abs()), px, purpose, nil))
 		out = append(out, newPlanned(base, spec, tgt.IsPositive(), tgt.Abs(), false, px, purpose, r.desiredLeverage(f, src, base, spec)))
 	} else {
 		reducing := !cur.IsZero() && tgt.Abs().LessThan(cur.Abs())
@@ -909,7 +984,7 @@ func (r *taskRunner) planOne(f *followerCtx, fs, src *model.AccountSnapshot, bas
 		if !reducing {
 			lev = r.desiredLeverage(f, src, base, spec)
 		}
-		out = append(out, newPlanned(base, spec, delta.IsPositive(), delta.Abs(), reducing, px, purpose, lev))
+		out = append(out, newPlanned(base, spec, delta.IsPositive(), delta.Abs(), reducing && reduceOnly(acct, cur, delta.Abs()), px, purpose, lev))
 	}
 	return plan{kind: planOrders, orders: out}
 }
@@ -1048,6 +1123,20 @@ func (r *taskRunner) execute(ctx context.Context, f *followerCtx, p *planned) bo
 				row.SlippageBps = util.Ptr(util.Fmt(slip.Mul(util.D(10000)).RoundBank(2)))
 			}
 		}
+		if p.book && result.Filled.IsPositive() {
+			px := req.RefPx
+			if result.AvgPx != nil && result.AvgPx.IsPositive() {
+				px = *result.AvgPx
+			}
+			if !px.IsPositive() {
+				px = bid.Add(ask).Div(util.D(2))
+			}
+			qty := result.Filled
+			if !req.Buy {
+				qty = qty.Neg()
+			}
+			r.e.LedgerFill(r.id, f.connID, p.base, qty, px)
+		}
 		if result.Status == model.Rejected {
 			row.Reason = util.Ptr("未成交（IOC 无对手盘或被拒）")
 		}
@@ -1119,6 +1208,8 @@ func (r *taskRunner) syncMirrors(ctx context.Context, src *model.AccountSnapshot
 			if onBook {
 				filled = util.MaxD(fo.OrigQty.Sub(fo.Qty), decimal.Zero)
 			}
+			// Every path below persists `filled`, so each fill is booked once.
+			r.bookMirror(f, &m, filled)
 			so, srcAlive := srcIDs[m.SourceOrderID]
 			if m.Status == "grace" {
 				if m.GraceUntil == nil || *m.GraceUntil <= now {
@@ -1132,6 +1223,9 @@ func (r *taskRunner) syncMirrors(ctx context.Context, src *model.AccountSnapshot
 						suffix = "；宽限期结束，已撤残余"
 					}
 					_, _ = db.ExecContext(ctx, "UPDATE mirrors SET status='done', filled=?, note=COALESCE(note,'') || ?, updated_at=? WHERE id=?", util.Fmt(filled), suffix, now, m.ID)
+				} else if util.Fmt(filled) != m.Filled {
+					// Persist every booked fill, or the next pass books it again.
+					_, _ = db.ExecContext(ctx, "UPDATE mirrors SET filled=?, updated_at=? WHERE id=?", util.Fmt(filled), now, m.ID)
 				}
 				continue
 			}
@@ -1154,7 +1248,7 @@ func (r *taskRunner) syncMirrors(ctx context.Context, src *model.AccountSnapshot
 				if spec := f.markets.Base(m.Base); spec != nil {
 					_ = f.ex.Cancel(ctx, spec, cid)
 				}
-				_, _ = db.ExecContext(ctx, "UPDATE mirrors SET status='done', note='源订单已改单，重新镜像', updated_at=? WHERE id=?", now, m.ID)
+				_, _ = db.ExecContext(ctx, "UPDATE mirrors SET status='done', filled=?, note='源订单已改单，重新镜像', updated_at=? WHERE id=?", util.Fmt(filled), now, m.ID)
 				continue
 			}
 			if newStatus != m.Status || util.Fmt(filled) != m.Filled {
@@ -1190,6 +1284,22 @@ func (r *taskRunner) syncMirrors(ctx context.Context, src *model.AccountSnapshot
 	r.e.Changed("mirrors")
 }
 
+// bookMirror books the part of a mirror filled since it was last recorded.
+func (r *taskRunner) bookMirror(f *followerCtx, m *store.MirrorRow, filled decimal.Decimal) {
+	delta := filled.Sub(util.Dec(m.Filled))
+	if !delta.IsPositive() {
+		return
+	}
+	px := util.DecP(m.Price)
+	if m.TriggerPx != nil {
+		px = util.Dec(*m.TriggerPx)
+	}
+	if !m.Buy {
+		delta = delta.Neg()
+	}
+	r.e.LedgerFill(r.id, f.connID, m.Base, delta, px)
+}
+
 func (r *taskRunner) mirrorOne(ctx context.Context, fi int, fs, src *model.AccountSnapshot, o *model.OpenOrder) {
 	f := r.followers[fi]
 	db := r.e.DB
@@ -1213,6 +1323,11 @@ func (r *taskRunner) mirrorOne(ctx context.Context, fi int, fs, src *model.Accou
 	if o.TriggerPx != nil {
 		trig = util.Ptr(util.Fmt(*o.TriggerPx))
 	}
+	// Reverse applies to mirrored orders as well; mirrors store the follower's side.
+	buy := o.Buy
+	if r.rules.Reverse {
+		buy = !buy
+	}
 	insert := func(status string, cid *string, qty, price *decimal.Decimal, note *string) {
 		var q, p *string
 		if qty != nil {
@@ -1223,23 +1338,18 @@ func (r *taskRunner) mirrorOne(ctx context.Context, fi int, fs, src *model.Accou
 		}
 		_, _ = db.ExecContext(ctx, `INSERT INTO mirrors (task_id, connection_id, source_order_id, client_id, base, buy, kind, src_qty, src_price, qty, price, trigger_px, filled, status, note, created_at, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '0', ?, ?, ?, ?)`,
-			r.id, f.connID, o.ID, cid, o.Base, o.Buy, kind, util.Fmt(o.OrigQty), util.Fmt(srcPx), q, p, trig, status, note, now, now)
+			r.id, f.connID, o.ID, cid, o.Base, buy, kind, util.Fmt(o.OrigQty), util.Fmt(srcPx), q, p, trig, status, note, now, now)
 	}
 	spec := f.markets.Base(o.Base)
 	if spec == nil {
 		insert("not_mirrored", nil, nil, nil, util.Ptr(f.ex.Platform().Label()+" 无对应合约"))
 		return
 	}
-	// Direction filter / reverse apply to mirrored orders as well.
-	buy := o.Buy
-	if r.rules.Reverse {
-		buy = !buy
-	}
 	var qty decimal.Decimal
 	if o.TriggerPx != nil && o.ReduceOnly {
 		// TP / SL: same share of the follower's actual position.
 		srcPos := src.Position(o.Base).Abs()
-		mine := fs.Position(o.Base).Abs()
+		mine := r.held(f, o.Base).Abs()
 		if srcPos.IsZero() || mine.IsZero() {
 			return // try again once the follower holds the position
 		}
@@ -1318,58 +1428,68 @@ func (r *taskRunner) managedBases() map[string]bool {
 	return out
 }
 
-// closeFollower flattens a follower. `only` limits it to the given coins
-// (task stop); nil closes every position on the account (global close-all).
-func (r *taskRunner) closeFollower(ctx context.Context, f *followerCtx, why string, only map[string]bool) {
+// closeFollower flattens a follower: only this task's own shares, or with
+// wholeAccount every position on the account (global close-all), after which
+// every task's shares there are booked closed.
+func (r *taskRunner) closeFollower(ctx context.Context, f *followerCtx, why string, wholeAccount bool) {
 	snap, err := f.ex.Snapshot(ctx, f.markets, false)
 	if err != nil {
 		r.e.Alert("error", &r.id, &f.connID, f.alias+" 平仓失败", util.Ptr(err.Error()))
 		return
 	}
-	for _, p := range snap.Positions {
-		if p.Size.IsZero() {
+	r.e.RememberSnapshot(f.connID, snap)
+	type leg struct {
+		base string
+		size decimal.Decimal
+	}
+	var legs []leg
+	if wholeAccount {
+		for _, p := range snap.Positions {
+			legs = append(legs, leg{p.Base, p.Size})
+		}
+	} else {
+		for _, h := range r.e.heldOn(r.id, f.connID) {
+			legs = append(legs, leg{h.base, h.size})
+		}
+	}
+	for _, l := range legs {
+		if l.size.IsZero() {
 			continue
 		}
-		if only != nil && !only[p.Base] {
-			continue
-		}
-		spec := f.markets.Base(p.Base)
+		spec := f.markets.Base(l.base)
 		if spec == nil {
 			continue
 		}
-		pl := newPlanned(p.Base, spec, p.Size.IsNegative(), p.Size.Abs(), true, p.MarkPx, "close", nil)
-		pl.req.RefPx = decimal.Zero // no slippage guard when flattening
+		pl := newPlanned(l.base, spec, l.size.IsNegative(), l.size.Abs(), reduceOnly(snap.Position(l.base), l.size, l.size.Abs()), decimal.Zero, "close", nil)
+		pl.book = !wholeAccount
 		r.execute(ctx, f, pl)
 	}
-	scope := "全部"
-	if only != nil {
-		scope = "本任务跟随的"
+	scope := "本任务跟随的"
+	if wholeAccount {
+		r.e.closeSharesOn(f.connID, snap)
+		scope = "全部"
 	}
 	_, _ = store.InsertSignal(ctx, r.e.DB, r.id, "*", "risk", nil, nil, fmt.Sprintf("%s：%s %s仓位市价平掉", why, f.alias, scope), nil)
 }
 
 func (r *taskRunner) closeAllPositions(ctx context.Context, why string) {
-	managed := r.managedBases()
 	for _, f := range r.followers {
-		r.closeFollower(ctx, f, why, managed)
+		r.closeFollower(ctx, f, why, false)
 	}
 }
 
 func (r *taskRunner) checkLossLimits(ctx context.Context) {
-	dayStart := util.StartOfTodayMs()
-	daily, total := decimal.Zero, decimal.Zero
-	for _, f := range r.followers {
-		s := f.snap
-		if s == nil {
-			continue
-		}
-		if _, first, err := store.EquityBounds(ctx, r.e.DB, f.connID, dayStart); err == nil && first != nil {
-			daily = daily.Add(s.Equity.Sub(util.Dec(*first)))
-		}
-		if f.startEquity != nil {
-			total = total.Add(s.Equity.Sub(*f.startEquity))
-		}
+	// The task's own PnL (ledger), not the accounts' equity: other tasks or
+	// manual trades on a shared account must not trip this task's limits.
+	total, ok := r.e.TaskPnl(r.id)
+	if !ok {
+		return
 	}
+	dayOpen, err := store.TaskPnlAt(ctx, r.e.DB, r.id, util.StartOfTodayMs())
+	if err != nil {
+		return
+	}
+	daily := total.Sub(dayOpen)
 	var why string
 	if l := r.risk.DailyLossLimit; l != nil && !l.IsZero() && daily.Neg().GreaterThanOrEqual(*l) {
 		why = fmt.Sprintf("日亏损 %s 达到上限 %s", util.Fmt(daily.Neg().RoundBank(2)), util.Fmt(*l))
@@ -1391,40 +1511,42 @@ func (r *taskRunner) checkLossLimits(ctx context.Context) {
 	r.e.Changed("tasks")
 }
 
-func (r *taskRunner) publish(src *model.AccountSnapshot) {
+func (r *taskRunner) publish(ctx context.Context, src *model.AccountSnapshot) {
 	rows := []CompareRow{}
-	tgtNotional, actNotional, srcNotional := decimal.Zero, decimal.Zero, decimal.Zero
+	// Target notional, and the part of it not replicated by this task's own
+	// shares (only gaps an order could close: no dust below the venue
+	// minimum, no fills expected from mirrored resting orders).
+	tgtNotional, actNotional, gapNotional, srcNotional := decimal.Zero, decimal.Zero, decimal.Zero, decimal.Zero
 	var bases []string
 	seen := map[string]bool{}
-	for _, p := range src.Positions {
-		if !seen[p.Base] {
-			seen[p.Base] = true
-			bases = append(bases, p.Base)
+	add := func(b string) {
+		if !seen[b] {
+			seen[b] = true
+			bases = append(bases, b)
 		}
 	}
+	for _, p := range src.Positions {
+		add(p.Base)
+	}
 	for _, f := range r.followers {
-		if f.snap == nil {
-			continue
-		}
-		for _, p := range f.snap.Positions {
-			if _, open := r.baseline.OpenSizes[p.Base]; open && !seen[p.Base] {
-				seen[p.Base] = true
-				bases = append(bases, p.Base)
-			}
+		for _, h := range r.e.heldOn(r.id, f.connID) {
+			add(h.base)
 		}
 	}
 	for _, p := range src.Positions {
 		srcNotional = srcNotional.Add(p.Size.Mul(p.MarkPx).Abs())
 	}
-	for _, base := range bases {
-		s := src.Position(base)
-		px := r.srcRefPx(src, base)
-		for _, f := range r.followers {
-			fs := f.snap
-			if fs == nil {
-				continue
-			}
-			actual := fs.Position(base)
+	tol := r.rules.TolerancePct.Div(util.Hundred)
+	for _, f := range r.followers {
+		fs := f.snap
+		if fs == nil {
+			continue
+		}
+		expected, grace := r.mirrorState(ctx, f.connID)
+		for _, base := range bases {
+			s := src.Position(base)
+			px := r.refPx(src, fs, base)
+			actual := r.held(f, base)
 			row := CompareRow{Base: base, ConnectionID: f.connID, Alias: f.alias, Src: util.Fmt(s)}
 			spec := f.markets.Base(base)
 			switch {
@@ -1437,22 +1559,34 @@ func (r *taskRunner) publish(src *model.AccountSnapshot) {
 				tgt := r.targetFor(f, fs, src, base, px)
 				tgtR := util.FloorStep(tgt.Abs().Div(spec.CoinPerUnit), spec.QtyStep).Mul(spec.CoinPerUnit).Mul(util.Signum(tgt))
 				dev := actual.Sub(tgtR)
+				// Fills of mirrored orders whose source order is still open.
+				devEff := actual.Sub(expected[base]).Sub(tgtR)
 				tgtNotional = tgtNotional.Add(tgtR.Mul(px).Abs())
 				actNotional = actNotional.Add(actual.Mul(px).Abs())
 				row.Target = util.Ptr(util.Fmt(tgtR))
 				row.Actual = util.Ptr(util.Fmt(actual))
 				row.Deviation = util.Ptr(util.Fmt(dev))
-				tol := r.rules.TolerancePct.Div(util.Hundred)
 				basis := util.MaxD(tgtR.Abs(), actual.Abs())
+				gap := false
 				switch {
 				case dev.IsZero() || (!basis.IsZero() && dev.Abs().Div(basis).LessThan(decimal.RequireFromString("0.0001"))):
 					row.State, row.Note = "synced", "已同步"
-				case dev.Mul(px).Abs().LessThan(r.rules.MinChangeUSDT) || spec.ToUnits(dev.Abs()).LessThan(spec.MinQty):
+				case grace[base]:
+					row.State, row.Note = "expected", "源挂单刚成交/撤单，镜像单宽限期内"
+				case !expected[base].IsZero() && (devEff.IsZero() || devEff.Abs().LessThan(dev.Abs())):
+					row.State, row.Note = "expected", "镜像挂单先于源单成交，等待源单"
+					gap = !devEff.IsZero() && !basis.IsZero() && devEff.Abs().Div(basis).GreaterThanOrEqual(tol)
+				case dev.Mul(px).Abs().LessThan(r.rules.MinChangeUSDT) || spec.ToUnits(dev.Abs()).LessThan(spec.MinUnits()) ||
+					(!spec.MinNotional.IsZero() && dev.Mul(px).Abs().LessThan(spec.MinNotional)):
 					row.State, row.Note = "dust", "低于最小下单量，累计待补"
 				case !basis.IsZero() && dev.Abs().Div(basis).LessThan(tol):
 					row.State, row.Note = "synced", "容差内"
 				default:
 					row.State, row.Note = "pending", "对账补单中"
+					gap = true
+				}
+				if gap {
+					gapNotional = gapNotional.Add(devEff.Mul(px).Abs())
 				}
 			default:
 				row.State, row.Note = "skipped", f.ex.Platform().Label()+" 无对应合约，已跳过"
@@ -1462,29 +1596,15 @@ func (r *taskRunner) publish(src *model.AccountSnapshot) {
 	}
 	positions := []PositionLive{}
 	for _, f := range r.followers {
-		fs := f.snap
-		if fs == nil {
-			continue
-		}
-		for _, base := range bases {
-			if !r.rules.Allows(base) || r.baseline.Ignored.Has(base) {
-				continue
-			}
-			for i := range fs.Positions {
-				p := &fs.Positions[i]
-				if p.Base != base || p.Size.IsZero() {
-					continue
+		for _, pl := range r.e.taskShares(r.id, f.connID, f.alias, f.snap) {
+			if sp := srcPosition(src, pl.Base); sp != nil {
+				pl.SrcSize = util.Ptr(util.Fmt(sp.Size))
+				pl.SrcEntryPx = util.Ptr(util.Fmt(sp.EntryPx))
+				if sp.Leverage != nil && sp.Leverage.IsPositive() {
+					pl.SrcLeverage = util.Ptr(util.Fmt(sp.Leverage.RoundBank(2)))
 				}
-				pl := newPositionLive(f.connID, f.alias, p)
-				if sp := srcPosition(src, base); sp != nil {
-					pl.SrcSize = util.Ptr(util.Fmt(sp.Size))
-					pl.SrcEntryPx = util.Ptr(util.Fmt(sp.EntryPx))
-					if sp.Leverage != nil && sp.Leverage.IsPositive() {
-						pl.SrcLeverage = util.Ptr(util.Fmt(sp.Leverage.RoundBank(2)))
-					}
-				}
-				positions = append(positions, pl)
 			}
+			positions = append(positions, pl)
 		}
 	}
 	followers := []FollowerLive{}
@@ -1494,8 +1614,11 @@ func (r *taskRunner) publish(src *model.AccountSnapshot) {
 		}
 	}
 	devPct := decimal.Zero
-	if !tgtNotional.IsZero() {
-		devPct = actNotional.Sub(tgtNotional).Abs().Div(tgtNotional).Mul(util.Hundred).RoundBank(1)
+	switch {
+	case tgtNotional.IsPositive():
+		devPct = gapNotional.Div(tgtNotional).Mul(util.Hundred).RoundBank(1)
+	case gapNotional.IsPositive():
+		devPct = util.Hundred // holding while the target is flat
 	}
 	live := &TaskLive{
 		SourceConnected: !r.lostHandled,
