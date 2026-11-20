@@ -4,6 +4,7 @@ package engine
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -111,14 +112,20 @@ type Engine struct {
 	snapMu sync.RWMutex
 	snaps  map[string]*model.AccountSnapshot
 
+	// Per-task virtual positions on shared follower accounts (ledger.go).
+	ledgerMu sync.Mutex
+	ledger   map[ledgerKey]*ledgerPos
+	short    map[string]shortfall
+
 	estopped atomic.Bool
 	// UI lock (tasks keep running while locked).
 	locked atomic.Bool
 }
 
 func New(ctx context.Context, db *sql.DB, sec *secrets.Store, bus *Bus) *Engine {
-	e := &Engine{DB: db, Secrets: sec, Bus: bus, ctx: ctx, adapters: map[string]exchange.Exchange{}, markets: map[mktKey]mktEntry{}, runners: map[string]*runner{}, live: map[string]*TaskLive{}, snaps: map[string]*model.AccountSnapshot{}}
+	e := &Engine{DB: db, Secrets: sec, Bus: bus, ctx: ctx, adapters: map[string]exchange.Exchange{}, markets: map[mktKey]mktEntry{}, runners: map[string]*runner{}, live: map[string]*TaskLive{}, snaps: map[string]*model.AccountSnapshot{}, ledger: map[ledgerKey]*ledgerPos{}, short: map[string]shortfall{}}
 	e.locked.Store(store.SettingsCache().AppLock)
+	e.loadLedger(ctx)
 	return e
 }
 
@@ -413,6 +420,11 @@ func (e *Engine) StopTask(ctx context.Context, taskID string, closePositions *bo
 	if err := store.SetTaskStatus(ctx, e.DB, taskID, "stopped", nil); err != nil {
 		return err
 	}
+	// Whatever is left on the accounts no longer belongs to this task.
+	if pnl, ok := e.TaskPnl(taskID); ok {
+		e.releaseLedger(taskID)
+		_ = store.InsertTaskPnl(ctx, e.DB, taskID, pnl)
+	}
 	e.liveMu.Lock()
 	delete(e.live, taskID)
 	e.liveMu.Unlock()
@@ -474,16 +486,27 @@ func (e *Engine) ReleaseEstop(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// One task failing to start (locked secrets, broken connection, deleted
+	// source…) must not block the release or the other tasks: it stays paused
+	// with its reason and an alert, and can be resumed by hand later.
+	failed := 0
 	for _, t := range tasks {
 		if t.Status == "paused" && t.PauseReason != nil && *t.PauseReason == "全局急停" {
 			if err := e.StartTask(ctx, t.ID, false); err != nil {
-				return err
+				failed++
+				e.Alert("warn", util.Ptr(t.ID), nil, "解除急停后任务未能恢复", util.Ptr(err.Error()))
+				continue
 			}
 			_ = e.ReconcileNow(t.ID)
 		}
 	}
-	e.Alert("ok", nil, nil, "已解除全局急停", util.Ptr("被急停暂停的任务已对账后恢复"))
+	if failed > 0 {
+		e.Alert("warn", nil, nil, "已解除全局急停", util.Ptr(fmt.Sprintf("%d 个任务未能自动恢复，请到任务页手动启动", failed)))
+	} else {
+		e.Alert("ok", nil, nil, "已解除全局急停", util.Ptr("被急停暂停的任务已对账后恢复"))
+	}
 	e.Changed("estop")
+	e.Changed("tasks")
 	return nil
 }
 
@@ -509,7 +532,7 @@ func (e *Engine) CloseEverything(ctx context.Context) error {
 		for _, f := range tr.followers {
 			if !done[f.connID] {
 				done[f.connID] = true
-				tr.closeFollower(ctx, f, "全部平仓", nil)
+				tr.closeFollower(ctx, f, "全部平仓", true)
 			}
 		}
 	}
@@ -620,5 +643,6 @@ func (e *Engine) SampleEquity(ctx context.Context) {
 		e.RememberSnapshot(c.ID, s)
 		_ = store.InsertEquity(ctx, e.DB, c.ID, s.Equity, s.Available, s.Upnl(), s.Notional())
 	}
+	e.RecordTaskPnl(ctx)
 	e.Changed("equity")
 }

@@ -255,6 +255,9 @@ func deleteTask(ctx context.Context, s *Server, body []byte) (any, error) {
 			return nil, err
 		}
 	}
+	if err := s.E.DropLedger(ctx, a.ID); err != nil {
+		return nil, err
+	}
 	s.E.Changed("tasks")
 	return nil, nil
 }
@@ -306,25 +309,10 @@ func summarize(ctx context.Context, s *Server, t *store.TaskRow) (*TaskSummary, 
 		return nil, err
 	}
 	followers := []FollowerDto{}
-	today, total := decimal.Zero, decimal.Zero
-	have := false
 	for _, f := range frows {
 		c, err := store.Connection(ctx, db, f.ConnectionID)
 		if err != nil {
 			return nil, err
-		}
-		latest, first, err := store.EquityBounds(ctx, db, f.ConnectionID, since)
-		if err != nil {
-			return nil, err
-		}
-		if latest != nil {
-			have = true
-			if first != nil {
-				today = today.Add(util.Dec(latest.Equity).Sub(util.Dec(*first)))
-			}
-			if f.StartEquity != nil {
-				total = total.Add(util.Dec(latest.Equity).Sub(util.Dec(*f.StartEquity)))
-			}
 		}
 		fd := FollowerDto{ConnectionID: f.ConnectionID}
 		if c != nil {
@@ -356,8 +344,14 @@ func summarize(ctx context.Context, s *Server, t *store.TaskRow) (*TaskSummary, 
 		FROM signals WHERE task_id = ? AND ts >= ?`, t.ID, util.NowMs()-7*86_400_000).Scan(&sum.WeekAdds, &sum.WeekReduces); err != nil {
 		return nil, err
 	}
-	if have {
-		sum.TodayPnl = util.Ptr(util.Fmt(today.RoundBank(2)))
+	// The task's own PnL from its ledger shares, not the follower accounts'
+	// equity, which other tasks sharing an account would move too.
+	if total, ok := s.E.TaskPnl(t.ID); ok || t.StartedAt != nil {
+		open, err := store.TaskPnlAt(ctx, db, t.ID, since)
+		if err != nil {
+			return nil, err
+		}
+		sum.TodayPnl = util.Ptr(util.Fmt(total.Sub(open).RoundBank(2)))
 		sum.TotalPnl = util.Ptr(util.Fmt(total.RoundBank(2)))
 	}
 	return sum, nil
