@@ -102,7 +102,12 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
-	return nil
+	m6, err := migrations.ReadFile("migrations/0006_indexes.sql")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(string(m6))
+	return err
 }
 
 func hasColumn(db *sql.DB, table, col string) (bool, error) {

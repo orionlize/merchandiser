@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"sort"
 	"strings"
 	"sync"
@@ -15,7 +16,10 @@ import (
 
 // 跟单员广场: ranked public Hyperliquid wallets.
 
-const favKey = "plaza_favorites"
+const (
+	favKey   = "plaza_favorites"
+	cacheKey = "plaza_cache"
+)
 
 var (
 	plazaOnce sync.Once
@@ -29,7 +33,19 @@ func (s *Server) plaza() (*plaza.Service, error) {
 		if ctx == nil {
 			ctx = context.Background()
 		}
-		plazaSvc, plazaErr = plaza.New(ctx, func(ctx context.Context) []string { return pinnedAddrs(ctx, s) })
+		plazaSvc, plazaErr = plaza.New(ctx, func(ctx context.Context) []string { return pinnedAddrs(ctx, s) }, plaza.Store{
+			Load: func(ctx context.Context) []byte {
+				if v, err := store.GetSetting(ctx, s.E.DB, cacheKey); err == nil && v != nil {
+					return []byte(*v)
+				}
+				return nil
+			},
+			Save: func(ctx context.Context, b []byte) {
+				if err := store.SetSetting(ctx, s.E.DB, cacheKey, string(b)); err != nil {
+					slog.Warn("plaza cache save", "err", err)
+				}
+			},
+		})
 	})
 	return plazaSvc, plazaErr
 }
@@ -198,13 +214,22 @@ func plazaWallet(ctx context.Context, s *Server, body []byte) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Positions don't depend on the analysis: fetch both at once.
+	var ps []plaza.Position
+	var perr error
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		ps, perr = svc.Positions(ctx, addr)
+	}()
 	w, err := svc.Wallet(ctx, addr)
+	<-done
 	if err != nil {
 		return nil, err
 	}
 	out := PlazaWalletDto{WalletDto: walletDto(w, favorites(ctx, s), links(ctx, s), 60), Positions: []plaza.Position{}}
-	if ps, err := svc.Positions(ctx, addr); err != nil {
-		out.PositionsError = err.Error()
+	if perr != nil {
+		out.PositionsError = perr.Error()
 	} else {
 		out.Positions = ps
 	}
