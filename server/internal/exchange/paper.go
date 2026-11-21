@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/shopspring/decimal"
@@ -40,16 +41,20 @@ type PaperOrder struct {
 	ReduceOnly bool             `json:"reduce_only"`
 }
 
-// PaperFill serialises as [ts, base, buy, qty, px, fee].
+// PaperFill serialises as [ts, base, buy, qty, px, fee, client_id, maker,
+// dir] (older states have the first six only).
 type PaperFill struct {
 	Ts           string
 	Base         string
 	Buy          bool
 	Qty, Px, Fee decimal.Decimal
+	ClientID     string
+	Maker        bool
+	Dir          string
 }
 
 func (f PaperFill) MarshalJSON() ([]byte, error) {
-	return json.Marshal([]any{f.Ts, f.Base, f.Buy, f.Qty, f.Px, f.Fee})
+	return json.Marshal([]any{f.Ts, f.Base, f.Buy, f.Qty, f.Px, f.Fee, f.ClientID, f.Maker, f.Dir})
 }
 
 func (f *PaperFill) UnmarshalJSON(b []byte) error {
@@ -57,8 +62,8 @@ func (f *PaperFill) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &a); err != nil {
 		return err
 	}
-	if len(a) != 6 {
-		return fmt.Errorf("paper fill: want 6 fields")
+	if len(a) < 6 || len(a) > 9 {
+		return fmt.Errorf("paper fill: want 6 to 9 fields")
 	}
 	_ = json.Unmarshal(a[0], &f.Ts)
 	_ = json.Unmarshal(a[1], &f.Base)
@@ -66,7 +71,25 @@ func (f *PaperFill) UnmarshalJSON(b []byte) error {
 	_ = json.Unmarshal(a[3], &f.Qty)
 	_ = json.Unmarshal(a[4], &f.Px)
 	_ = json.Unmarshal(a[5], &f.Fee)
+	if len(a) > 6 {
+		_ = json.Unmarshal(a[6], &f.ClientID)
+	}
+	if len(a) > 7 {
+		_ = json.Unmarshal(a[7], &f.Maker)
+	}
+	if len(a) > 8 {
+		_ = json.Unmarshal(a[8], &f.Dir)
+	}
 	return nil
+}
+
+// PaperFunding is one simulated hourly funding settlement.
+type PaperFunding struct {
+	Ts     int64           `json:"ts"`
+	Base   string          `json:"base"`
+	Size   decimal.Decimal `json:"size"`
+	Amount decimal.Decimal `json:"amount"`
+	Rate   decimal.Decimal `json:"rate"`
 }
 
 type PaperState struct {
@@ -74,6 +97,9 @@ type PaperState struct {
 	Positions map[string]*PaperPos `json:"positions"`
 	Orders    []PaperOrder         `json:"orders"`
 	Fills     []PaperFill          `json:"fills"`
+	Funding   []PaperFunding       `json:"funding,omitempty"`
+	// Last funding hour settled (ms / 1h).
+	FundingHour int64 `json:"funding_hour,omitempty"`
 }
 
 type Paper struct {
@@ -119,7 +145,7 @@ func (p *Paper) persist(ctx context.Context) error {
 	return err
 }
 
-func applyFill(s *PaperState, base string, buy bool, qty, px, feeRate decimal.Decimal) {
+func applyFill(s *PaperState, base string, buy bool, qty, px, feeRate decimal.Decimal, clientID string) {
 	signed := qty
 	if !buy {
 		signed = qty.Neg()
@@ -147,12 +173,30 @@ func applyFill(s *PaperState, base string, buy bool, qty, px, feeRate decimal.De
 	pos.Size = nw
 	fee := qty.Mul(px).Mul(feeRate)
 	s.Cash = s.Cash.Sub(fee)
-	s.Fills = append(s.Fills, PaperFill{Ts: fmt.Sprint(util.NowMs()), Base: base, Buy: buy, Qty: qty, Px: px, Fee: fee})
+	s.Fills = append(s.Fills, PaperFill{Ts: fmt.Sprint(util.NowMs()), Base: base, Buy: buy, Qty: qty, Px: px, Fee: fee, ClientID: clientID, Maker: feeRate.Equal(makerFee), Dir: fillDir(old, nw)})
 	if len(s.Fills) > 500 {
 		s.Fills = s.Fills[100:]
 	}
 	if nw.IsZero() {
 		delete(s.Positions, base)
+	}
+}
+
+// fillDir names a fill by the position before and after it.
+func fillDir(old, nw decimal.Decimal) string {
+	side := func(d decimal.Decimal) string {
+		if d.IsNegative() {
+			return "short"
+		}
+		return "long"
+	}
+	switch {
+	case old.IsZero() || (old.Sign() == nw.Sign() && nw.Abs().GreaterThan(old.Abs())):
+		return "open_" + side(nw)
+	case nw.IsZero() || old.Sign() == nw.Sign():
+		return "close_" + side(old)
+	default:
+		return "flip_" + side(nw)
 	}
 }
 
@@ -207,7 +251,7 @@ func matchResting(s *PaperState, mids map[string]decimal.Decimal, m *Markets) {
 			if o.TriggerPx != nil {
 				px, fee = mid, takerFee
 			}
-			applyFill(s, o.Base, o.Buy, qty, px, fee)
+			applyFill(s, o.Base, o.Buy, qty, px, fee, o.ClientID)
 		}
 	}
 	s.Orders = remaining
@@ -235,6 +279,7 @@ func (p *Paper) Snapshot(ctx context.Context, m *Markets, withOrders bool) (*mod
 	if err != nil {
 		return nil, err
 	}
+	p.accrueFunding(ctx, mids, m)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	before := len(p.st.Orders)
@@ -321,7 +366,7 @@ func (p *Paper) Place(ctx context.Context, spec *model.ContractSpec, req *model.
 				return nil, &errs.Exchange{Code: "reduce_only", Msg: "只减仓订单会增加仓位"}
 			}
 		}
-		applyFill(&p.st, spec.Base, req.Buy, q, px, takerFee)
+		applyFill(&p.st, spec.Base, req.Buy, q, px, takerFee, req.ClientID)
 		if err := p.persist(ctx); err != nil {
 			return nil, err
 		}
@@ -370,7 +415,8 @@ func (p *Paper) Query(_ context.Context, _ *model.ContractSpec, clientID string)
 	return nil, nil
 }
 
-func (p *Paper) SetLeverage(ctx context.Context, spec *model.ContractSpec, leverage uint32) error {
+// SetLeverage: paper accounts are always cross-margined; the mode is ignored.
+func (p *Paper) SetLeverage(ctx context.Context, spec *model.ContractSpec, leverage uint32, _ bool) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if ps, ok := p.st.Positions[spec.Base]; ok && ps.Leverage != max(leverage, 1) {
@@ -392,3 +438,79 @@ func (p *Paper) Info(context.Context) (*model.ConnectionInfo, error) {
 
 func (p *Paper) SetOneWay(context.Context) error            { return nil }
 func (p *Paper) ServerTime(context.Context) (*int64, error) { return nil, nil }
+
+// accrueFunding settles simulated hourly funding at the venue's current
+// rates: longs pay a positive rate, shorts receive it. Missed hours (server
+// down) are settled at the current rate, at most one day's worth.
+func (p *Paper) accrueFunding(ctx context.Context, mids map[string]decimal.Decimal, m *Markets) {
+	hour := util.NowMs() / 3_600_000
+	p.mu.Lock()
+	last, open := p.st.FundingHour, len(p.st.Positions) > 0
+	if last >= hour {
+		p.mu.Unlock()
+		return
+	}
+	if last == 0 || !open {
+		p.st.FundingHour = hour
+		_ = p.persist(ctx)
+		p.mu.Unlock()
+		return
+	}
+	p.mu.Unlock()
+	rates, err := p.feed.FundingRates(ctx)
+	if err != nil {
+		return // retried on the next snapshot
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.st.FundingHour >= hour {
+		return
+	}
+	for h := max(p.st.FundingHour+1, hour-23); h <= hour; h++ {
+		for base, ps := range p.st.Positions {
+			spec := m.Base(base)
+			if spec == nil {
+				continue
+			}
+			rate, ok := rates[spec.Symbol]
+			mid, okm := mids[spec.Symbol]
+			if !ok || !okm || rate.IsZero() {
+				continue
+			}
+			amount := ps.Size.Mul(spec.CoinPx(mid)).Mul(rate).Neg()
+			p.st.Cash = p.st.Cash.Add(amount)
+			p.st.Funding = append(p.st.Funding, PaperFunding{Ts: h * 3_600_000, Base: base, Size: ps.Size, Amount: amount, Rate: rate})
+		}
+	}
+	if len(p.st.Funding) > 2000 {
+		p.st.Funding = p.st.Funding[len(p.st.Funding)-1500:]
+	}
+	p.st.FundingHour = hour
+	_ = p.persist(ctx)
+}
+
+func (p *Paper) FillsSince(_ context.Context, _ *Markets, since int64) ([]Fill, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	var out []Fill
+	for i, f := range p.st.Fills {
+		ts, err := strconv.ParseInt(f.Ts, 10, 64)
+		if err != nil || ts < since {
+			continue
+		}
+		out = append(out, Fill{ID: fmt.Sprintf("%s|%s|%s|%d", f.Ts, f.ClientID, f.Base, i%100), Ts: ts, Base: f.Base, Buy: f.Buy, Qty: f.Qty, Px: f.Px, Fee: f.Fee, Maker: f.Maker, ClientID: f.ClientID, Dir: f.Dir})
+	}
+	return out, nil
+}
+
+func (p *Paper) FundingSince(_ context.Context, _ *Markets, since int64) ([]FundingPay, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	var out []FundingPay
+	for _, f := range p.st.Funding {
+		if f.Ts >= since {
+			out = append(out, FundingPay{ID: fmt.Sprintf("%d|%s", f.Ts, f.Base), Ts: f.Ts, Base: f.Base, Size: f.Size, Amount: f.Amount, Rate: f.Rate})
+		}
+	}
+	return out, nil
+}

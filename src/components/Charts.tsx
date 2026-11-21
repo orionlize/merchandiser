@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { BaselineSeries, ColorType, createChart, createSeriesMarkers, CrosshairMode, type IChartApi, type ISeriesApi, type ISeriesMarkersPluginApi, type Time, type UTCTimestamp } from "lightweight-charts";
+import { BaselineSeries, ColorType, createChart, createSeriesMarkers, CrosshairMode, LineSeries, LineStyle, type IChartApi, type ISeriesApi, type ISeriesMarkersPluginApi, type Time, type UTCTimestamp } from "lightweight-charts";
 import { useEffect, useRef } from "react";
 import { trNow } from "../lib/i18n";
 
@@ -99,6 +99,121 @@ export function PnlCurveChart({ points, height = 260, compact = false }: { point
     markers.current?.setMarkers(dd > 0 && to ? [{ time: local(to), position: "belowBar", shape: "arrowUp", color: css("--danger"), text: trNow("回撤", "DD") }] : []);
     chart.current.timeScale().fitContent();
   }, [points]);
+
+  return <div ref={box} style={{ height }} className="w-full" />;
+}
+
+/** Strictly increasing local-time points for a line series. */
+function lineData(points: [number, number][]) {
+  const data: { time: UTCTimestamp; value: number }[] = [];
+  for (const [t, v] of points) {
+    const time = local(t);
+    if (data.length && data[data.length - 1].time >= time) data[data.length - 1].value = v;
+    else data.push({ time, value: v });
+  }
+  return data;
+}
+
+/** Follow simulation: the simulated PnL (primary) against the trader's PnL scaled to the same capital (dashed). */
+export function SimCurveChart({ curve, height = 180 }: { curve: [number, number, number][]; height?: number }) {
+  const box = useRef<HTMLDivElement>(null);
+  const chart = useRef<IChartApi | null>(null);
+  const sim = useRef<ISeriesApi<"Line"> | null>(null);
+  const trader = useRef<ISeriesApi<"Line"> | null>(null);
+
+  useEffect(() => {
+    const c = createChart(box.current!, {
+      autoSize: true,
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: css("--muted-fg"), fontSize: 11, attributionLogo: false },
+      grid: { vertLines: { visible: false }, horzLines: { color: css("--border") } },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 2 },
+      crosshair: { mode: CrosshairMode.Magnet },
+      handleScroll: false,
+      handleScale: false,
+      localization: { priceFormatter: compactNum },
+    });
+    const fmt = { type: "price" as const, precision: 2, minMove: 0.01 };
+    trader.current = c.addSeries(LineSeries, { lineWidth: 1, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: false, priceFormat: fmt });
+    sim.current = c.addSeries(LineSeries, { lineWidth: 2, priceLineVisible: false, priceFormat: fmt });
+    chart.current = c;
+    const recolor = () => {
+      c.applyOptions({ layout: { textColor: css("--muted-fg") }, grid: { horzLines: { color: css("--border") } } });
+      sim.current?.applyOptions({ color: css("--primary") });
+      trader.current?.applyOptions({ color: css("--chart-avg") });
+    };
+    recolor();
+    const mo = new MutationObserver(recolor);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    // autoSize measures after the first fit, so fit again once the width is known.
+    const ro = new ResizeObserver(() => c.timeScale().fitContent());
+    ro.observe(box.current!);
+    return () => {
+      mo.disconnect();
+      ro.disconnect();
+      c.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    sim.current?.setData(lineData(curve.map((p) => [p[0], p[1]])));
+    trader.current?.setData(lineData(curve.map((p) => [p[0], p[2]])));
+    chart.current?.timeScale().fitContent();
+  }, [curve]);
+
+  return <div ref={box} style={{ height }} className="w-full" />;
+}
+
+/** Several return curves (fractions) on one percent axis; colours come from --series-N. */
+export function ReturnsChart({ series, height = 220 }: { series: { key: string; points: [number, number][] }[]; height?: number }) {
+  const box = useRef<HTMLDivElement>(null);
+  const chart = useRef<IChartApi | null>(null);
+  const lines = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+
+  useEffect(() => {
+    const c = createChart(box.current!, {
+      autoSize: true,
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: css("--muted-fg"), fontSize: 11, attributionLogo: false },
+      grid: { vertLines: { visible: false }, horzLines: { color: css("--border") } },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 2 },
+      crosshair: { mode: CrosshairMode.Magnet },
+      handleScroll: false,
+      handleScale: false,
+      localization: { priceFormatter: (v: number) => `${v < 0 ? "−" : v > 0 ? "+" : ""}${Math.abs(v * 100).toFixed(1)}%` },
+    });
+    chart.current = c;
+    const recolor = () => c.applyOptions({ layout: { textColor: css("--muted-fg") }, grid: { horzLines: { color: css("--border") } } });
+    recolor();
+    const mo = new MutationObserver(() => {
+      recolor();
+      let i = 0;
+      for (const l of lines.current.values()) l.applyOptions({ color: css(`--series-${++i}`) });
+    });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const ro = new ResizeObserver(() => c.timeScale().fitContent());
+    ro.observe(box.current!);
+    const map = lines.current;
+    return () => {
+      mo.disconnect();
+      ro.disconnect();
+      map.clear();
+      c.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const c = chart.current;
+    if (!c) return;
+    for (const l of lines.current.values()) c.removeSeries(l);
+    lines.current.clear();
+    series.forEach((s, i) => {
+      const l = c.addSeries(LineSeries, { lineWidth: 2, color: css(`--series-${i + 1}`), priceLineVisible: false, lastValueVisible: false, priceFormat: { type: "price", precision: 4, minMove: 0.0001 } });
+      l.setData(lineData(s.points));
+      lines.current.set(s.key, l);
+    });
+    c.timeScale().fitContent();
+  }, [series]);
 
   return <div ref={box} style={{ height }} className="w-full" />;
 }

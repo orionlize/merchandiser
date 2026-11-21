@@ -26,6 +26,11 @@
   --bar-tgt: #9aa3ae;
   --bar-act: #eaecef;
   --chart-avg: #5b9cff;
+  /* Compared series (交易员对比), in order. */
+  --series-1: #f0b90b;
+  --series-2: #5b9cff;
+  --series-3: #eaecef;
+  --series-4: #b37feb;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -52,6 +57,10 @@
   --bar-tgt: #8a919c;
   --bar-act: #000000;
   --chart-avg: #2563eb;
+  --series-1: #a87f00;
+  --series-2: #2563eb;
+  --series-3: #000000;
+  --series-4: #7c3aed;
   color-scheme: light;
 }
 

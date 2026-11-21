@@ -96,7 +96,8 @@ func cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
 		h.Set("Access-Control-Allow-Origin", "*")
-		h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-OTP, X-OTP-Grace")
+		h.Set("Access-Control-Expose-Headers", "X-OTP-Grace")
 		h.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		h.Set("Access-Control-Max-Age", "86400")
 		if r.Method == http.MethodOptions {
@@ -138,8 +139,34 @@ func (s *Server) command(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t0 := time.Now()
-	out, err := h(r.Context(), s, body)
+	meta := newMeta(r, body)
+	ctx := context.WithValue(r.Context(), metaKey{}, meta)
+	audited := !readOnlyCommands[name]
+	summary := ""
+	if audited {
+		summary = s.auditSummary(ctx, name, body)
+	}
+	var out any
+	// unlock_app checks the password first, then the code (misc.go).
+	if sensitiveCommands[name] && name != "unlock_app" {
+		err = s.checkOTP(ctx, freshOtp[name])
+	}
+	if err == nil {
+		out, err = h(ctx, s, body)
+	}
+	// A prompt for the code is not an attempt: only the retry is logged.
+	if audited && !isOtpChallenge(err) {
+		s.audit(ctx, name, summary, body, err)
+	}
+	if meta.newTicket != "" {
+		w.Header().Set("X-OTP-Grace", meta.newTicket)
+	}
 	if err != nil {
+		var oe *OtpError
+		if errors.As(err, &oe) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": oe.Msg, "code": oe.Code})
+			return
+		}
 		status := http.StatusBadRequest
 		var ex *errs.Exchange
 		if errors.As(err, &ex) || errs.IsRateLimited(err) {

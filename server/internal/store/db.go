@@ -102,6 +102,28 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	if has, err = hasColumn(db, "task_positions", "trip_json"); err != nil {
+		return err
+	} else if !has {
+		m7, err := migrations.ReadFile("migrations/0007_position_history.sql")
+		if err != nil {
+			return err
+		}
+		if _, err := db.Exec(string(m7)); err != nil {
+			return err
+		}
+	}
+	if has, err = hasColumn(db, "task_positions", "fees"); err != nil {
+		return err
+	} else if !has {
+		m8, err := migrations.ReadFile("migrations/0008_costs_audit.sql")
+		if err != nil {
+			return err
+		}
+		if _, err := db.Exec(string(m8)); err != nil {
+			return err
+		}
+	}
 	m6, err := migrations.ReadFile("migrations/0006_indexes.sql")
 	if err != nil {
 		return err
@@ -519,13 +541,35 @@ func EquityBounds(ctx context.Context, db *sql.DB, conn string, since int64) (*E
 	return latest, &first, nil
 }
 
-func Prune(ctx context.Context, db *sql.DB, retentionDays int64) error {
-	cutoff := util.NowMs() - retentionDays*86_400_000
-	for _, t := range []string{"signals", "orders", "alerts", "equity_snapshots", "source_equity", "task_pnl"} {
-		if _, err := db.ExecContext(ctx, "DELETE FROM "+t+" WHERE ts < ?", cutoff); err != nil {
+// Prune applies the retention settings: logs after logDays, position history
+// and costs after tripDays, the audit log after auditDays (0 = keep forever,
+// for each).
+func Prune(ctx context.Context, db *sql.DB, logDays, tripDays, auditDays int64) error {
+	now := util.NowMs()
+	if logDays > 0 {
+		cutoff := now - logDays*86_400_000
+		for _, t := range []string{"signals", "orders", "alerts", "equity_snapshots", "source_equity", "task_pnl"} {
+			if _, err := db.ExecContext(ctx, "DELETE FROM "+t+" WHERE ts < ?", cutoff); err != nil {
+				return err
+			}
+		}
+		if _, err := db.ExecContext(ctx, "DELETE FROM mirrors WHERE status IN ('done','not_mirrored','failed') AND updated_at < ?", cutoff); err != nil {
 			return err
 		}
 	}
-	_, err := db.ExecContext(ctx, "DELETE FROM mirrors WHERE status IN ('done','not_mirrored','failed') AND updated_at < ?", cutoff)
-	return err
+	if tripDays > 0 {
+		c := now - tripDays*86_400_000
+		if _, err := db.ExecContext(ctx, "DELETE FROM task_trips WHERE closed_at < ?", c); err != nil {
+			return err
+		}
+		if _, err := db.ExecContext(ctx, "DELETE FROM task_costs WHERE ts < ?", c); err != nil {
+			return err
+		}
+	}
+	if auditDays > 0 {
+		if _, err := db.ExecContext(ctx, "DELETE FROM op_log WHERE ts < ?", now-auditDays*86_400_000); err != nil {
+			return err
+		}
+	}
+	return nil
 }

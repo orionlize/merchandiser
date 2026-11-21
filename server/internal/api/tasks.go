@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -30,21 +31,99 @@ type TaskInput struct {
 	StartNow  bool           `json:"start_now"`
 }
 
-func validateRules(r *engine.Rules) error {
-	switch r.Sizing.Mode {
-	case engine.EquityRatio, engine.FixedMultiple:
-		if !r.Sizing.K.IsPositive() || r.Sizing.K.GreaterThan(util.Hundred) {
+func validateSizing(z *engine.Sizing) error {
+	switch z.Mode {
+	case engine.EquityRatio, engine.FixedMultiple, engine.Allocated:
+		if !z.K.IsPositive() || z.K.GreaterThan(util.Hundred) {
 			return errs.Msg("倍数应在 0–100 之间")
 		}
+		if z.Mode == engine.Allocated && !z.Capital.IsPositive() {
+			return errs.Msg("投入本金应大于 0")
+		}
 	case engine.FixedNotional:
-		if !r.Sizing.Notional.IsPositive() {
+		if !z.Notional.IsPositive() {
 			return errs.Msg("固定名义金额应大于 0")
 		}
 	default:
 		return errs.Msg("未知仓位计算方式")
 	}
+	return nil
+}
+
+func validateRules(r *engine.Rules) error {
+	switch r.Mode {
+	case "copy":
+	case "watch":
+		if r.Watch.MinNotional.IsNegative() {
+			return errs.Msg("推送的最小名义金额不能为负")
+		}
+		if !r.Watch.Open && !r.Watch.Add && !r.Watch.Reduce && !r.Watch.Close {
+			return errs.Msg("请至少选择一种要推送的信号")
+		}
+	default:
+		return errs.Msg("未知的任务类型")
+	}
+	if err := validateSizing(&r.Sizing); err != nil {
+		return err
+	}
 	if r.Leverage.Cap == 0 {
 		return errs.Msg("杠杆上限应 ≥ 1")
+	}
+	if r.Leverage.Margin != "cross" && r.Leverage.Margin != "isolated" {
+		return errs.Msg("保证金模式应为全仓或逐仓")
+	}
+	if t := &r.TPSL; t.Enabled {
+		for _, v := range []*decimal.Decimal{t.TPPct, t.SLPct, t.TrailActivatePct, t.TrailCallbackPct} {
+			if v != nil && v.IsNegative() {
+				return errs.Msg("止盈止损比例不能为负")
+			}
+		}
+		if t.SLPct != nil && t.SLPct.GreaterThan(util.Hundred) {
+			return errs.Msg("止损 ROE 百分比应在 0–100 之间")
+		}
+		if (t.TrailActivatePct != nil && t.TrailActivatePct.IsPositive()) != (t.TrailCallbackPct != nil && t.TrailCallbackPct.IsPositive()) {
+			return errs.Msg("移动止盈需同时填写激活收益率与回撤")
+		}
+		if !t.Active() {
+			return errs.Msg("已开启止盈止损，请至少填写一项")
+		}
+	}
+	return nil
+}
+
+func validateRisk(r *engine.Risk) error {
+	if r.LossUnit != "usdt" && r.LossUnit != "pct" {
+		return errs.Msg("亏损上限单位应为 USDT 或本金百分比")
+	}
+	if r.LossUnit == "pct" {
+		for _, l := range []*decimal.Decimal{r.DailyLossLimit, r.TotalLossLimit} {
+			if l != nil && (l.IsNegative() || l.GreaterThan(util.Hundred)) {
+				return errs.Msg("亏损上限百分比应在 0–100 之间")
+			}
+		}
+	}
+	if r.ProfitAction != "pause" && r.ProfitAction != "close" {
+		return errs.Msg("未知的盈利目标动作")
+	}
+	if r.ProfitTarget != nil && r.ProfitTarget.IsNegative() {
+		return errs.Msg("盈利目标应大于 0")
+	}
+	if r.SourceDDAction != "pause" && r.SourceDDAction != "close" {
+		return errs.Msg("未知的信号源回撤熔断动作")
+	}
+	if d := r.SourceDDPct; d != nil && (d.IsNegative() || d.GreaterThan(util.Hundred)) {
+		return errs.Msg("信号源回撤熔断线应在 0–100 之间（百分比）")
+	}
+	return nil
+}
+
+func validateFollowers(fs []FollowerSpec) error {
+	for _, f := range fs {
+		if f.Overrides != nil && f.Overrides.Sizing != nil {
+			if err := validateSizing(f.Overrides.Sizing); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -74,7 +153,15 @@ func createTask(ctx context.Context, s *Server, body []byte) (any, error) {
 	if err := validateRules(&in.Rules); err != nil {
 		return nil, err
 	}
-	if len(in.Followers) == 0 {
+	if err := validateRisk(&in.Risk); err != nil {
+		return nil, err
+	}
+	if err := validateFollowers(in.Followers); err != nil {
+		return nil, err
+	}
+	if in.Rules.Watching() {
+		in.Followers = nil // watch-only tasks never trade
+	} else if len(in.Followers) == 0 {
 		return nil, errs.Msg("至少选择一个跟单账户")
 	}
 	db := s.E.DB
@@ -142,6 +229,42 @@ func updateTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		return nil, err
 	}
 	u, id, db := a.Update, a.ID, s.E.DB
+	t, err := store.Task(ctx, db, id)
+	if err != nil {
+		return nil, err
+	}
+	if t == nil {
+		return nil, errs.Msg("任务不存在")
+	}
+	var was engine.Rules
+	_ = json.Unmarshal([]byte(t.RulesJSON), &was)
+	watching := was.Watching()
+	if u.Rules != nil {
+		watching = u.Rules.Watching()
+	}
+	// Turning a watch-only task into copy trading: it then needs followers,
+	// and starts over from the source's positions at that time.
+	converted := was.Watching() && !watching
+	if converted && u.Followers == nil {
+		return nil, errs.Msg("转为跟单需要选择跟单账户")
+	}
+	if !was.Watching() && watching {
+		return nil, errs.Msg("跟单任务不能改为观察模式，请新建观察任务")
+	}
+	if watching {
+		u.Followers = nil
+	}
+	if u.Followers != nil {
+		src, err := store.Source(ctx, db, t.SourceID)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range *u.Followers {
+			if src != nil && src.ConnectionID != nil && *src.ConnectionID == f.ConnectionID {
+				return nil, errs.Msg("跟单账户不能与信号源是同一个连接")
+			}
+		}
+	}
 	if u.Name != nil {
 		if _, err := db.ExecContext(ctx, "UPDATE tasks SET name=? WHERE id=?", strings.TrimSpace(*u.Name), id); err != nil {
 			return nil, err
@@ -157,6 +280,9 @@ func updateTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		}
 	}
 	if u.Risk != nil {
+		if err := validateRisk(u.Risk); err != nil {
+			return nil, err
+		}
 		b, _ := json.Marshal(u.Risk)
 		if _, err := db.ExecContext(ctx, "UPDATE tasks SET risk_json=? WHERE id=?", string(b), id); err != nil {
 			return nil, err
@@ -166,6 +292,9 @@ func updateTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		fs := *u.Followers
 		if len(fs) == 0 {
 			return nil, errs.Msg("至少保留一个跟单账户")
+		}
+		if err := validateFollowers(fs); err != nil {
+			return nil, err
 		}
 		old, err := store.Followers(ctx, db, id)
 		if err != nil {
@@ -198,7 +327,13 @@ func updateTask(ctx context.Context, s *Server, body []byte) (any, error) {
 			return nil, err
 		}
 	}
-	s.E.ReloadTask(id)
+	if converted {
+		if err := s.E.RestartTask(ctx, id); err != nil {
+			return nil, err
+		}
+	} else {
+		s.E.ReloadTask(id)
+	}
 	s.E.Changed("tasks")
 	return nil, nil
 }
@@ -271,24 +406,27 @@ type FollowerDto struct {
 }
 
 type TaskSummary struct {
-	ID             string           `json:"id"`
-	Name           string           `json:"name"`
-	Status         string           `json:"status"`
-	PauseReason    *string          `json:"pause_reason"`
-	SourceID       string           `json:"source_id"`
-	SourceName     string           `json:"source_name"`
-	SourceKind     string           `json:"source_kind"`
-	SourcePlatform string           `json:"source_platform"`
-	SourceAddress  *string          `json:"source_address"`
-	Followers      []FollowerDto    `json:"followers"`
-	Rules          engine.Rules     `json:"rules"`
-	Risk           engine.Risk      `json:"risk"`
-	CreatedAt      int64            `json:"created_at"`
-	StartedAt      *int64           `json:"started_at"`
-	StoppedAt      *int64           `json:"stopped_at"`
-	TodayPnl       *string          `json:"today_pnl"`
-	TotalPnl       *string          `json:"total_pnl"`
-	Live           *engine.TaskLive `json:"live"`
+	ID             string        `json:"id"`
+	Name           string        `json:"name"`
+	Status         string        `json:"status"`
+	PauseReason    *string       `json:"pause_reason"`
+	SourceID       string        `json:"source_id"`
+	SourceName     string        `json:"source_name"`
+	SourceKind     string        `json:"source_kind"`
+	SourcePlatform string        `json:"source_platform"`
+	SourceAddress  *string       `json:"source_address"`
+	Followers      []FollowerDto `json:"followers"`
+	Rules          engine.Rules  `json:"rules"`
+	Risk           engine.Risk   `json:"risk"`
+	CreatedAt      int64         `json:"created_at"`
+	StartedAt      *int64        `json:"started_at"`
+	StoppedAt      *int64        `json:"stopped_at"`
+	TodayPnl       *string       `json:"today_pnl"`
+	TotalPnl       *string       `json:"total_pnl"`
+	// What ROI and percent loss limits are measured against: the allocated
+	// capital, else the accounts' equity when the task started.
+	Capital *string          `json:"capital"`
+	Live    *engine.TaskLive `json:"live"`
 	// Source position changes over the last 7 days: opens and adds, trims and closes.
 	WeekAdds    int64 `json:"week_adds"`
 	WeekReduces int64 `json:"week_reduces"`
@@ -335,6 +473,22 @@ func summarize(ctx context.Context, s *Server, t *store.TaskRow) (*TaskSummary, 
 	}
 	if err := json.Unmarshal([]byte(t.RiskJSON), &sum.Risk); err != nil {
 		return nil, err
+	}
+	capital, known := decimal.Zero, false
+	for i, f := range frows {
+		sz := sum.Rules.Sizing
+		if o := followers[i].Overrides; o != nil && o.Sizing != nil {
+			sz = *o.Sizing
+		}
+		switch {
+		case sz.Mode == engine.Allocated:
+			capital, known = capital.Add(sz.Capital), true
+		case f.StartEquity != nil:
+			capital, known = capital.Add(util.Dec(*f.StartEquity)), true
+		}
+	}
+	if known && capital.IsPositive() {
+		sum.Capital = util.Ptr(util.Fmt(capital.RoundBank(2)))
 	}
 	if src != nil {
 		sum.SourceName, sum.SourceKind, sum.SourcePlatform, sum.SourceAddress = src.Name, src.Kind, src.Platform, src.Address
@@ -385,6 +539,8 @@ type MirrorDto struct {
 
 type TaskDetail struct {
 	*TaskSummary
+	// The PnL split into its parts (nil before the task traded).
+	Pnl        *PnlDto            `json:"pnl"`
 	LatencyP95 *int64             `json:"latency_p95"`
 	Mirrors    []MirrorDto        `json:"mirrors"`
 	Signals    []SignalWithOrders `json:"signals"`
@@ -469,7 +625,27 @@ func getTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		}
 		signals = append(signals, SignalWithOrders{SignalRow: sg, Orders: orders})
 	}
-	return TaskDetail{TaskSummary: sum, LatencyP95: p95(lats), Mirrors: mirrors, Signals: signals}, nil
+	d := TaskDetail{TaskSummary: sum, LatencyP95: p95(lats), Mirrors: mirrors, Signals: signals}
+	if b, ok := s.E.TaskPnlBreakdown(a.ID); ok {
+		tot, err := store.TaskCostTotals(ctx, db, a.ID, 0)
+		if err != nil {
+			return nil, err
+		}
+		f := func(x decimal.Decimal) string { return util.Fmt(x.RoundBank(2)) }
+		d.Pnl = &PnlDto{Realized: f(b.Realized), Upnl: f(b.Upnl), Gross: f(b.Gross()), Fees: f(b.Fees), Funding: f(b.Funding), Net: f(b.Net()), Costs: tot}
+	}
+	return d, nil
+}
+
+type PnlDto struct {
+	Realized string `json:"realized"`
+	Upnl     string `json:"upnl"`
+	Gross    string `json:"gross"`
+	// Fees paid; funding received (negative = paid).
+	Fees    string           `json:"fees"`
+	Funding string           `json:"funding"`
+	Net     string           `json:"net"`
+	Costs   store.CostTotals `json:"costs"`
 }
 
 // ---------- wizard preview ----------
@@ -482,6 +658,10 @@ type PreviewRow struct {
 	RatioPct     *string `json:"ratio_pct"`
 	SampleTarget *string `json:"sample_target"`
 	SyncNotional string  `json:"sync_notional"`
+	// Allocated mode: this task's capital, and what other live tasks have
+	// allocated on the same account.
+	Capital      *string `json:"capital"`
+	OtherCapital *string `json:"other_capital"`
 }
 
 type PreviewDto struct {
@@ -500,6 +680,8 @@ func previewTask(ctx context.Context, s *Server, body []byte) (any, error) {
 			SourceID  string         `json:"source_id"`
 			Followers []FollowerSpec `json:"followers"`
 			Rules     engine.Rules   `json:"rules"`
+			// Editing an existing task: leave its own capital out of "other".
+			TaskID *string `json:"task_id"`
 		} `json:"input"`
 	}](body)
 	if err != nil {
@@ -568,12 +750,29 @@ func previewTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		if f.Overrides != nil && f.Overrides.Sizing != nil {
 			sizing = *f.Overrides.Sizing
 		}
-		var ratio *string
+		var ratio, capital, other *string
 		switch {
 		case sizing.Mode == engine.EquityRatio && !src.Equity.IsZero():
 			ratio = util.Ptr(util.Fmt(fs.Equity.Div(src.Equity).Mul(sizing.K).Mul(util.Hundred).RoundBank(2)))
+		case sizing.Mode == engine.Allocated && !src.Equity.IsZero():
+			ratio = util.Ptr(util.Fmt(sizing.Capital.Div(src.Equity).Mul(sizing.K).Mul(util.Hundred).RoundBank(4)))
 		case sizing.Mode == engine.FixedMultiple:
 			ratio = util.Ptr(util.Fmt(sizing.K.Mul(util.Hundred).RoundBank(2)))
+		}
+		if sizing.Mode == engine.Allocated {
+			except := ""
+			if in.TaskID != nil {
+				except = *in.TaskID
+			}
+			o, err := allocatedOn(ctx, db, f.ConnectionID, except)
+			if err != nil {
+				return nil, err
+			}
+			capital = util.Ptr(util.Fmt(sizing.Capital.RoundBank(2)))
+			other = util.Ptr(util.Fmt(o.RoundBank(2)))
+			if tot := sizing.Capital.Add(o); tot.GreaterThan(fs.Equity) {
+				warn(fmt.Sprintf("%s 投入本金合计 %s USDT（含其他任务 %s），超过账户权益 %s，开仓可能因保证金不足失败。", c.Alias, util.Fmt(tot.RoundBank(2)), util.Fmt(o.RoundBank(2)), util.Fmt(fs.Equity.RoundBank(2))))
+			}
 		}
 		syncNotional := decimal.Zero
 		var sampleTarget *string
@@ -591,7 +790,7 @@ func previewTask(ctx context.Context, s *Server, body []byte) (any, error) {
 				continue
 			}
 			sz := in.Rules.Directional(p.Size)
-			t := engine.Target(&sizing, engine.SizingInput{SrcSize: sz, SrcEquity: src.Equity, FollowerEquity: fs.Equity, Price: p.MarkPx, SrcOpenSize: sz})
+			t := engine.Target(&sizing, engine.SizingInput{SrcSize: sz, SrcEquity: src.Equity, FollowerEquity: fs.Equity, Price: p.MarkPx, SrcOpenSize: sz, Capital: sizing.Capital})
 			units := spec.ToUnits(t)
 			if sample != nil && sample.Base == p.Base {
 				sampleTarget = util.Ptr(util.Fmt(units.Mul(spec.CoinPerUnit)))
@@ -606,7 +805,7 @@ func previewTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		if c.OneWay != nil && !*c.OneWay {
 			warn(fmt.Sprintf("%s 为双向持仓模式，需先在连接页切换为单向。", c.Alias))
 		}
-		rows = append(rows, PreviewRow{ConnectionID: c.ID, Alias: c.Alias, Equity: util.Fmt(fs.Equity.RoundBank(2)), Available: util.Fmt(fs.Available.RoundBank(2)), RatioPct: ratio, SampleTarget: sampleTarget, SyncNotional: util.Fmt(syncNotional.RoundBank(2))})
+		rows = append(rows, PreviewRow{ConnectionID: c.ID, Alias: c.Alias, Equity: util.Fmt(fs.Equity.RoundBank(2)), Available: util.Fmt(fs.Available.RoundBank(2)), RatioPct: ratio, SampleTarget: sampleTarget, SyncNotional: util.Fmt(syncNotional.RoundBank(2)), Capital: capital, OtherCapital: other})
 	}
 	out := PreviewDto{
 		SourceEquity: util.Fmt(src.Equity.RoundBank(2)), SourcePositions: len(src.Positions), Rows: rows, Warnings: warnings,
@@ -619,4 +818,37 @@ func previewTask(ctx context.Context, s *Server, body []byte) (any, error) {
 		out.SyncMarginPct = util.Fmt(totalNotional.Div(totalAvail).Mul(util.Hundred).RoundBank(1))
 	}
 	return out, nil
+}
+
+// allocatedOn sums the capital other non-stopped tasks allocate on an account.
+func allocatedOn(ctx context.Context, db *sql.DB, connID, exceptTask string) (decimal.Decimal, error) {
+	rows, err := db.QueryContext(ctx, `SELECT t.rules_json, f.override_json FROM task_followers f JOIN tasks t ON t.id = f.task_id
+		WHERE f.connection_id = ? AND t.status != 'stopped' AND t.id != ?`, connID, exceptTask)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	defer rows.Close()
+	out := decimal.Zero
+	for rows.Next() {
+		var rj string
+		var oj *string
+		if err := rows.Scan(&rj, &oj); err != nil {
+			return decimal.Zero, err
+		}
+		var r engine.Rules
+		if json.Unmarshal([]byte(rj), &r) != nil {
+			continue
+		}
+		sz := r.Sizing
+		if oj != nil {
+			var o engine.FollowerOverride
+			if json.Unmarshal([]byte(*oj), &o) == nil && o.Sizing != nil {
+				sz = *o.Sizing
+			}
+		}
+		if sz.Mode == engine.Allocated {
+			out = out.Add(sz.Capital)
+		}
+	}
+	return out, rows.Err()
 }

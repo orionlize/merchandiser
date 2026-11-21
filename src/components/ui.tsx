@@ -119,9 +119,10 @@ export function Input({ className, invalid, suffix, ...rest }: InputHTMLAttribut
   );
 }
 
-export function NumInput({ value, onChange, suffix, className, invalid, placeholder, clearable = true }: { value: string; onChange: (v: string) => void; suffix?: ReactNode; className?: string; invalid?: boolean; placeholder?: string; clearable?: boolean }) {
+export function NumInput({ value, onChange, prefix, suffix, className, invalid, placeholder, clearable = true }: { value: string; onChange: (v: string) => void; prefix?: ReactNode; suffix?: ReactNode; className?: string; invalid?: boolean; placeholder?: string; clearable?: boolean }) {
   return (
     <div className={clsx("flex h-9 items-center rounded-md border bg-bg px-3 transition-[border-color] duration-150 focus-within:border-ring", invalid ? "border-danger" : "border-input", className)}>
+      {prefix ? <span className="num mr-1 shrink-0 text-sm text-muted-fg">{prefix}</span> : null}
       <input value={value} placeholder={placeholder} inputMode="decimal" onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))} className="num h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-fg" />
       {suffix ? <span className="ml-2 shrink-0 text-xs text-muted-fg">{suffix}</span> : null}
       {clearable && value && !suffix ? (
@@ -162,11 +163,13 @@ export function Field({ label, children, error, hint, className }: { label?: Rea
 
 export function Tabs<T extends string>({ value, onChange, tabs, className }: { value: T; onChange: (v: T) => void; tabs: { value: T; label: ReactNode }[]; className?: string }) {
   return (
-    <div className={clsx("flex gap-6 border-b border-border", className)}>
+    // Scrolls sideways on phones instead of wrapping; the bottom rule is an
+    // inset shadow so the active underline can sit on it inside the scroller.
+    <div className={clsx("flex shrink-0 gap-6 overflow-x-auto shadow-[inset_0_-1px_0_var(--border)] [scrollbar-width:none] max-md:gap-5", className)}>
       {tabs.map((t) => (
-        <button key={t.value} onClick={() => onChange(t.value)} className={clsx("relative pb-2.5 text-sm transition-colors duration-150", value === t.value ? "text-fg" : "text-muted-fg hover:text-fg")}>
+        <button key={t.value} onClick={() => onChange(t.value)} className={clsx("relative shrink-0 pb-2.5 text-sm whitespace-nowrap transition-colors duration-150", value === t.value ? "text-fg" : "text-muted-fg hover:text-fg")}>
           {t.label}
-          {value === t.value ? <span className="anim-tab absolute -bottom-px left-0 right-0 h-0.5 bg-primary" /> : null}
+          {value === t.value ? <span className="anim-tab absolute bottom-0 left-0 right-0 h-0.5 bg-primary" /> : null}
         </button>
       ))}
     </div>

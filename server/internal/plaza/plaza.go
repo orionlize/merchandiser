@@ -143,6 +143,14 @@ type Service struct {
 	lastUse  time.Time
 	running  bool
 	priority []string
+
+	// Follow simulations (simulate.go): their own budget and a short cache
+	// of the fetched data so re-running with other parameters is instant.
+	// 240/min like the crawler, but with a 3-minute burst so one wallet's
+	// full 10,000-fill history (~620 weight) loads in seconds, not minutes.
+	sim      *exchange.TokenBucket
+	simMu    sync.Mutex
+	simCache map[string]*simEntry
 }
 
 // Store persists the crawl so a restart or deploy doesn't start from an
@@ -159,10 +167,12 @@ func New(root context.Context, pinned func(context.Context) []string, st Store) 
 	}
 	s := &Service{
 		root: root, hl: hl, pinned: pinned, store: st,
-		budget:  exchange.NewBucket(240, time.Minute),
-		ui:      exchange.NewBucket(60, time.Minute),
-		lbHTTP:  &http.Client{Timeout: 90 * time.Second},
-		wallets: map[string]*Wallet{},
+		budget:   exchange.NewBucket(240, time.Minute),
+		ui:       exchange.NewBucket(60, time.Minute),
+		sim:      exchange.NewBucket(720, 3*time.Minute),
+		simCache: map[string]*simEntry{},
+		lbHTTP:   &http.Client{Timeout: 90 * time.Second},
+		wallets:  map[string]*Wallet{},
 	}
 	if st.Load != nil {
 		if b := st.Load(root); len(b) > 0 {

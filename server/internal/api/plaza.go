@@ -265,3 +265,25 @@ func plazaFavorite(ctx context.Context, s *Server, body []byte) (any, error) {
 	}
 	return nil, nil
 }
+
+func plazaSimulate(ctx context.Context, s *Server, body []byte) (any, error) {
+	a, err := bind[struct {
+		Address string  `json:"address"`
+		Window  string  `json:"window"`
+		Capital float64 `json:"capital"`
+		SlipBps float64 `json:"slip_bps"`
+		Start   string  `json:"start"`
+	}](body)
+	if err != nil {
+		return nil, err
+	}
+	addr := strings.ToLower(strings.TrimSpace(a.Address))
+	if !exchange.ValidAddress(addr) {
+		return nil, errs.Msg("地址应为 0x 开头的 42 位十六进制")
+	}
+	svc, err := s.plaza()
+	if err != nil {
+		return nil, err
+	}
+	return svc.Simulate(ctx, addr, a.Window, a.Start, a.Capital, a.SlipBps)
+}

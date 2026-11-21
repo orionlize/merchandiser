@@ -14,6 +14,11 @@ import { StopDialog } from "./TaskDetail";
 export function sizingLabel(r: Rules) {
   const k = Number(r.sizing.k);
   switch (r.sizing.mode) {
+    case "allocated": {
+      const c = Number(r.sizing.capital ?? 0).toLocaleString("en-US");
+      const ks = k !== 1 ? ` ×${k}` : "";
+      return r.sizing.compound ? trNow(`本金 ${c} USDT${ks}，复利`, `Capital ${c} USDT${ks}, compounding`) : trNow(`本金 ${c} USDT${ks}`, `Capital ${c} USDT${ks}`);
+    }
     case "equity_ratio":
       return trNow(`权益比例 ×${k.toFixed(1)}`, `Equity ratio ×${k.toFixed(1)}`);
     case "fixed_multiple":
@@ -47,7 +52,15 @@ function holdings(t: TaskSummary) {
 
 function subline(t: TaskSummary) {
   if (t.status === "stopped") return `${date(t.stopped_at ?? t.created_at)} ${trNow("停止", "stopped")}${t.rules.stop === "keep" ? trNow("，仓位已保留", ", positions kept") : ""}`;
+  if (t.rules.mode === "watch") return `${sourceLabel(t)} · ${trNow("只观察提醒，不下单", "watch only, no orders")}${t.started_at ? trNow(` · 运行 ${days(t.started_at)} 天`, ` · ${days(t.started_at)}d`) : ""}`;
   return `${sourceLabel(t)} → ${followersLabel(t)}${t.started_at ? trNow(` · 运行 ${days(t.started_at)} 天`, ` · ${days(t.started_at)}d`) : ""}`;
+}
+
+/** Marks a watch-only task next to its name. */
+export function WatchTag({ t }: { t: TaskSummary }) {
+  const tr = useTr();
+  if (t.rules.mode !== "watch") return null;
+  return <span className="ml-1.5 inline-flex h-5 items-center rounded-sm bg-primary-soft px-1.5 align-middle text-[11px] font-semibold text-primary">{tr("观察", "Watch")}</span>;
 }
 
 function Holdings({ t, max = 3 }: { t: TaskSummary; max?: number }) {
@@ -222,7 +235,10 @@ export function Tasks() {
                   return (
                     <tr key={t.id} className="cursor-pointer border-b border-border last:border-0 hover:bg-muted" onClick={() => go("task", t.id)}>
                       <td className="max-w-[280px] px-4 py-3">
-                        <div className={clsx("truncate font-semibold", dim && "font-normal text-muted-fg")}>{t.name}</div>
+                        <div className={clsx("truncate font-semibold", dim && "font-normal text-muted-fg")}>
+                          {t.name}
+                          <WatchTag t={t} />
+                        </div>
                         <div className="mt-0.5 truncate text-xs text-muted-fg">{subline(t)}</div>
                       </td>
                       <td className="px-2 text-right">
@@ -263,7 +279,10 @@ export function Tasks() {
                   <button className="w-full px-4 pt-3 text-left" onClick={() => go("task", t.id)}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className={clsx("truncate text-md font-semibold", t.status === "stopped" && "text-muted-fg")}>{t.name}</div>
+                        <div className={clsx("truncate text-md font-semibold", t.status === "stopped" && "text-muted-fg")}>
+                          {t.name}
+                          <WatchTag t={t} />
+                        </div>
                         <div className={clsx("truncate text-xs", alarm ? "text-danger" : "text-muted-fg")}>{alarm ? t.pause_reason : subline(t)}</div>
                       </div>
                       <span className="shrink-0 text-xs">

@@ -15,6 +15,7 @@ import (
 	"merchandiser/server/internal/errs"
 	"merchandiser/server/internal/exchange"
 	"merchandiser/server/internal/model"
+	"merchandiser/server/internal/notify"
 	"merchandiser/server/internal/secrets"
 	"merchandiser/server/internal/store"
 	"merchandiser/server/internal/util"
@@ -120,6 +121,11 @@ type Engine struct {
 	estopped atomic.Bool
 	// UI lock (tasks keep running while locked).
 	locked atomic.Bool
+
+	// Pushes to Telegram / webhooks (nil = off, e.g. in tests).
+	Notify *notify.Service
+	// Set while RestoreOnBoot runs: one summary instead of a message per task.
+	restoring atomic.Bool
 }
 
 func New(ctx context.Context, db *sql.DB, sec *secrets.Store, bus *Bus) *Engine {
@@ -152,7 +158,18 @@ func (e *Engine) updateLive(taskID string, f func(*TaskLive)) {
 	}
 }
 
+// Alert records an alert and pushes it: errors as "error", the rest as
+// "risk". Use AlertAs for another category.
 func (e *Engine) Alert(level string, taskID, connID *string, title string, detail *string) {
+	cat := notify.CatRisk
+	if level == "error" {
+		cat = notify.CatError
+	}
+	e.AlertAs(cat, level, taskID, connID, title, detail)
+}
+
+func (e *Engine) AlertAs(cat, level string, taskID, connID *string, title string, detail *string) {
+	e.Notify.Notify(cat, level, title, detail)
 	if _, err := store.InsertAlert(context.Background(), e.DB, level, taskID, connID, title, detail); err != nil {
 		slog.Error("alert insert failed", "err", err)
 	}
@@ -354,6 +371,7 @@ func (e *Engine) StartTask(ctx context.Context, taskID string, freshStart bool) 
 		if err := store.SetTaskStatus(ctx, e.DB, taskID, "running", nil); err != nil {
 			return err
 		}
+		e.notifyLifecycle(ctx, taskID, "已恢复跟单", nil)
 		e.Changed("tasks")
 		return nil
 	}
@@ -370,8 +388,21 @@ func (e *Engine) StartTask(ctx context.Context, taskID string, freshStart bool) 
 		defer close(r.done)
 		tr.run(e.ctx, r.cmds)
 	}()
+	e.notifyLifecycle(ctx, taskID, "已启动", nil)
 	e.Changed("tasks")
 	return nil
+}
+
+// notifyLifecycle pushes a task start / pause / stop (no alert row).
+func (e *Engine) notifyLifecycle(ctx context.Context, taskID, what string, detail *string) {
+	if e.Notify == nil || e.restoring.Load() {
+		return
+	}
+	name := taskID
+	if t, err := store.Task(ctx, e.DB, taskID); err == nil && t != nil {
+		name = t.Name
+	}
+	e.Notify.Notify(notify.CatLifecycle, "ok", name+" "+what, detail)
 }
 
 func (r *runner) send(c taskCmd) {
@@ -390,6 +421,10 @@ func (e *Engine) PauseTask(ctx context.Context, taskID string, reason *string) e
 		r.send(taskCmd{kind: cmdPause})
 	}
 	e.runMu.Unlock()
+	// The e-stop sends its own alert; one message per task would be noise.
+	if reason == nil || *reason != "全局急停" {
+		e.notifyLifecycle(ctx, taskID, "已暂停", reason)
+	}
 	e.Changed("tasks")
 	return nil
 }
@@ -428,6 +463,11 @@ func (e *Engine) StopTask(ctx context.Context, taskID string, closePositions *bo
 	e.liveMu.Lock()
 	delete(e.live, taskID)
 	e.liveMu.Unlock()
+	what := "已停止"
+	if closePositions != nil && *closePositions {
+		what = "已停止并平仓"
+	}
+	e.notifyLifecycle(ctx, taskID, what, nil)
 	e.Changed("tasks")
 	return nil
 }
@@ -449,6 +489,21 @@ func (e *Engine) ReloadTask(taskID string) {
 	if r, ok := e.runners[taskID]; ok {
 		r.send(taskCmd{kind: cmdReload})
 	}
+}
+
+// RestartTask reloads a task and drops its runtime state, so it starts over
+// from the source's current positions (a watch-only task turned into copy
+// trading). A task that is not running starts fresh on its next start.
+func (e *Engine) RestartTask(ctx context.Context, taskID string) error {
+	if _, err := e.DB.ExecContext(ctx, "UPDATE tasks SET baseline_json = NULL WHERE id = ?", taskID); err != nil {
+		return err
+	}
+	e.runMu.Lock()
+	defer e.runMu.Unlock()
+	if r, ok := e.runners[taskID]; ok {
+		r.send(taskCmd{kind: cmdReload, fresh: true})
+	}
+	return nil
 }
 
 func (e *Engine) broadcast(c taskCmd) {
@@ -494,16 +549,16 @@ func (e *Engine) ReleaseEstop(ctx context.Context) error {
 		if t.Status == "paused" && t.PauseReason != nil && *t.PauseReason == "全局急停" {
 			if err := e.StartTask(ctx, t.ID, false); err != nil {
 				failed++
-				e.Alert("warn", util.Ptr(t.ID), nil, "解除急停后任务未能恢复", util.Ptr(err.Error()))
+				e.AlertAs(notify.CatError, "warn", util.Ptr(t.ID), nil, "解除急停后任务未能恢复", util.Ptr(err.Error()))
 				continue
 			}
 			_ = e.ReconcileNow(t.ID)
 		}
 	}
 	if failed > 0 {
-		e.Alert("warn", nil, nil, "已解除全局急停", util.Ptr(fmt.Sprintf("%d 个任务未能自动恢复，请到任务页手动启动", failed)))
+		e.AlertAs(notify.CatLifecycle, "warn", nil, nil, "已解除全局急停", util.Ptr(fmt.Sprintf("%d 个任务未能自动恢复，请到任务页手动启动", failed)))
 	} else {
-		e.Alert("ok", nil, nil, "已解除全局急停", util.Ptr("被急停暂停的任务已对账后恢复"))
+		e.AlertAs(notify.CatLifecycle, "ok", nil, nil, "已解除全局急停", util.Ptr("被急停暂停的任务已对账后恢复"))
 	}
 	e.Changed("estop")
 	e.Changed("tasks")
@@ -546,6 +601,12 @@ func (e *Engine) RestoreOnBoot(ctx context.Context) {
 		slog.Error("restore", "err", err)
 		return
 	}
+	e.restoring.Store(true)
+	restored := 0
+	defer func() {
+		e.restoring.Store(false)
+		e.Notify.Notify(notify.CatLifecycle, "ok", "服务已启动", util.Ptr(fmt.Sprintf("已恢复 %d 个运行中的任务", restored)))
+	}()
 	for _, t := range tasks {
 		if t.Status != "running" {
 			continue
@@ -554,6 +615,7 @@ func (e *Engine) RestoreOnBoot(ctx context.Context) {
 			_ = store.SetTaskStatus(ctx, e.DB, t.ID, "paused", util.Ptr("启动恢复失败: "+err.Error()))
 			e.Alert("error", &t.ID, nil, t.Name+" 恢复失败", util.Ptr(err.Error()))
 		} else {
+			restored++
 			slog.Info("restored task", "name", t.Name)
 		}
 	}
@@ -571,8 +633,10 @@ func (e *Engine) RunningCount() int {
 	return n
 }
 
-// SpawnBackground starts equity sampling, retention and sleep-gap detection.
+// SpawnBackground starts equity sampling, cost sync, retention and sleep-gap
+// detection.
 func (e *Engine) SpawnBackground() {
+	go e.costLoop()
 	go func() {
 		t := time.NewTicker(60 * time.Second)
 		defer t.Stop()
@@ -589,8 +653,8 @@ func (e *Engine) SpawnBackground() {
 		t := time.NewTicker(6 * time.Hour)
 		defer t.Stop()
 		for {
-			days := int64(store.SettingsCache().LogRetentionDays)
-			if err := store.Prune(e.ctx, e.DB, days); err != nil {
+			st := store.SettingsCache()
+			if err := store.Prune(e.ctx, e.DB, int64(st.LogRetentionDays), int64(st.TripRetentionDays), int64(st.AuditRetentionDays)); err != nil {
 				slog.Warn("prune", "err", err)
 			}
 			select {
@@ -614,7 +678,7 @@ func (e *Engine) SpawnBackground() {
 			gap := now - last
 			last = now
 			if gap > 30_000 && e.RunningCount() > 0 {
-				e.Alert("warn", nil, nil, "检测到服务器挂起 "+decimal.NewFromInt(gap/1000).String()+" 秒", util.Ptr("期间未跟单，已对所有运行中的任务重新对账"))
+				e.AlertAs(notify.CatError, "warn", nil, nil, "检测到服务器挂起 "+decimal.NewFromInt(gap/1000).String()+" 秒", util.Ptr("期间未跟单，已对所有运行中的任务重新对账"))
 				e.broadcast(taskCmd{kind: cmdReconcile})
 			}
 		}
