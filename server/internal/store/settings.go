@@ -18,19 +18,24 @@ type Settings struct {
 	AppLock          bool   `json:"app_lock"`
 	IdleLockMinutes  uint32 `json:"idle_lock_minutes"`
 	LogRetentionDays uint32 `json:"log_retention_days"`
-	Notifications    bool   `json:"notifications"`
-	CloseConfirmMode string `json:"close_confirm_mode"`
+	// Position history and costs, and the audit log (0 = keep forever).
+	TripRetentionDays  uint32 `json:"trip_retention_days"`
+	AuditRetentionDays uint32 `json:"audit_retention_days"`
+	Notifications      bool   `json:"notifications"`
+	CloseConfirmMode   string `json:"close_confirm_mode"`
 }
 
 func DefaultSettings() Settings {
 	return Settings{
-		Language:         "zh",
-		Theme:            "dark",
-		PreventSleep:     true,
-		IdleLockMinutes:  15,
-		LogRetentionDays: 90,
-		Notifications:    true,
-		CloseConfirmMode: "word",
+		Language:           "zh",
+		Theme:              "dark",
+		PreventSleep:       true,
+		IdleLockMinutes:    15,
+		LogRetentionDays:   90,
+		TripRetentionDays:  365,
+		AuditRetentionDays: 180,
+		Notifications:      true,
+		CloseConfirmMode:   "word",
 	}
 }
 

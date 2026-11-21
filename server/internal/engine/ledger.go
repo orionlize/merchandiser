@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"sort"
 
@@ -26,8 +27,35 @@ type ledgerKey struct{ task, conn, base string }
 
 type ledgerPos struct {
 	size, avgPx, realized decimal.Decimal
+	// Cumulative fees paid and funding received (the PnL above is gross).
+	fees, funding decimal.Decimal
 	// Last time this share changed through a fill (ms).
 	changedAt int64
+	// The open round trip (nil while flat).
+	trip *trip
+}
+
+// trip accumulates one round trip of a share, from flat back to flat, for
+// the position history.
+type trip struct {
+	OpenedAt int64           `json:"opened_at"`
+	MaxSize  decimal.Decimal `json:"max_size"`
+	InQty    decimal.Decimal `json:"in_qty"`
+	InCost   decimal.Decimal `json:"in_cost"`
+	OutQty   decimal.Decimal `json:"out_qty"`
+	OutValue decimal.Decimal `json:"out_value"`
+	// The share's realised PnL when the trip opened.
+	RealizedAt decimal.Decimal  `json:"realized_at"`
+	Leverage   *decimal.Decimal `json:"leverage,omitempty"`
+	// Costs booked while the trip was open.
+	Fees    decimal.Decimal `json:"fees"`
+	Funding decimal.Decimal `json:"funding"`
+}
+
+// FillTag says why a share changed; it becomes the close reason of a trip.
+type FillTag struct {
+	Reason string
+	Note   string
 }
 
 // shortfall tracks an account holding less than the tasks' shares, so a
@@ -50,15 +78,33 @@ func (e *Engine) loadLedger(ctx context.Context) {
 	e.ledgerMu.Lock()
 	defer e.ledgerMu.Unlock()
 	for _, p := range rows {
-		e.ledger[ledgerKey{p.TaskID, p.ConnectionID, p.Base}] = &ledgerPos{size: util.Dec(p.Size), avgPx: util.Dec(p.AvgPx), realized: util.Dec(p.Realized), changedAt: p.UpdatedAt}
+		lp := &ledgerPos{size: util.Dec(p.Size), avgPx: util.Dec(p.AvgPx), realized: util.Dec(p.Realized), fees: util.Dec(p.Fees), funding: util.Dec(p.Funding), changedAt: p.UpdatedAt}
+		if p.TripJSON != nil {
+			var t trip
+			if json.Unmarshal([]byte(*p.TripJSON), &t) == nil {
+				lp.trip = &t
+			}
+		}
+		if !lp.size.IsZero() && lp.trip == nil {
+			// Opened before trips were recorded: start it at the last change.
+			lp.trip = &trip{OpenedAt: p.UpdatedAt, MaxSize: lp.size.Abs(), InQty: lp.size.Abs(), InCost: lp.size.Abs().Mul(lp.avgPx), RealizedAt: lp.realized}
+		}
+		e.ledger[ledgerKey{p.TaskID, p.ConnectionID, p.Base}] = lp
 	}
 }
 
 // persist writes one share; the caller holds ledgerMu.
 func (e *Engine) persistLedger(k ledgerKey, p *ledgerPos) {
+	var tj *string
+	if p.trip != nil {
+		if b, err := json.Marshal(p.trip); err == nil {
+			tj = util.Ptr(string(b))
+		}
+	}
 	err := store.UpsertTaskPosition(context.Background(), e.DB, &store.TaskPositionRow{
 		TaskID: k.task, ConnectionID: k.conn, Base: k.base,
-		Size: util.Fmt(p.size), AvgPx: util.Fmt(p.avgPx), Realized: util.Fmt(p.realized), UpdatedAt: util.NowMs(),
+		Size: util.Fmt(p.size), AvgPx: util.Fmt(p.avgPx), Realized: util.Fmt(p.realized), UpdatedAt: util.NowMs(), TripJSON: tj,
+		Fees: util.Fmt(p.fees.RoundBank(8)), Funding: util.Fmt(p.funding.RoundBank(8)),
 	})
 	if err != nil {
 		slog.Error("persist task ledger", "task", k.task, "base", k.base, "err", err)
@@ -87,8 +133,95 @@ func (p *ledgerPos) applyFill(qty, px decimal.Decimal) {
 	}
 }
 
+// book applies a fill to a share and keeps its round trip: opening from flat
+// starts one, returning to flat (or flipping) records it in the history.
+// The caller holds ledgerMu and persists the share.
+func (e *Engine) book(k ledgerKey, p *ledgerPos, qty, px decimal.Decimal, tag FillTag) {
+	if qty.IsZero() {
+		return
+	}
+	now := util.NowMs()
+	lev := e.leverageOf(k.conn, k.base)
+	if p.size.IsZero() || p.size.Sign() == qty.Sign() {
+		if p.size.IsZero() || p.trip == nil {
+			p.trip = &trip{OpenedAt: now, RealizedAt: p.realized}
+		}
+		p.applyFill(qty, px)
+		p.trip.InQty = p.trip.InQty.Add(qty.Abs())
+		p.trip.InCost = p.trip.InCost.Add(qty.Abs().Mul(px))
+		p.trip.MaxSize = util.MaxD(p.trip.MaxSize, p.size.Abs())
+		if lev != nil {
+			p.trip.Leverage = lev
+		}
+		return
+	}
+	before := p.size
+	closed := util.MinD(qty.Abs(), before.Abs())
+	if p.trip == nil {
+		p.trip = &trip{OpenedAt: p.changedAt, MaxSize: before.Abs(), InQty: before.Abs(), InCost: before.Abs().Mul(p.avgPx), RealizedAt: p.realized}
+	}
+	if lev != nil {
+		p.trip.Leverage = lev
+	}
+	p.applyFill(qty, px)
+	p.trip.OutQty = p.trip.OutQty.Add(closed)
+	p.trip.OutValue = p.trip.OutValue.Add(closed.Mul(px))
+	if p.size.IsZero() || p.size.Sign() != before.Sign() {
+		e.recordTrip(k, before, p, tag, now)
+		p.trip = nil
+		if !p.size.IsZero() { // flipped: the rest opens a new trip
+			p.trip = &trip{OpenedAt: now, MaxSize: p.size.Abs(), InQty: p.size.Abs(), InCost: p.size.Abs().Mul(px), RealizedAt: p.realized, Leverage: lev}
+		}
+	}
+}
+
+// recordTrip writes a finished round trip; the caller holds ledgerMu.
+func (e *Engine) recordTrip(k ledgerKey, side decimal.Decimal, p *ledgerPos, tag FillTag, now int64) {
+	t := p.trip
+	if t == nil || !t.InQty.IsPositive() {
+		return
+	}
+	row := &store.TripRow{
+		TaskID: k.task, ConnectionID: k.conn, Base: k.base, Side: "long", OpenedAt: t.OpenedAt, ClosedAt: now,
+		MaxSize: util.Fmt(t.MaxSize), EntryPx: util.Fmt(t.InCost.Div(t.InQty).RoundBank(8)), ExitPx: "0",
+		Realized: util.Fmt(p.realized.Sub(t.RealizedAt).RoundBank(6)), Reason: tag.Reason,
+	}
+	if side.IsNegative() {
+		row.Side = "short"
+	}
+	if t.OutQty.IsPositive() {
+		row.ExitPx = util.Fmt(t.OutValue.Div(t.OutQty).RoundBank(8))
+	}
+	if t.Leverage != nil {
+		row.Leverage = util.Ptr(util.Fmt(t.Leverage.RoundBank(2)))
+	}
+	if row.Reason == "" {
+		row.Reason = "sync"
+	}
+	if tag.Note != "" {
+		row.Note = util.Ptr(tag.Note)
+	}
+	row.Fees, row.Funding = util.Fmt(t.Fees.RoundBank(8)), util.Fmt(t.Funding.RoundBank(8))
+	if err := store.InsertTrip(context.Background(), e.DB, row); err != nil {
+		slog.Error("record trip", "task", k.task, "base", k.base, "err", err)
+	}
+}
+
+// leverageOf is the coin's leverage on an account from its latest snapshot.
+func (e *Engine) leverageOf(conn, base string) *decimal.Decimal {
+	if s := e.LatestSnapshot(conn); s != nil {
+		for _, p := range s.Positions {
+			if p.Base == base && p.Leverage != nil && p.Leverage.IsPositive() {
+				l := *p.Leverage
+				return &l
+			}
+		}
+	}
+	return nil
+}
+
 // LedgerFill books a fill of one task's own order.
-func (e *Engine) LedgerFill(task, conn, base string, qty, px decimal.Decimal) {
+func (e *Engine) LedgerFill(task, conn, base string, qty, px decimal.Decimal, tag FillTag) {
 	if qty.IsZero() || !px.IsPositive() {
 		return
 	}
@@ -100,7 +233,7 @@ func (e *Engine) LedgerFill(task, conn, base string, qty, px decimal.Decimal) {
 		p = &ledgerPos{}
 		e.ledger[k] = p
 	}
-	p.applyFill(qty, px)
+	e.book(k, p, qty, px, tag)
 	p.changedAt = util.NowMs()
 	delete(e.short, connBase(conn, base))
 	e.persistLedger(k, p)
@@ -163,6 +296,7 @@ func (e *Engine) claimShare(task, conn, base string, target, actual, entryPx dec
 		e.ledger[k] = p
 	}
 	p.size, p.avgPx, p.changedAt = size, entryPx, util.NowMs()
+	p.trip = &trip{OpenedAt: p.changedAt, MaxSize: size.Abs(), InQty: size.Abs(), InCost: size.Abs().Mul(entryPx), RealizedAt: p.realized, Leverage: e.leverageOf(conn, base)}
 	e.persistLedger(k, p)
 }
 
@@ -228,14 +362,11 @@ func (e *Engine) reconcileLedger(conn string, snap *model.AccountSnapshot, px fu
 			p := e.ledger[k]
 			newSize := p.size.Mul(keep).Div(sum.Abs())
 			cut := newSize.Sub(p.size) // opposite sign of size
-			if price.IsPositive() {
-				p.applyFill(cut, price)
-			} else {
-				p.size = newSize
-				if p.size.IsZero() {
-					p.avgPx = decimal.Zero
-				}
+			at := price
+			if !at.IsPositive() {
+				at = p.avgPx // unknown price: book the cut flat
 			}
+			e.book(k, p, cut, at, FillTag{Reason: "account", Note: "账户实际持仓少于任务份额（强平或手动平仓），已按账户调减"})
 			p.changedAt = now
 			e.persistLedger(k, p)
 			slog.Info("task ledger cut to account", "task", k.task, "base", base, "size", p.size)
@@ -252,11 +383,11 @@ func (e *Engine) releaseLedger(task string) {
 		if k.task != task || p.size.IsZero() {
 			continue
 		}
-		if px := e.markOf(k.conn, k.base); px.IsPositive() {
-			p.applyFill(p.size.Neg(), px)
-		} else {
-			p.size, p.avgPx = decimal.Zero, decimal.Zero
+		px := e.markOf(k.conn, k.base)
+		if !px.IsPositive() {
+			px = p.avgPx
 		}
+		e.book(k, p, p.size.Neg(), px, FillTag{Reason: "release", Note: "任务停止，仓位留在账户上，按最新标记价结算"})
 		p.changedAt = util.NowMs()
 		e.persistLedger(k, p)
 	}
@@ -286,9 +417,22 @@ func (e *Engine) markOf(conn, base string) decimal.Decimal {
 	return decimal.Zero
 }
 
-// TaskPnl is a task's cumulative PnL from its own shares: realised plus
-// unrealised at the latest account marks.
+// TaskPnl is a task's cumulative net PnL from its own shares: realised plus
+// unrealised at the latest account marks, less fees, plus funding.
 func (e *Engine) TaskPnl(task string) (pnl decimal.Decimal, ok bool) {
+	b, ok := e.TaskPnlBreakdown(task)
+	return b.Net(), ok
+}
+
+// PnlBreakdown splits a task's PnL into its parts.
+type PnlBreakdown struct {
+	Realized, Upnl, Fees, Funding decimal.Decimal
+}
+
+func (b PnlBreakdown) Gross() decimal.Decimal { return b.Realized.Add(b.Upnl) }
+func (b PnlBreakdown) Net() decimal.Decimal   { return b.Gross().Sub(b.Fees).Add(b.Funding) }
+
+func (e *Engine) TaskPnlBreakdown(task string) (b PnlBreakdown, ok bool) {
 	e.ledgerMu.Lock()
 	defer e.ledgerMu.Unlock()
 	for k, p := range e.ledger {
@@ -296,15 +440,53 @@ func (e *Engine) TaskPnl(task string) (pnl decimal.Decimal, ok bool) {
 			continue
 		}
 		ok = true
-		pnl = pnl.Add(p.realized)
+		b.Realized = b.Realized.Add(p.realized)
+		b.Fees = b.Fees.Add(p.fees)
+		b.Funding = b.Funding.Add(p.funding)
 		if !p.size.IsZero() {
 			if px := e.markOf(k.conn, k.base); px.IsPositive() {
-				pnl = pnl.Add(p.size.Mul(px.Sub(p.avgPx)))
+				b.Upnl = b.Upnl.Add(p.size.Mul(px.Sub(p.avgPx)))
 			}
 		}
 	}
-	return pnl, ok
+	return b, ok
 }
+
+// LedgerCost books a fee (kind "fee", paid) or funding payment ("funding",
+// received) into a task's share and its round trip: the open one, or the one
+// that just closed (a closing fill's fee settles after the trip is recorded).
+func (e *Engine) LedgerCost(task, conn, base, kind string, amount decimal.Decimal, ts int64) {
+	if amount.IsZero() {
+		return
+	}
+	k := ledgerKey{task, conn, base}
+	e.ledgerMu.Lock()
+	defer e.ledgerMu.Unlock()
+	p := e.ledger[k]
+	if p == nil {
+		p = &ledgerPos{}
+		e.ledger[k] = p
+	}
+	if kind == "funding" {
+		p.funding = p.funding.Add(amount)
+	} else {
+		p.fees = p.fees.Add(amount)
+	}
+	if p.trip != nil && ts >= p.trip.OpenedAt-openSlackMs {
+		if kind == "funding" {
+			p.trip.Funding = p.trip.Funding.Add(amount)
+		} else {
+			p.trip.Fees = p.trip.Fees.Add(amount)
+		}
+	} else if _, err := store.AddTripCost(context.Background(), e.DB, task, conn, base, kind, amount, ts); err != nil {
+		slog.Warn("trip cost", "task", task, "base", base, "err", err)
+	}
+	e.persistLedger(k, p)
+}
+
+// A trip opens when its first order returns, so the venue time of that
+// opening fill is slightly earlier.
+const openSlackMs = 3_000
 
 // taskShares lists a task's open shares as positions for the UI, priced at the
 // account's marks.
@@ -360,12 +542,25 @@ func (e *Engine) closeSharesOn(conn string, before *model.AccountSnapshot) {
 				px = ap.MarkPx
 			}
 		}
-		if px.IsPositive() {
-			p.applyFill(p.size.Neg(), px)
-		} else {
-			p.size, p.avgPx = decimal.Zero, decimal.Zero
+		if !px.IsPositive() {
+			px = p.avgPx
 		}
+		e.book(k, p, p.size.Neg(), px, FillTag{Reason: "close_all", Note: "全部平仓"})
 		p.changedAt = util.NowMs()
 		e.persistLedger(k, p)
 	}
+}
+
+// TaskRealizedOn is a task's realised PnL on one account net of costs
+// (compounding capital).
+func (e *Engine) TaskRealizedOn(task, conn string) decimal.Decimal {
+	e.ledgerMu.Lock()
+	defer e.ledgerMu.Unlock()
+	out := decimal.Zero
+	for k, p := range e.ledger {
+		if k.task == task && k.conn == conn {
+			out = out.Add(p.realized).Sub(p.fees).Add(p.funding)
+		}
+	}
+	return out
 }

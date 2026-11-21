@@ -51,8 +51,8 @@ func snap(ts int64, base, size, mark string) *model.AccountSnapshot {
 // Two tasks on one account: each sees only its own share, and PnL splits.
 func TestLedgerSharedAccount(t *testing.T) {
 	e := newTestEngine(t)
-	e.LedgerFill("A", "acct", "BTC", d("1"), d("100"))
-	e.LedgerFill("B", "acct", "BTC", d("3"), d("110"))
+	e.LedgerFill("A", "acct", "BTC", d("1"), d("100"), FillTag{})
+	e.LedgerFill("B", "acct", "BTC", d("3"), d("110"), FillTag{})
 	if !e.Held("A", "acct", "BTC").Equal(d("1")) || !e.Held("B", "acct", "BTC").Equal(d("3")) {
 		t.Fatal("shares")
 	}
@@ -73,8 +73,8 @@ func TestLedgerSharedAccount(t *testing.T) {
 // them down, but only once the shortfall persists past a fresh fill.
 func TestLedgerShortfall(t *testing.T) {
 	e := newTestEngine(t)
-	e.LedgerFill("A", "acct", "ETH", d("1"), d("100"))
-	e.LedgerFill("B", "acct", "ETH", d("3"), d("100"))
+	e.LedgerFill("A", "acct", "ETH", d("1"), d("100"), FillTag{})
+	e.LedgerFill("B", "acct", "ETH", d("3"), d("100"), FillTag{})
 	px := func(string) decimal.Decimal { return d("90") }
 	now := util.NowMs()
 	// Right after a fill: ignored.
@@ -105,7 +105,7 @@ func TestLedgerShortfall(t *testing.T) {
 // Seeding a pre-existing position never takes what other tasks own.
 func TestLedgerClaimShare(t *testing.T) {
 	e := newTestEngine(t)
-	e.LedgerFill("A", "acct", "SOL", d("2"), d("10"))
+	e.LedgerFill("A", "acct", "SOL", d("2"), d("10"), FillTag{})
 	e.claimShare("B", "acct", "SOL", d("5"), d("3"), d("10")) // account 3, A owns 2
 	if !e.Held("B", "acct", "SOL").Equal(d("1")) {
 		t.Fatalf("B=%s", e.Held("B", "acct", "SOL"))

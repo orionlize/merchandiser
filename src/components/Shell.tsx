@@ -11,7 +11,7 @@ import { Dot } from "./ui";
 const NAV: { page: Page; icon: typeof LayoutGrid; zh: string; en: string; match: Page[] }[] = [
   { page: "overview", icon: LayoutGrid, zh: "总览", en: "Overview", match: ["overview"] },
   { page: "tasks", icon: Copy, zh: "跟单任务", en: "Copy tasks", match: ["tasks", "task", "wizard"] },
-  { page: "plaza", icon: Trophy, zh: "跟单员广场", en: "Trader plaza", match: ["plaza"] },
+  { page: "plaza", icon: Trophy, zh: "跟单员广场", en: "Trader plaza", match: ["plaza", "compare"] },
   { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources"] },
   { page: "connections", icon: Link2, zh: "交易账户", en: "Accounts", match: ["connections"] },
   { page: "records", icon: List, zh: "成交与盈亏", en: "Fills & PnL", match: ["records"] },
@@ -79,7 +79,7 @@ function TodayCard() {
 const TABS: { page: Page; icon: typeof LayoutGrid; zh: string; en: string; match: Page[] }[] = [
   { page: "overview", icon: LayoutGrid, zh: "总览", en: "Home", match: ["overview"] },
   { page: "tasks", icon: Copy, zh: "任务", en: "Tasks", match: ["tasks", "task", "wizard"] },
-  { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources", "plaza"] },
+  { page: "sources", icon: RadioIcon, zh: "信号源", en: "Sources", match: ["sources", "plaza", "compare"] },
   { page: "connections", icon: Wallet, zh: "账户", en: "Accounts", match: ["connections"] },
   { page: "settings", icon: MoreHorizontal, zh: "更多", en: "More", match: ["settings", "records"] },
 ];
@@ -105,7 +105,7 @@ export function BottomTabs() {
 }
 
 /** Where the back arrow goes on phones; top-level tabs have none. */
-const PARENT: Partial<Record<Page, Page>> = { task: "tasks", wizard: "tasks", records: "settings" };
+const PARENT: Partial<Record<Page, Page>> = { task: "tasks", wizard: "tasks", records: "settings", compare: "plaza" };
 
 export function TopBar({ title }: { title: ReactNode }) {
   const tr = useTr();

@@ -37,6 +37,7 @@ import (
 	"merchandiser/server/internal/api"
 	"merchandiser/server/internal/engine"
 	"merchandiser/server/internal/leader"
+	"merchandiser/server/internal/notify"
 	"merchandiser/server/internal/secrets"
 	"merchandiser/server/internal/store"
 )
@@ -206,6 +207,11 @@ func run() error {
 	}
 
 	eng := engine.New(ctx, db, sec, engine.NewBus())
+	// Only this process (the data directory's owner) pushes notifications
+	// and heartbeats, so a standby instance never reports a healthy engine.
+	eng.Notify = notify.New(ctx, db)
+	eng.Notify.Report = eng.DailyReport
+	eng.Notify.AttachVault(sec)
 	if !sec.Locked() {
 		go func() {
 			eng.RestoreOnBoot(ctx)

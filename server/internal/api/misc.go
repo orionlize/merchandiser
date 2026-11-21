@@ -617,6 +617,13 @@ func unlockApp(ctx context.Context, s *Server, body []byte) (any, error) {
 		time.Sleep(500 * time.Millisecond)
 		return nil, errs.Msg("密码错误")
 	}
+	// With the secrets file still locked the code cannot be checked; the
+	// sensitive commands stay gated until it is unlocked.
+	if !s.E.Secrets.Locked() {
+		if err := s.checkOTP(ctx, true); err != nil {
+			return nil, err
+		}
+	}
 	s.E.SetLocked(false)
 	s.E.Changed("lock")
 	return nil, nil
@@ -635,6 +642,9 @@ func unlockSecrets(ctx context.Context, s *Server, body []byte) (any, error) {
 		return nil, err
 	}
 	if wasLocked {
+		if s.E.Notify != nil {
+			s.E.Notify.AttachVault(s.E.Secrets)
+		}
 		go func() {
 			s.E.RestoreOnBoot(s.Ctx)
 			s.E.SampleEquity(s.Ctx)
@@ -1028,6 +1038,14 @@ func init() {
 		"delete_task":  deleteTask,
 		"preview_task": previewTask,
 
+		"task_position_history": taskPositionHistory,
+		"task_costs":            taskCosts,
+		"plaza_simulate":        plazaSimulate,
+
+		"get_notify":  getNotify,
+		"set_notify":  setNotify,
+		"test_notify": testNotify,
+
 		"get_overview":      getOverview,
 		"list_alerts":       listAlerts,
 		"query_logs":        queryLogs,
@@ -1044,6 +1062,13 @@ func init() {
 		"lock_app":          lockAppH,
 		"unlock_app":        unlockApp,
 		"unlock_secrets":    unlockSecrets,
+
+		"totp_status":         totpStatus,
+		"totp_setup":          totpSetup,
+		"totp_enable":         totpEnable,
+		"totp_disable":        totpDisable,
+		"totp_recovery_regen": totpRecoveryRegen,
+		"list_op_log":         listOpLog,
 
 		"symbol_map":            symbolMap,
 		"set_symbol_override":   setSymbolOverride,

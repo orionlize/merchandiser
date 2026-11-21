@@ -48,12 +48,12 @@ func TestSigningMatchesReference(t *testing.T) {
 
 func TestPaperFillsAndPnl(t *testing.T) {
 	s := &PaperState{Cash: d("1000"), Positions: map[string]*PaperPos{}}
-	applyFill(s, "BTC", true, d("1"), d("100"), decimal.Zero)
-	applyFill(s, "BTC", true, d("1"), d("110"), decimal.Zero)
+	applyFill(s, "BTC", true, d("1"), d("100"), decimal.Zero, "")
+	applyFill(s, "BTC", true, d("1"), d("110"), decimal.Zero, "")
 	if !s.Positions["BTC"].Entry.Equal(d("105")) {
 		t.Fatalf("entry %s", s.Positions["BTC"].Entry)
 	}
-	applyFill(s, "BTC", false, d("3"), d("120"), decimal.Zero)
+	applyFill(s, "BTC", false, d("3"), d("120"), decimal.Zero, "")
 	// Realised (120-105)*2 = 30, flipped short 1 @ 120.
 	if !s.Cash.Equal(d("1030")) || !s.Positions["BTC"].Size.Equal(d("-1")) || !s.Positions["BTC"].Entry.Equal(d("120")) {
 		t.Fatalf("cash %s pos %+v", s.Cash, s.Positions["BTC"])

@@ -19,6 +19,7 @@ import (
 	"merchandiser/server/internal/errs"
 	"merchandiser/server/internal/exchange"
 	"merchandiser/server/internal/model"
+	"merchandiser/server/internal/notify"
 	"merchandiser/server/internal/store"
 	"merchandiser/server/internal/util"
 )
@@ -38,6 +39,8 @@ type taskCmd struct {
 	kind  cmdKind
 	close *bool
 	done  chan struct{}
+	// cmdReload: drop the runtime state and start over (watch → copy).
+	fresh bool
 }
 
 type CompareRow struct {
@@ -75,6 +78,9 @@ type TaskLive struct {
 	// Follower positions in the coins this task manages.
 	Positions []PositionLive `json:"positions"`
 	Paused    bool           `json:"paused"`
+	// Source drawdown breaker: current drawdown (%) from the peak PnL.
+	SourceDDPct   *string `json:"source_dd_pct"`
+	SourcePeakPnl *string `json:"source_peak_pnl"`
 }
 
 // StrSet serialises as a JSON array.
@@ -112,11 +118,22 @@ type Baseline struct {
 	Initialized bool                       `json:"initialized"`
 	// The task's ledger shares were seeded from the accounts (ledger.go).
 	LedgerInit bool `json:"ledger_init"`
+	// Coins closed by take profit / stop loss, per account: not followed
+	// again until the source closes or flips them.
+	Exited map[string]StrSet `json:"exited"`
+	// Peak ROE (%) per "account|coin" share, for trailing take profit.
+	Peaks map[string]decimal.Decimal `json:"peaks"`
+	// Source drawdown breaker: the source's peak cumulative PnL since the
+	// task started (or the breaker last tripped), and its equity then.
+	SrcPeakPnl    *decimal.Decimal `json:"src_peak_pnl,omitempty"`
+	SrcPeakEquity decimal.Decimal  `json:"src_peak_equity"`
 }
 
 func newBaseline() Baseline {
-	return Baseline{Ignored: StrSet{}, OpenSizes: map[string]decimal.Decimal{}}
+	return Baseline{Ignored: StrSet{}, OpenSizes: map[string]decimal.Decimal{}, Exited: map[string]StrSet{}, Peaks: map[string]decimal.Decimal{}}
 }
+
+func (b *Baseline) exited(conn, base string) bool { return b.Exited[conn].Has(base) }
 
 type followerCtx struct {
 	connID      string
@@ -128,6 +145,9 @@ type followerCtx struct {
 	startEquity *decimal.Decimal
 	snap        *model.AccountSnapshot
 	cooldown    map[string]time.Time
+	// New coins the task may still open on this account in the current
+	// planning pass (max positions); -1 = no limit.
+	openSlots int
 }
 
 type taskRunner struct {
@@ -150,6 +170,14 @@ type taskRunner struct {
 	lastFollowerRefresh int64
 	alerted             map[string]int64
 	paused              bool
+	// Peaks changed since the baseline was last saved.
+	peaksDirty   bool
+	peaksSavedAt int64
+	// Source PnL as last read from the venue (drawdown breaker), the source
+	// equity at that read, and when it was read / last tried.
+	srcPnl, srcPnlEquity decimal.Decimal
+	srcPnlAt, srcPnlTry  int64
+	srcDD                *decimal.Decimal
 }
 
 const stepInterval = time.Second
@@ -209,7 +237,7 @@ func prepareRunner(ctx context.Context, e *Engine, taskID string, freshStart boo
 		if c, _ := store.Connection(ctx, e.DB, f.ConnectionID); c != nil {
 			alias = c.Alias
 		}
-		fc := &followerCtx{connID: f.ConnectionID, alias: alias, ex: ex, markets: m, sizing: rules.Sizing, leverage: rules.Leverage, cooldown: map[string]time.Time{}}
+		fc := &followerCtx{connID: f.ConnectionID, alias: alias, ex: ex, markets: m, sizing: rules.Sizing, leverage: rules.Leverage, cooldown: map[string]time.Time{}, openSlots: -1}
 		if ov.Sizing != nil {
 			fc.sizing = *ov.Sizing
 		}
@@ -222,8 +250,11 @@ func prepareRunner(ctx context.Context, e *Engine, taskID string, freshStart boo
 		}
 		followers = append(followers, fc)
 	}
-	if len(followers) == 0 {
+	if len(followers) == 0 && !rules.Watching() {
 		return nil, errs.Msg("任务没有跟单账户")
+	}
+	if rules.Watching() {
+		followers = nil // watch-only: never trades
 	}
 	baseline := newBaseline()
 	if t.BaselineJSON != nil && !freshStart {
@@ -235,6 +266,12 @@ func prepareRunner(ctx context.Context, e *Engine, taskID string, freshStart boo
 		}
 		if baseline.OpenSizes == nil {
 			baseline.OpenSizes = map[string]decimal.Decimal{}
+		}
+		if baseline.Exited == nil {
+			baseline.Exited = map[string]StrSet{}
+		}
+		if baseline.Peaks == nil {
+			baseline.Peaks = map[string]decimal.Decimal{}
 		}
 	}
 	// Refuse to run with a badly skewed clock.
@@ -322,8 +359,12 @@ func (r *taskRunner) run(ctx context.Context, cmds <-chan taskCmd) {
 			case cmdReconcile:
 				force = true
 			case cmdReload:
-				if fresh, err := prepareRunner(ctx, r.e, r.id, false); err == nil {
+				if fresh, err := prepareRunner(ctx, r.e, r.id, c.fresh); err == nil {
 					r.rules, r.risk, r.followers = fresh.rules, fresh.risk, fresh.followers
+					if c.fresh {
+						r.baseline = fresh.baseline
+						r.saveBaseline(ctx)
+					}
 					r.recordStartEquity(ctx)
 					force = true
 				} else {
@@ -392,8 +433,38 @@ func (r *taskRunner) step(ctx context.Context, force, wsOk bool) error {
 		r.saveBaseline(ctx)
 	}
 
+	// A coin left after take profit / stop loss is followed again once the
+	// source is flat on it (also when it closed while the task was down).
+	cleared := false
+	for _, set := range r.baseline.Exited {
+		for b := range set {
+			if src.Position(b).IsZero() {
+				delete(set, b)
+				cleared = true
+			}
+		}
+	}
+	if cleared {
+		r.saveBaseline(ctx)
+	}
 	signals := r.detectSignals(ctx, src)
 	changed := len(signals) > 0
+	if r.rules.Watching() {
+		// Watch-only: signals are logged and pushed (detectSignals); no
+		// followers, orders or risk checks.
+		if changed || force || now-r.lastFollowerRefresh >= int64(r.rules.ReconcileSecs)*1000 {
+			r.lastFollowerRefresh = now
+			r.publish(ctx, src)
+		}
+		r.prev = src
+		return nil
+	}
+	r.checkTPSL(ctx, src)
+	if r.checkSourceDD(ctx, src) {
+		r.publish(ctx, src)
+		r.prev = src
+		return nil
+	}
 	mirrorsActive := r.hasActiveMirrors(ctx)
 	reconcileMs := int64(r.rules.ReconcileSecs) * 1000
 	reconcileDue := now-r.lastReconcile >= reconcileMs
@@ -527,6 +598,10 @@ func (r *taskRunner) detectSignals(ctx context.Context, src *model.AccountSnapsh
 		if kind == "close" || kind == "flip" {
 			// A pre-existing position closed or flipped: follow from here on.
 			delete(r.baseline.Ignored, base)
+			// Same for coins left after take profit / stop loss.
+			for _, set := range r.baseline.Exited {
+				delete(set, base)
+			}
 		}
 		if kind == "close" {
 			delete(r.baseline.OpenSizes, base)
@@ -543,6 +618,9 @@ func (r *taskRunner) detectSignals(ctx context.Context, src *model.AccountSnapsh
 			continue
 		}
 		out[base] = id
+		if r.rules.Watching() {
+			r.notifySignal(base, kind, label, a, b, src)
+		}
 	}
 	if len(out) > 0 {
 		r.saveBaseline(ctx)
@@ -662,11 +740,15 @@ type planned struct {
 	signalID *int64
 	// Book the fill to this task's ledger share (false for account-wide closes).
 	book bool
+	// Why the share changes (position history close reason).
+	tag FillTag
+	// Reason shown on the order row.
+	note *string
 }
 
 func newPlanned(base string, spec *model.ContractSpec, buy bool, qty decimal.Decimal, reduceOnly bool, refPx decimal.Decimal, purpose string, lev *uint32) *planned {
 	return &planned{
-		base: base, spec: *spec, purpose: purpose, leverage: lev, book: true,
+		base: base, spec: *spec, purpose: purpose, leverage: lev, book: true, tag: FillTag{Reason: purpose},
 		req: model.OrderRequest{Buy: buy, Qty: qty, Type: model.OrderType{Kind: model.OrderMarket}, ReduceOnly: reduceOnly, ClientID: util.NewClientID(), RefPx: refPx},
 	}
 }
@@ -709,6 +791,7 @@ func (r *taskRunner) syncPositions(ctx context.Context, src *model.AccountSnapsh
 			continue
 		}
 		expected, grace := r.mirrorState(ctx, f.connID)
+		f.openSlots = r.openSlots(f)
 		var orders []*planned
 		for _, base := range sortedBases {
 			sigID, hasSig := signals[base]
@@ -880,7 +963,7 @@ func (r *taskRunner) targetFor(f *followerCtx, fs, src *model.AccountSnapshot, b
 	if !ok {
 		open = raw
 	}
-	t := Target(&f.sizing, SizingInput{SrcSize: raw, SrcEquity: src.Equity, FollowerEquity: fs.Equity, Price: px, SrcOpenSize: r.rules.Directional(open)})
+	t := Target(&f.sizing, SizingInput{SrcSize: raw, SrcEquity: src.Equity, FollowerEquity: fs.Equity, Price: px, SrcOpenSize: r.rules.Directional(open), Capital: r.capitalOf(f)})
 	// Risk caps (notional).
 	if !px.IsZero() {
 		if c := r.risk.MaxSymbolNotional; c != nil {
@@ -919,11 +1002,14 @@ func (r *taskRunner) planOne(f *followerCtx, fs, src *model.AccountSnapshot, bas
 		return plan{kind: planSkip, text: "品种不在名单内"}
 	}
 	// Unknown source equity would read as a zero target and close everything.
-	if f.sizing.Mode == EquityRatio && !src.Equity.IsPositive() {
+	if (f.sizing.Mode == EquityRatio || f.sizing.Mode == Allocated) && !src.Equity.IsPositive() {
 		return plan{kind: planSkip, text: "信号源权益未知，无法按权益比例计算"}
 	}
 	if r.baseline.Ignored.Has(base) {
 		return plan{kind: planSkip, text: "启动前已有持仓，按「只跟新开仓位」不跟"}
+	}
+	if r.baseline.exited(f.connID, base) {
+		return plan{kind: planSkip, text: "已止盈 / 止损退出，等信号源平仓或反手后再跟"}
 	}
 	spec := f.markets.Base(base)
 	if spec == nil {
@@ -948,6 +1034,10 @@ func (r *taskRunner) planOne(f *followerCtx, fs, src *model.AccountSnapshot, bas
 	delta := tgt.Sub(cur)
 	if delta.IsZero() {
 		return plan{kind: planNothing}
+	}
+	opening := actual.IsZero() && cur.IsZero() && !tgt.IsZero()
+	if opening && f.openSlots == 0 {
+		return plan{kind: planSkip, text: fmt.Sprintf("已持有 %d 个币种，达到上限，不跟新币种", *r.risk.MaxPositions)}
 	}
 	closingFully := tgt.IsZero() && !actual.IsZero()
 	// Minimum change threshold and venue minimum.
@@ -986,7 +1076,48 @@ func (r *taskRunner) planOne(f *followerCtx, fs, src *model.AccountSnapshot, bas
 		}
 		out = append(out, newPlanned(base, spec, delta.IsPositive(), delta.Abs(), reducing && reduceOnly(acct, cur, delta.Abs()), px, purpose, lev))
 	}
+	if opening && f.openSlots > 0 {
+		f.openSlots--
+	}
 	return plan{kind: planOrders, orders: out}
+}
+
+// openSlots is how many new coins the task may still open on an account
+// (max positions), -1 without a limit.
+func (r *taskRunner) openSlots(f *followerCtx) int {
+	mp := r.risk.MaxPositions
+	if mp == nil || *mp == 0 {
+		return -1
+	}
+	return max(int(*mp)-len(r.e.heldOn(r.id, f.connID)), 0)
+}
+
+// capitalOf is a follower's capital in allocated mode: the configured amount,
+// plus the task's realised PnL on the account when compounding (never < 0).
+func (r *taskRunner) capitalOf(f *followerCtx) decimal.Decimal {
+	if f.sizing.Mode != Allocated {
+		return decimal.Zero
+	}
+	c := f.sizing.Capital
+	if f.sizing.Compound {
+		c = c.Add(r.e.TaskRealizedOn(r.id, f.connID))
+	}
+	return util.MaxD(c, decimal.Zero)
+}
+
+// taskCapital is what loss limits in percent and ROI are measured against:
+// the allocated capital, else the accounts' equity when the task started.
+func (r *taskRunner) taskCapital() decimal.Decimal {
+	out := decimal.Zero
+	for _, f := range r.followers {
+		switch {
+		case f.sizing.Mode == Allocated:
+			out = out.Add(f.sizing.Capital)
+		case f.startEquity != nil:
+			out = out.Add(*f.startEquity)
+		}
+	}
+	return out
 }
 
 func (r *taskRunner) desiredLeverage(f *followerCtx, src *model.AccountSnapshot, base string, spec *model.ContractSpec) *uint32 {
@@ -1009,11 +1140,25 @@ func (r *taskRunner) logSkip(ctx context.Context, f *followerCtx, base string, s
 	_, _ = store.InsertOrder(ctx, r.e.DB, &store.OrderRow{TaskID: r.id, SignalID: sig, ConnectionID: &f.connID, Base: base, Status: "skipped", Reason: &reason, Purpose: "sync"})
 }
 
-// Leverage already applied per (connection, coin); shared across tasks.
+// Leverage and margin mode already applied per (connection, coin); shared across tasks.
+type levSetting struct {
+	lev   uint32
+	cross bool
+}
+
 var (
 	levMu    sync.Mutex
-	levCache = map[string]uint32{}
+	levCache = map[string]levSetting{}
 )
+
+// alertOnce raises an alert at most once an hour per key.
+func (r *taskRunner) alertOnce(key, level string, f *followerCtx, title, detail string) {
+	if util.NowMs()-r.alerted[key] < 3_600_000 {
+		return
+	}
+	r.alerted[key] = util.NowMs()
+	r.e.Alert(level, &r.id, &f.connID, title, &detail)
+}
 
 // execute places one planned order with slippage check, leverage and
 // retries. Returns success.
@@ -1022,7 +1167,7 @@ func (r *taskRunner) execute(ctx context.Context, f *followerCtx, p *planned) bo
 	row := store.OrderRow{
 		TaskID: r.id, SignalID: p.signalID, ConnectionID: &f.connID, Base: p.base, Symbol: &p.spec.Symbol,
 		Buy: util.Ptr(p.req.Buy), Qty: util.Ptr(util.Fmt(p.req.Qty.RoundBank(8))), ReduceOnly: p.req.ReduceOnly,
-		ClientID: util.Ptr(p.req.ClientID), RefPx: util.Ptr(util.Fmt(p.req.RefPx)), Purpose: p.purpose,
+		ClientID: util.Ptr(p.req.ClientID), RefPx: util.Ptr(util.Fmt(p.req.RefPx)), Purpose: p.purpose, Reason: p.note,
 	}
 	// Slippage guard on opening / increasing orders.
 	bid, ask, err := f.ex.BBO(ctx, &p.spec)
@@ -1053,15 +1198,22 @@ func (r *taskRunner) execute(ctx context.Context, f *followerCtx, p *planned) bo
 	}
 	if p.leverage != nil {
 		key := f.connID + "|" + p.base
+		want := levSetting{*p.leverage, f.leverage.Cross()}
 		levMu.Lock()
 		cur, ok := levCache[key]
 		levMu.Unlock()
-		if !ok || cur != *p.leverage {
-			if err := f.ex.SetLeverage(ctx, &p.spec, *p.leverage); err != nil {
+		if !ok || cur != want {
+			if err := f.ex.SetLeverage(ctx, &p.spec, want.lev, want.cross); err != nil {
 				slog.Warn("set leverage", "alias", f.alias, "base", p.base, "err", err)
+				// E.g. the venue refuses to switch margin mode with a position open.
+				mode := "全仓"
+				if !want.cross {
+					mode = "逐仓"
+				}
+				r.alertOnce(f.connID+":lev:"+p.base, "warn", f, fmt.Sprintf("%s %s 杠杆 / 保证金模式设置失败", f.alias, p.base), fmt.Sprintf("目标 %dx %s：%v；本单按账户当前设置下单", want.lev, mode, err))
 			}
 			levMu.Lock()
-			levCache[key] = *p.leverage
+			levCache[key] = want
 			levMu.Unlock()
 		}
 	}
@@ -1135,7 +1287,10 @@ func (r *taskRunner) execute(ctx context.Context, f *followerCtx, p *planned) bo
 			if !req.Buy {
 				qty = qty.Neg()
 			}
-			r.e.LedgerFill(r.id, f.connID, p.base, qty, px)
+			r.e.LedgerFill(r.id, f.connID, p.base, qty, px, p.tag)
+		}
+		if result.Filled.IsPositive() {
+			r.notifyFill(f, p, result, req.RefPx)
 		}
 		if result.Status == model.Rejected {
 			row.Reason = util.Ptr("未成交（IOC 无对手盘或被拒）")
@@ -1275,7 +1430,10 @@ func (r *taskRunner) syncMirrors(ctx context.Context, src *model.AccountSnapshot
 			if m, ok := bySrc[sid]; ok && m.Status != "done" {
 				continue
 			}
-			if !r.rules.Allows(o.Base) || r.baseline.Ignored.Has(o.Base) {
+			if !r.rules.Allows(o.Base) || r.baseline.Ignored.Has(o.Base) || r.baseline.exited(f.connID, o.Base) {
+				continue
+			}
+			if !o.ReduceOnly && r.blockedByMaxPos(f, o.Base) {
 				continue
 			}
 			r.mirrorOne(ctx, fi, fs, src, o)
@@ -1297,7 +1455,7 @@ func (r *taskRunner) bookMirror(f *followerCtx, m *store.MirrorRow, filled decim
 	if !m.Buy {
 		delta = delta.Neg()
 	}
-	r.e.LedgerFill(r.id, f.connID, m.Base, delta, px)
+	r.e.LedgerFill(r.id, f.connID, m.Base, delta, px, FillTag{Reason: "mirror"})
 }
 
 func (r *taskRunner) mirrorOne(ctx context.Context, fi int, fs, src *model.AccountSnapshot, o *model.OpenOrder) {
@@ -1355,7 +1513,11 @@ func (r *taskRunner) mirrorOne(ctx context.Context, fi int, fs, src *model.Accou
 		}
 		qty = mine.Mul(util.MinD(o.Qty.Div(srcPos), util.One))
 	} else {
-		qty = o.Qty.Mul(OrderFactor(&f.sizing, src.Equity, fs.Equity, o.Qty.Mul(srcPx)))
+		eq := fs.Equity
+		if f.sizing.Mode == Allocated {
+			eq = r.capitalOf(f)
+		}
+		qty = o.Qty.Mul(OrderFactor(&f.sizing, src.Equity, eq, o.Qty.Mul(srcPx)))
 	}
 	if spec.ToUnits(qty).LessThan(spec.MinUnits()) {
 		insert("not_mirrored", nil, &qty, nil, util.Ptr("低于最小下单量，成交后由仓位差额累计处理"))
@@ -1462,6 +1624,7 @@ func (r *taskRunner) closeFollower(ctx context.Context, f *followerCtx, why stri
 		}
 		pl := newPlanned(l.base, spec, l.size.IsNegative(), l.size.Abs(), reduceOnly(snap.Position(l.base), l.size, l.size.Abs()), decimal.Zero, "close", nil)
 		pl.book = !wholeAccount
+		pl.tag.Note = why
 		r.execute(ctx, f, pl)
 	}
 	scope := "本任务跟随的"
@@ -1490,25 +1653,295 @@ func (r *taskRunner) checkLossLimits(ctx context.Context) {
 		return
 	}
 	daily := total.Sub(dayOpen)
-	var why string
-	if l := r.risk.DailyLossLimit; l != nil && !l.IsZero() && daily.Neg().GreaterThanOrEqual(*l) {
-		why = fmt.Sprintf("日亏损 %s 达到上限 %s", util.Fmt(daily.Neg().RoundBank(2)), util.Fmt(*l))
-	} else if l := r.risk.TotalLossLimit; l != nil && !l.IsZero() && total.Neg().GreaterThanOrEqual(*l) {
-		why = fmt.Sprintf("累计亏损 %s 达到上限 %s", util.Fmt(total.Neg().RoundBank(2)), util.Fmt(*l))
+	dailyL, totalL := r.risk.LossLimits(r.taskCapital())
+	var why, title, trigger string
+	closeAll := r.risk.CloseOnLoss
+	switch {
+	case dailyL != nil && daily.Neg().GreaterThanOrEqual(*dailyL):
+		why = fmt.Sprintf("日亏损 %s 达到上限 %s", util.Fmt(daily.Neg().RoundBank(2)), util.Fmt(dailyL.RoundBank(2)))
+		title, trigger = r.name+" 亏损触及上限，任务已暂停", "亏损上限触发"
+	case totalL != nil && total.Neg().GreaterThanOrEqual(*totalL):
+		why = fmt.Sprintf("累计亏损 %s 达到上限 %s", util.Fmt(total.Neg().RoundBank(2)), util.Fmt(totalL.RoundBank(2)))
+		title, trigger = r.name+" 亏损触及上限，任务已暂停", "亏损上限触发"
+	case r.risk.ProfitTarget != nil && r.risk.ProfitTarget.IsPositive() && total.GreaterThanOrEqual(*r.risk.ProfitTarget):
+		why = fmt.Sprintf("累计盈利 %s 达到目标 %s", util.Fmt(total.RoundBank(2)), util.Fmt(r.risk.ProfitTarget.RoundBank(2)))
+		title, trigger = r.name+" 达到盈利目标，任务已暂停", "盈利目标达成"
+		closeAll = r.risk.ProfitAction == "close"
 	}
 	if why == "" {
 		return
 	}
-	if r.risk.CloseOnLoss {
-		r.closeAllPositions(ctx, "亏损上限触发")
+	r.tripBreaker(ctx, title, trigger, why, closeAll)
+}
+
+// tripBreaker pauses the task (closing its positions first if asked) after
+// a risk limit triggered.
+func (r *taskRunner) tripBreaker(ctx context.Context, title, trigger, why string, closeAll bool) {
+	if closeAll {
+		r.closeAllPositions(ctx, trigger)
 	}
-	r.cancelAllMirrors(ctx, "亏损上限触发")
+	r.cancelAllMirrors(ctx, trigger)
 	r.paused = true
 	reason := why + "，已自动暂停"
+	if closeAll {
+		reason = why + "，已平仓并暂停"
+	}
 	_ = store.SetTaskStatus(ctx, r.e.DB, r.id, "paused", &reason)
 	_, _ = store.InsertSignal(ctx, r.e.DB, r.id, "*", "risk", nil, nil, "风控触发："+reason, nil)
-	r.e.Alert("warn", &r.id, nil, r.name+" 亏损触及上限，任务已暂停", &why)
+	r.e.Alert("warn", &r.id, nil, title, &reason)
 	r.e.Changed("tasks")
+}
+
+// ---------- source drawdown breaker ----------
+
+// pnlReader is a source that reports its cumulative PnL (transfers excluded).
+type pnlReader interface {
+	AllTimePnl(ctx context.Context) (decimal.Decimal, error)
+}
+
+const (
+	srcPnlEvery = 5 * 60_000
+	srcPnlRetry = 30_000
+)
+
+// sourcePnl is the source's cumulative PnL: read from the venue every few
+// minutes (or now, with fresh) and followed by its equity in between. Venues
+// without a PnL history use the equity itself (transfers then count).
+func (r *taskRunner) sourcePnl(ctx context.Context, src *model.AccountSnapshot, fresh bool) (decimal.Decimal, bool) {
+	pr, ok := r.source.(pnlReader)
+	if !ok {
+		return src.Equity, true
+	}
+	now := util.NowMs()
+	due := r.srcPnlAt == 0 || now-r.srcPnlAt >= srcPnlEvery || (fresh && now-r.srcPnlAt >= srcPnlRetry)
+	if due && now-r.srcPnlTry >= srcPnlRetry {
+		r.srcPnlTry = now
+		if pnl, err := pr.AllTimePnl(ctx); err == nil {
+			r.srcPnl, r.srcPnlEquity, r.srcPnlAt = pnl, src.Equity, now
+		} else {
+			slog.Debug("source pnl", "task", r.name, "err", err)
+		}
+	}
+	if r.srcPnlAt == 0 {
+		return decimal.Zero, false
+	}
+	return r.srcPnl.Add(src.Equity.Sub(r.srcPnlEquity)), true
+}
+
+// checkSourceDD trips the source drawdown breaker; true = the task paused.
+func (r *taskRunner) checkSourceDD(ctx context.Context, src *model.AccountSnapshot) bool {
+	limit := r.risk.SourceDDPct
+	if !isSet(limit) {
+		return false
+	}
+	pnl, ok := r.sourcePnl(ctx, src, false)
+	if !ok {
+		return false
+	}
+	b := &r.baseline
+	if b.SrcPeakPnl == nil || pnl.GreaterThan(*b.SrcPeakPnl) {
+		p := pnl
+		b.SrcPeakPnl, b.SrcPeakEquity = &p, src.Equity
+		r.peaksDirty = true
+		r.srcDD = &decimal.Zero
+		return false
+	}
+	dd := SourceDrawdown(*b.SrcPeakPnl, b.SrcPeakEquity, pnl)
+	r.srcDD = &dd
+	if dd.LessThan(*limit) {
+		return false
+	}
+	// Equity moves between venue reads include transfers: confirm on a fresh read.
+	if util.NowMs()-r.srcPnlAt > srcPnlRetry {
+		if pnl, ok = r.sourcePnl(ctx, src, true); !ok || util.NowMs()-r.srcPnlAt > srcPnlRetry {
+			return false
+		}
+		if dd = SourceDrawdown(*b.SrcPeakPnl, b.SrcPeakEquity, pnl); dd.LessThan(*limit) {
+			return false
+		}
+	}
+	why := fmt.Sprintf("信号源回撤 %s%% 达到熔断线 %s%%（峰值盈亏 %s，当前 %s）", util.Fmt(dd.RoundBank(1)), util.Fmt(*limit), util.Fmt(b.SrcPeakPnl.RoundBank(2)), util.Fmt(pnl.RoundBank(2)))
+	// Resuming measures the drawdown from the level at that time.
+	b.SrcPeakPnl, b.SrcPeakEquity, r.srcDD = nil, decimal.Zero, nil
+	r.saveBaseline(ctx)
+	r.tripBreaker(ctx, r.name+" 信号源回撤熔断，任务已暂停", "信号源回撤熔断", why, r.risk.SourceDDAction == "close")
+	return true
+}
+
+// ---------- watch-only ----------
+
+// notifySignal pushes a watch-only task's source signal (if its filters want it).
+func (r *taskRunner) notifySignal(base, kind, label string, from, to decimal.Decimal, src *model.AccountSnapshot) {
+	if r.e.Notify == nil || !r.rules.Allows(base) {
+		return
+	}
+	px := r.srcRefPx(src, base)
+	notional := to.Sub(from).Abs().Mul(px)
+	if !r.rules.Watch.Wants(kind, notional) {
+		return
+	}
+	title := fmt.Sprintf("%s：%s %s", r.name, base, label)
+	detail := fmt.Sprintf("%s → %s", util.Fmt(from), util.Fmt(to))
+	if px.IsPositive() {
+		detail += fmt.Sprintf("，约 %s USDT @ %s", util.Fmt(notional.RoundBank(0)), util.Fmt(util.RoundSig(px, 6, 8)))
+	}
+	r.e.Notify.Notify(notify.CatSignal, "ok", title, &detail)
+}
+
+// ---------- take profit / stop loss ----------
+
+var exitLabel = map[string]string{"tp": "止盈", "sl": "止损", "trail": "移动止盈"}
+
+// leverageFor is the leverage a share's ROE is measured with: the account's
+// on the coin, else what the task would set.
+func (r *taskRunner) leverageFor(f *followerCtx, src *model.AccountSnapshot, base string) decimal.Decimal {
+	if f.snap != nil {
+		for _, p := range f.snap.Positions {
+			if p.Base == base && p.Leverage != nil && p.Leverage.IsPositive() {
+				return *p.Leverage
+			}
+		}
+	}
+	if spec := f.markets.Base(base); spec != nil {
+		if l := r.desiredLeverage(f, src, base, spec); l != nil {
+			return decimal.NewFromInt(int64(*l))
+		}
+	}
+	return util.One
+}
+
+// checkTPSL closes the task's share of a coin when its ROE crosses a take
+// profit / stop loss level or falls back from its peak by the trailing
+// callback. The coin is then left alone on that account until the source
+// closes or flips it. Runs every step on the source's fresh marks.
+func (r *taskRunner) checkTPSL(ctx context.Context, src *model.AccountSnapshot) {
+	t := &r.rules.TPSL
+	live := map[string]bool{}
+	if t.Active() {
+		for _, f := range r.followers {
+			for _, h := range r.e.heldOn(r.id, f.connID) {
+				key := f.connID + "|" + h.base
+				live[key] = true
+				if f.snap == nil {
+					continue
+				}
+				px := r.refPx(src, f.snap, h.base)
+				if !px.IsPositive() || !h.avgPx.IsPositive() {
+					continue
+				}
+				roe := ROE(h.size, h.avgPx, px, r.leverageFor(f, src, h.base))
+				peak, ok := r.baseline.Peaks[key]
+				if !ok || roe.GreaterThan(peak) {
+					peak = roe
+					r.baseline.Peaks[key] = roe
+					r.peaksDirty = true
+				}
+				why := t.Exit(roe, peak)
+				if why == "" {
+					continue
+				}
+				if c, ok := f.cooldown["tpsl:"+h.base]; ok && time.Since(c) < 10*time.Second {
+					continue
+				}
+				r.exitShare(ctx, f, h, px, roe, peak, why)
+			}
+		}
+	}
+	for key := range r.baseline.Peaks {
+		if !live[key] {
+			delete(r.baseline.Peaks, key)
+			r.peaksDirty = true
+		}
+	}
+	if r.peaksDirty && util.NowMs()-r.peaksSavedAt > 10_000 {
+		r.saveBaseline(ctx)
+		r.peaksDirty, r.peaksSavedAt = false, util.NowMs()
+	}
+}
+
+func (r *taskRunner) exitShare(ctx context.Context, f *followerCtx, h heldPos, px, roe, peak decimal.Decimal, why string) {
+	spec := f.markets.Base(h.base)
+	if spec == nil {
+		return
+	}
+	label := exitLabel[why]
+	note := fmt.Sprintf("%s：ROE %s%%", label, signed(roe.RoundBank(1)))
+	if why == "trail" {
+		note += fmt.Sprintf("（峰值 %s%%）", signed(peak.RoundBank(1)))
+	}
+	acct := decimal.Zero
+	if f.snap != nil {
+		acct = f.snap.Position(h.base)
+	}
+	// No reference price: closing must never be held back by the slippage guard.
+	pl := newPlanned(h.base, spec, h.size.IsNegative(), h.size.Abs(), reduceOnly(acct, h.size, h.size.Abs()), decimal.Zero, "tpsl", nil)
+	pl.tag = FillTag{Reason: why, Note: note}
+	pl.note = &note
+	if !r.execute(ctx, f, pl) {
+		f.cooldown["tpsl:"+h.base] = time.Now()
+		return
+	}
+	if r.baseline.Exited[f.connID] == nil {
+		r.baseline.Exited[f.connID] = StrSet{}
+	}
+	r.baseline.Exited[f.connID][h.base] = struct{}{}
+	delete(r.baseline.Peaks, f.connID+"|"+h.base)
+	r.saveBaseline(ctx)
+	r.cancelMirrorsOf(ctx, f, h.base, label+"退出")
+	text := fmt.Sprintf("%s %s %s，市价平掉本任务份额 %s @ ≈%s；等信号源平仓或反手后再跟", f.alias, h.base, note, util.Fmt(h.size.Abs()), util.Fmt(util.RoundSig(px, 6, 8)))
+	_, _ = store.InsertSignal(ctx, r.e.DB, r.id, h.base, "risk", nil, nil, text, nil)
+	r.e.Alert("warn", &r.id, &f.connID, fmt.Sprintf("%s：%s %s 触发%s", r.name, f.alias, h.base, label), &text)
+	// Re-read the accounts on the next step.
+	r.lastFollowerRefresh = 0
+	r.e.Changed("signals")
+	r.e.Changed("orders")
+}
+
+// cancelMirrorsOf cancels the task's live mirrored orders for one coin on one account.
+func (r *taskRunner) cancelMirrorsOf(ctx context.Context, f *followerCtx, base, why string) {
+	rows, _ := store.Mirrors(ctx, r.e.DB, "WHERE task_id = ? AND connection_id = ? AND base = ? AND status IN ('live','grace')", r.id, f.connID, base)
+	for _, m := range rows {
+		if spec := f.markets.Base(m.Base); spec != nil && m.ClientID != nil {
+			_ = f.ex.Cancel(ctx, spec, *m.ClientID)
+		}
+		_, _ = r.e.DB.ExecContext(ctx, "UPDATE mirrors SET status='done', note=?, updated_at=? WHERE id=?", why+"，已撤单", util.NowMs(), m.ID)
+	}
+	if len(rows) > 0 {
+		r.e.Changed("mirrors")
+	}
+}
+
+// blockedByMaxPos: the task holds nothing of this coin on the account and
+// already holds the most coins it may.
+func (r *taskRunner) blockedByMaxPos(f *followerCtx, base string) bool {
+	mp := r.risk.MaxPositions
+	if mp == nil || *mp == 0 || !r.held(f, base).IsZero() {
+		return false
+	}
+	return len(r.e.heldOn(r.id, f.connID)) >= int(*mp)
+}
+
+var purposeLabel = map[string]string{"sync": "跟单", "reconcile": "对账补单", "close": "平仓", "tpsl": "止盈止损", "mirror": "镜像挂单"}
+
+// notifyFill pushes one fill of the task's own order (trade events).
+func (r *taskRunner) notifyFill(f *followerCtx, p *planned, res *model.OrderResult, ref decimal.Decimal) {
+	if r.e.Notify == nil {
+		return
+	}
+	side := "买入"
+	if !p.req.Buy {
+		side = "卖出"
+	}
+	px := ref
+	if res.AvgPx != nil && res.AvgPx.IsPositive() {
+		px = *res.AvgPx
+	}
+	title := fmt.Sprintf("%s：%s %s %s %s @ %s", r.name, f.alias, side, util.Fmt(res.Filled), p.base, util.Fmt(util.RoundSig(px, 6, 8)))
+	detail := purposeLabel[p.purpose]
+	if p.note != nil {
+		detail += "，" + *p.note
+	}
+	r.e.Notify.Notify(notify.CatTrade, "ok", title, &detail)
 }
 
 func (r *taskRunner) publish(ctx context.Context, src *model.AccountSnapshot) {
@@ -1554,6 +1987,12 @@ func (r *taskRunner) publish(ctx context.Context, src *model.AccountSnapshot) {
 				row.State, row.Note = "skipped", "名单外品种"
 			case r.baseline.Ignored.Has(base):
 				row.State, row.Note = "ignored", "启动前已有，不跟"
+				row.Actual = util.Ptr(util.Fmt(actual))
+			case r.baseline.exited(f.connID, base) && actual.IsZero():
+				row.State, row.Note = "skipped", "已止盈 / 止损退出，等信号源平仓或反手"
+				row.Actual = util.Ptr(util.Fmt(actual))
+			case spec != nil && !s.IsZero() && r.blockedByMaxPos(f, base):
+				row.State, row.Note = "skipped", "达到最多持有币种上限，不跟新币种"
 				row.Actual = util.Ptr(util.Fmt(actual))
 			case spec != nil:
 				tgt := r.targetFor(f, fs, src, base, px)
@@ -1631,6 +2070,10 @@ func (r *taskRunner) publish(ctx context.Context, src *model.AccountSnapshot) {
 		Followers:       followers,
 		Positions:       positions,
 		Paused:          r.paused,
+	}
+	if isSet(r.risk.SourceDDPct) && r.srcDD != nil && r.baseline.SrcPeakPnl != nil {
+		live.SourceDDPct = util.Ptr(util.Fmt(r.srcDD.RoundBank(2)))
+		live.SourcePeakPnl = util.Ptr(util.Fmt(r.baseline.SrcPeakPnl.RoundBank(2)))
 	}
 	if r.lastReconcile > 0 {
 		lr := r.lastReconcile

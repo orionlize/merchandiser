@@ -1,6 +1,6 @@
 import { QueryClient, keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
-import { api, errMsg, type ChartInterval, type PnlRange } from "./api";
-import { subscribe } from "./server";
+import { api, errMsg, type ChartInterval, type OpLogFilter, type PnlRange } from "./api";
+import { ServerError, subscribe } from "./server";
 import { useUi } from "./store";
 
 export const qc = new QueryClient({
@@ -11,7 +11,7 @@ export const qc = new QueryClient({
 const scopeKeys: Record<string, string[][]> = {
   tasks: [["tasks"], ["task"], ["overview"], ["health"]],
   live: [["task"], ["overview"], ["tasks"]],
-  orders: [["task"], ["task-chart"], ["logs"], ["overview"]],
+  orders: [["task"], ["task-chart"], ["logs"], ["overview"], ["task-trips"]],
   signals: [["task"], ["logs"]],
   mirrors: [["task"], ["source"]],
   alerts: [["overview"], ["alerts"]],
@@ -20,9 +20,13 @@ const scopeKeys: Record<string, string[][]> = {
   sources: [["sources"]],
   estop: [["health"], ["overview"], ["tasks"], ["task"]],
   settings: [["settings"]],
+  notify: [["notify"]],
   symbols: [["symbols"]],
   lock: [["health"]],
-  secrets: [["health"]],
+  secrets: [["health"], ["notify"], ["totp"]],
+  costs: [["task"], ["task-trips"], ["task-costs"]],
+  security: [["health"], ["totp"]],
+  oplog: [["oplog"]],
   all: [[]],
 };
 
@@ -81,6 +85,26 @@ export const usePlaza = () =>
   useQuery({ queryKey: ["plaza"], queryFn: api.plaza, refetchInterval: (q) => (q.state.data && q.state.data.status.analyzed >= q.state.data.status.total ? 120_000 : 10_000) });
 export const usePlazaWallet = (address: string | null) => useQuery({ queryKey: ["plaza-wallet", address], queryFn: () => api.plazaWallet(address!), enabled: !!address, staleTime: 30_000 });
 export const useSettings = () => useQuery({ queryKey: ["settings"], queryFn: api.settings });
+export const useNotify = () => useQuery({ queryKey: ["notify"], queryFn: api.notify, refetchInterval: 15_000 });
+export const usePositionHistory = (args: { id?: string; connectionId?: string | null; since?: number | null; limit: number }) =>
+  useQuery({
+    queryKey: ["task-trips", args.id, args.connectionId ?? "", args.since ?? 0, args.limit],
+    queryFn: () => api.positionHistory({ id: args.id!, connectionId: args.connectionId, since: args.since, limit: args.limit }),
+    enabled: !!args.id,
+    refetchInterval: 30_000,
+    placeholderData: keepPreviousData,
+  });
+
+export const useTaskCosts = (args: { id?: string; kind: "fee" | "funding" | null; connectionId: string | null; limit: number }) =>
+  useQuery({
+    queryKey: ["task-costs", args.id, args.kind ?? "", args.connectionId ?? "", args.limit],
+    queryFn: () => api.taskCosts({ id: args.id!, kind: args.kind, connectionId: args.connectionId, limit: args.limit }),
+    enabled: !!args.id,
+    refetchInterval: 60_000,
+    placeholderData: keepPreviousData,
+  });
+export const useTotp = () => useQuery({ queryKey: ["totp"], queryFn: api.totpStatus });
+export const useOpLog = (filter: OpLogFilter) => useQuery({ queryKey: ["oplog", filter], queryFn: () => api.opLog(filter), placeholderData: keepPreviousData });
 
 /** Mutation with toast on error and query invalidation on success. */
 export function useAction<A, R>(fn: (a: A) => Promise<R>, opts?: { ok?: string | ((r: R) => string); invalidate?: string[][] }) {
@@ -91,6 +115,8 @@ export function useAction<A, R>(fn: (a: A) => Promise<R>, opts?: { ok?: string |
       if (opts?.ok) toast(typeof opts.ok === "function" ? opts.ok(r) : opts.ok, "ok");
       (opts?.invalidate ?? []).forEach((k) => qc.invalidateQueries({ queryKey: k }));
     },
-    onError: (e) => toast(errMsg(e), "error"),
+    onError: (e) => {
+      if (!(e instanceof ServerError && e.code === "otp_cancelled")) toast(errMsg(e), "error");
+    },
   });
 }

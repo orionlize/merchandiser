@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { OtpCells, OtpDialog } from "./components/Otp";
 import { ServerSetup } from "./components/ServerSetup";
 import { BottomTabs, Sidebar, Toasts, TopBar } from "./components/Shell";
 import { Button, Field, Input, Modal } from "./components/ui";
@@ -11,6 +12,7 @@ import { onServerConfig, serverConfig, ServerError } from "./lib/server";
 import { applyTheme, useUi } from "./lib/store";
 import { Connections } from "./pages/Connections";
 import { Overview } from "./pages/Overview";
+import { Compare } from "./pages/Compare";
 import { Plaza } from "./pages/Plaza";
 import { Records } from "./pages/Records";
 import { Settings } from "./pages/Settings";
@@ -36,6 +38,7 @@ function Title() {
         </>
       );
     case "wizard":
+      if (route.convert) return <>{tr(`「${t?.name ?? ""}」转为跟单`, `Copy "${t?.name ?? ""}"`)}</>;
       return <>{route.id ? tr(`编辑「${t?.name ?? ""}」`, `Edit "${t?.name ?? ""}"`) : tr("新建跟单任务", "New copy task")}</>;
     case "sources":
       return <>{tr("信号源", "Sources")}</>;
@@ -46,6 +49,8 @@ function Title() {
           <span className="max-md:hidden">{tr("跟单员广场", "Trader plaza")}</span>
         </>
       );
+    case "compare":
+      return <>{tr("交易员对比", "Compare traders")}</>;
     case "connections":
       return <>{tr("交易账户", "Accounts")}</>;
     case "records":
@@ -70,11 +75,13 @@ function Page() {
     case "task":
       return <TaskDetail key={route.id} />;
     case "wizard":
-      return <Wizard key={route.id ?? "new"} />;
+      return <Wizard key={`${route.id ?? "new"}${route.convert ? ":convert" : ""}`} />;
     case "sources":
       return <Sources />;
     case "plaza":
       return <Plaza />;
+    case "compare":
+      return <Compare />;
     case "connections":
       return <Connections />;
     case "records":
@@ -84,24 +91,37 @@ function Page() {
   }
 }
 
-function LockScreen() {
+function LockScreen({ totp }: { totp: boolean }) {
   const tr = useTr();
   const [pw, setPw] = useState("");
+  const [code, setCode] = useState("");
+  const [recovery, setRecovery] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const ready = !!pw && (!totp || (recovery ? code.trim().length >= 8 : code.length === 6));
+  const submit = async (otp = code) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.unlock(pw, totp ? otp.trim() : undefined);
+      setPw("");
+      setCode("");
+      setErr(null);
+      qc.invalidateQueries();
+    } catch (x) {
+      setErr(errMsg(x));
+      setCode("");
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <div className="anim-fade fixed inset-0 z-[70] flex items-center justify-center bg-bg">
       <form
         className="flex w-[320px] flex-col items-center gap-4"
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          try {
-            await api.unlock(pw);
-            setPw("");
-            setErr(null);
-            qc.invalidateQueries();
-          } catch (x) {
-            setErr(errMsg(x));
-          }
+          if (ready) submit();
         }}
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
@@ -110,8 +130,28 @@ function LockScreen() {
         <div className="text-lg font-semibold">{tr("界面已锁定", "Locked")}</div>
         <div className="text-center text-xs text-muted-fg">{tr("跟单任务仍在后台运行", "Copy tasks keep running in the background")}</div>
         <Input type="password" className="w-full" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus invalid={!!err} placeholder={tr("输入密码解锁", "Password")} />
+        {totp ? (
+          <div className="flex w-full flex-col items-center gap-2">
+            <div className="self-start text-xs text-muted-fg">{tr("验证器动态码", "Authenticator code")}</div>
+            {recovery ? (
+              <Input className="num w-full" value={code} onChange={(e) => setCode(e.target.value)} placeholder="xxxx-xxxx" />
+            ) : (
+              <OtpCells value={code} onChange={setCode} onComplete={(v) => pw && submit(v)} />
+            )}
+            <button
+              type="button"
+              className="self-start text-xs text-primary hover:underline"
+              onClick={() => {
+                setRecovery(!recovery);
+                setCode("");
+              }}
+            >
+              {recovery ? tr("改用验证器动态码", "Use the authenticator code") : tr("换用恢复码", "Use a recovery code")}
+            </button>
+          </div>
+        ) : null}
         {err ? <div className="text-xs text-danger">{err}</div> : null}
-        <Button variant="primary" className="w-full" type="submit">
+        <Button variant="primary" className="w-full" type="submit" loading={busy} disabled={!ready}>
           {tr("解锁", "Unlock")}
         </Button>
       </form>
@@ -238,7 +278,8 @@ function Shell() {
       </main>
       <BottomTabs />
       <Toasts />
-      {health?.locked ? <LockScreen /> : null}
+      {health?.locked ? <LockScreen totp={!!health.totp_enabled && !health.secrets_locked} /> : null}
+      <OtpDialog />
       {health?.secrets_locked && !health.locked ? <SecretsUnlock /> : null}
       {!cfg || authFailed || editServer ? (
         <ServerSetup reason={authFailed ? tr("访问令牌错误，请重新填写", "Access token rejected") : null} onClose={cfg && !authFailed ? () => setEditServer(false) : undefined} />

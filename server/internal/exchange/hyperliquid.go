@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -484,9 +485,9 @@ func (h *Hyperliquid) Query(ctx context.Context, spec *model.ContractSpec, clien
 	return r, nil
 }
 
-func (h *Hyperliquid) SetLeverage(ctx context.Context, spec *model.ContractSpec, leverage uint32) error {
+func (h *Hyperliquid) SetLeverage(ctx context.Context, spec *model.ContractSpec, leverage uint32, cross bool) error {
 	lev := min(max(leverage, 1), max(spec.MaxLeverage, 1))
-	_, err := h.exchange(ctx, OMap{{"type", "updateLeverage"}, {"asset", spec.AssetIndex}, {"isCross", true}, {"leverage", lev}}, false)
+	_, err := h.exchange(ctx, OMap{{"type", "updateLeverage"}, {"asset", spec.AssetIndex}, {"isCross", cross}, {"leverage", lev}}, false)
 	return err
 }
 
@@ -618,4 +619,145 @@ func (h *Hyperliquid) Candles(ctx context.Context, coin, interval string, start,
 		out = append(out, Candle{T: t, O: f(c.Get("o")), H: f(c.Get("h")), L: f(c.Get("l")), C: f(c.Get("c")), V: f(c.Get("v"))})
 	}
 	return out, nil
+}
+
+// unCloid turns an HL cloid back into our client id: our 12-byte ids are
+// left-padded to 16 bytes, so strip exactly the padding.
+func unCloid(cl string) string {
+	c := strings.TrimPrefix(cl, "0x")
+	if len(c) == 32 && strings.HasPrefix(c, "00000000") {
+		c = c[8:]
+	}
+	return c
+}
+
+var hlDir = map[string]string{"Open Long": "open_long", "Close Long": "close_long", "Open Short": "open_short", "Close Short": "close_short", "Short > Long": "flip_long", "Long > Short": "flip_short"}
+
+// hlPerpCoin is false for spot ("@n") and builder-deployed ("dex:COIN") names.
+func hlPerpCoin(coin string) bool {
+	return coin != "" && !strings.Contains(coin, ":") && !strings.HasPrefix(coin, "@")
+}
+
+// FillsSince lists the account's perp fills from `since` (ms) on, oldest
+// first, paging through the venue's 2000-fill responses.
+func (h *Hyperliquid) FillsSince(ctx context.Context, m *Markets, since int64) ([]Fill, error) {
+	var out []Fill
+	seen := map[string]bool{}
+	start := since
+	for page := 0; page < 10; page++ {
+		v, err := h.info(ctx, map[string]any{"type": "userFillsByTime", "user": h.address, "startTime": start, "aggregateByTime": false}, 20)
+		if err != nil {
+			return out, err
+		}
+		arr := v.Arr()
+		last := start
+		for _, f := range arr {
+			coin := f.JStr("coin")
+			ts, _ := f.Get("time").Int()
+			last = max(last, ts)
+			if !hlPerpCoin(coin) {
+				continue
+			}
+			id := f.Get("tid").String()
+			if seen[id] {
+				continue
+			}
+			seen[id] = true
+			base, mult := h.resolve(m, coin)
+			fl := Fill{ID: id, Ts: ts, Base: base, Buy: f.JStr("side") == "B", Qty: f.JDec("sz").Mul(mult), Px: f.JDec("px").Div(mult), Fee: f.JDec("fee"), Maker: !f.Get("crossed").BoolOr(true), Dir: hlDir[f.JStr("dir")]}
+			if cl := f.JStr("cloid"); cl != "" {
+				fl.ClientID = unCloid(cl)
+			}
+			out = append(out, fl)
+		}
+		if len(arr) < 2000 || last <= start {
+			break
+		}
+		start = last
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Ts < out[j].Ts })
+	return out, nil
+}
+
+// FundingSince lists the account's hourly funding settlements from `since` on.
+func (h *Hyperliquid) FundingSince(ctx context.Context, m *Markets, since int64) ([]FundingPay, error) {
+	var out []FundingPay
+	seen := map[string]bool{}
+	start := since
+	for page := 0; page < 10; page++ {
+		v, err := h.info(ctx, map[string]any{"type": "userFunding", "user": h.address, "startTime": start}, 20)
+		if err != nil {
+			return out, err
+		}
+		arr := v.Arr()
+		last := start
+		for _, f := range arr {
+			d := f.Get("delta")
+			ts, _ := f.Get("time").Int()
+			last = max(last, ts)
+			coin := d.JStr("coin")
+			if d.JStr("type") != "funding" || !hlPerpCoin(coin) {
+				continue
+			}
+			id := fmt.Sprintf("%d|%s", ts, coin)
+			if seen[id] {
+				continue
+			}
+			seen[id] = true
+			base, mult := h.resolve(m, coin)
+			out = append(out, FundingPay{ID: id, Ts: ts, Base: base, Size: d.JDec("szi").Mul(mult), Amount: d.JDec("usdc"), Rate: d.JDec("fundingRate")})
+		}
+		if len(arr) < 500 || last <= start {
+			break
+		}
+		start = last
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Ts < out[j].Ts })
+	return out, nil
+}
+
+// FundingRates is the current hourly funding rate of every perp, by HL name.
+func (h *Hyperliquid) FundingRates(ctx context.Context) (map[string]decimal.Decimal, error) {
+	v, err := h.info(ctx, map[string]any{"type": "metaAndAssetCtxs"}, 20)
+	if err != nil {
+		return nil, err
+	}
+	uni, ctxs := v.At(0).Get("universe").Arr(), v.At(1).Arr()
+	out := map[string]decimal.Decimal{}
+	for i, u := range uni {
+		if i < len(ctxs) {
+			out[u.JStr("name")] = ctxs[i].JDec("funding")
+		}
+	}
+	return out, nil
+}
+
+// AllTimePnl is the account's cumulative perp PnL as the venue's portfolio
+// summary reports it: trading results only, deposits and withdrawals excluded.
+func (h *Hyperliquid) AllTimePnl(ctx context.Context) (decimal.Decimal, error) {
+	v, err := h.info(ctx, map[string]any{"type": "portfolio", "user": h.address}, 20)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	var all *util.J
+	for _, pair := range v.Arr() {
+		switch pair.At(0).Str() {
+		case "perpAllTime":
+			d := pair.At(1)
+			all = &d
+		case "allTime":
+			if all == nil {
+				d := pair.At(1)
+				all = &d
+			}
+		}
+	}
+	if all == nil {
+		return decimal.Zero, errs.Msg("交易所未返回收益曲线")
+	}
+	ph := all.Get("pnlHistory").Arr()
+	if len(ph) == 0 {
+		return decimal.Zero, nil
+	}
+	return ph[len(ph)-1].At(1).Dec(), nil
 }

@@ -23,7 +23,8 @@ type Exchange interface {
 	Cancel(ctx context.Context, spec *model.ContractSpec, clientID string) error
 	// Query looks an order up by our client id (nil, nil = not found).
 	Query(ctx context.Context, spec *model.ContractSpec, clientID string) (*model.OrderResult, error)
-	SetLeverage(ctx context.Context, spec *model.ContractSpec, leverage uint32) error
+	// SetLeverage sets the coin's leverage and margin mode (cross or isolated).
+	SetLeverage(ctx context.Context, spec *model.ContractSpec, leverage uint32, cross bool) error
 	// Info checks connectivity, permissions, position mode, equity.
 	Info(ctx context.Context) (*model.ConnectionInfo, error)
 	SetOneWay(ctx context.Context) error
@@ -90,3 +91,39 @@ func AggressivePx(ref decimal.Decimal, buy bool, slip decimal.Decimal) decimal.D
 }
 
 func decPtr(d decimal.Decimal) *decimal.Decimal { return &d }
+
+// Fill is one execution on an account as the venue reports it, in coin units.
+type Fill struct {
+	ID   string // unique per venue fill
+	Ts   int64
+	Base string
+	Buy  bool
+	Qty  decimal.Decimal
+	Px   decimal.Decimal
+	// Fee paid in USD(C/T); negative = maker rebate.
+	Fee   decimal.Decimal
+	Maker bool
+	// open_long | close_long | open_short | close_short | flip_long |
+	// flip_short ("" = unknown).
+	Dir string
+	// Our client id of the order ("" = not placed by us).
+	ClientID string
+}
+
+// FundingPay is one hourly funding settlement of a coin.
+type FundingPay struct {
+	ID   string
+	Ts   int64
+	Base string
+	// Signed position size it was charged on.
+	Size decimal.Decimal
+	// Received (negative = paid).
+	Amount decimal.Decimal
+	Rate   decimal.Decimal
+}
+
+// CostReporter is implemented by venues that report exact fees and funding.
+type CostReporter interface {
+	FillsSince(ctx context.Context, m *Markets, since int64) ([]Fill, error)
+	FundingSince(ctx context.Context, m *Markets, since int64) ([]FundingPay, error)
+}

@@ -71,6 +71,18 @@ export function ago(ts: number | null | undefined, en = false) {
   return en ? `${Math.round(h / 24)}d ago` : `${Math.round(h / 24)} 天前`;
 }
 
+/** Duration: "42m", "11h 48m", "3d 4h". */
+export function dur(ms: number | null | undefined, en = false): string {
+  if (ms == null || !Number.isFinite(ms)) return "—";
+  if (ms < 60_000) return `${Math.max(0, Math.round(ms / 1000))}s`;
+  const m = Math.round(ms / 60_000);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 48) return `${h}h ${m % 60}m`;
+  const d = Math.floor(h / 24);
+  return en ? `${d}d ${h % 24}h` : `${d}天 ${h % 24}h`;
+}
+
 export function days(from: number | null | undefined) {
   if (!from) return 0;
   return Math.max(0, Math.floor((Date.now() - from) / 86_400_000));

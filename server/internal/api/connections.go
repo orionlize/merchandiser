@@ -25,6 +25,8 @@ type HealthDto struct {
 	Locked        bool                   `json:"locked"`
 	SecretBackend string                 `json:"secret_backend"`
 	SecretsLocked bool                   `json:"secrets_locked"`
+	// Two-step verification is on (the lock screen asks for a code).
+	TotpEnabled bool `json:"totp_enabled"`
 	// Error alerts in the last 5 minutes (tray state).
 	RecentErrors int64 `json:"recent_errors"`
 }
@@ -38,6 +40,7 @@ func getHealth(ctx context.Context, s *Server, _ []byte) (any, error) {
 		Locked:        s.E.Locked(),
 		SecretBackend: secrets.Backend,
 		SecretsLocked: s.E.Secrets.Locked(),
+		TotpEnabled:   s.totpEnabled(ctx),
 		RecentErrors:  n,
 	}, nil
 }
@@ -533,7 +536,7 @@ func paperTrade(ctx context.Context, s *Server, body []byte) (any, error) {
 			return nil, err
 		}
 		if in.Leverage != nil {
-			if err := ex.SetLeverage(ctx, spec, min(max(*in.Leverage, 1), 100)); err != nil {
+			if err := ex.SetLeverage(ctx, spec, min(max(*in.Leverage, 1), 100), true); err != nil {
 				return nil, err
 			}
 		}

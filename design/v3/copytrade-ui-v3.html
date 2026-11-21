@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<!--
+  由 penhold-mcp 导出。本文件不包含字体文件，请先安装以下字体以获得与画布一致的效果：
+  - Noto Sans CJK SC（字重 400）
+  - Liberation Mono（字重 400, 500, 600）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新建任务 · 设规则（新增） / 新建任务 · 风控（新增） / 任务详情 · 历史仓位 / 跟单员广场 · 跟单模拟 / 设置 · 通知与心跳 / 移动端 / 跟单模拟 / 移动端 / 历史仓位</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0}
+body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.4;color:#111;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:none}
+input,textarea{font:inherit;color:inherit;border:0;outline:0;background:transparent;resize:none}
+button{appearance:none;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;text-align:inherit;border:0;background:transparent;cursor:pointer}
+a{color:inherit}
+:root{--color-primary:#F0B90B;--color-on-primary:#000000;--color-secondary:#47423F;--color-on-secondary:#FFFFFF;--color-bg:#0B0E11;--color-fg:#EAECEF;--color-card:#181A20;--color-muted:#22262D;--color-muted-fg:#9AA3AE;--color-border:#2B3139;--color-danger:#F6465D;--color-on-danger:#000000;--color-ring:#F0B90B;--color-input:#5E6673;--color-success:#2EBD85;--color-danger-soft:#2A1519;--color-success-soft:#14302A;--color-primary-soft:#3C3218;--color-warning:#F0A030;--color-bar-src:#5E6673;--color-bar-tgt:#9AA3AE;--color-bar-act:#EAECEF;--color-chart-avg:#5B9CFF;--font-body:'Noto Sans CJK SC', sans-serif;--font-mono:'Liberation Mono', monospace;--font-heading:'Noto Sans CJK SC', sans-serif;--size-xs:12px;--size-sm:14px;--size-md:16px;--size-lg:20px;--size-xl:24px;--size-2xl:32px;--size-3xl:40px;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:64px;--radius-sm:0px;--radius-md:4px;--radius-lg:8px}
+body{background:#fff}
+.dm-r{position:absolute;opacity:0;pointer-events:none}
+.dm-tabs{position:sticky;top:0;z-index:2147483647;display:flex;gap:4px;padding:8px 12px;background:#111827;font:13px/1.4 system-ui,sans-serif}
+.dm-tabs label{color:#d1d5db;padding:4px 10px;border-radius:6px;cursor:pointer}
+.dm-frame{display:none}
+#dm-f0:checked~main .dm-s0{display:block}#dm-f0:checked~nav label[for=dm-f0]{background:#374151;color:#fff}
+#dm-f1:checked~main .dm-s1{display:block}#dm-f1:checked~nav label[for=dm-f1]{background:#374151;color:#fff}
+#dm-f2:checked~main .dm-s2{display:block}#dm-f2:checked~nav label[for=dm-f2]{background:#374151;color:#fff}
+#dm-f3:checked~main .dm-s3{display:block}#dm-f3:checked~nav label[for=dm-f3]{background:#374151;color:#fff}
+#dm-f4:checked~main .dm-s4{display:block}#dm-f4:checked~nav label[for=dm-f4]{background:#374151;color:#fff}
+#dm-f5:checked~main .dm-s5{display:block}#dm-f5:checked~nav label[for=dm-f5]{background:#374151;color:#fff}
+#dm-f6:checked~main .dm-s6{display:block}#dm-f6:checked~nav label[for=dm-f6]{background:#374151;color:#fff}
+[data-dm-click],[data-dm-href]{cursor:pointer}
+[data-dm-disabled],[data-dm-disabled] *{cursor:not-allowed}
+.s1{display:flex;flex-direction:row;align-items:stretch;position:relative;padding:0px;font-family:var(--font-body);color:var(--color-fg);background:var(--color-bg);width:1440px;margin:0 auto}
+.s2{display:flex;flex-direction:column;gap:4px;flex-shrink:0;position:relative;width:220px;padding:24px 16px 16px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 1px 0px 0px;background:var(--color-card)}
+.s3{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;padding:0px 8px 24px 8px}
+.s4{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:22px;height:22px;border-radius:var(--radius-md);background:var(--color-primary)}
+.s5{width:14px;height:14px;color:var(--color-on-primary);object-fit:cover}
+.s6{font-size:var(--size-md);font-weight:600;line-height:1.3;white-space:pre-wrap}
+.s7{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;height:36px;padding:0px 12px;border-radius:var(--radius-md)}
+.s8{width:16px;height:16px;color:var(--color-muted-fg);object-fit:cover}
+.s9{font-size:var(--size-sm);line-height:1.4;white-space:pre-wrap}
+.s10{display:flex;flex-direction:column;position:absolute;top:9px;left:0px;width:3px;height:18px;background:var(--color-primary)}
+.s11{display:flex;flex-direction:column;flex-grow:1;position:relative}
+.s12{display:flex;flex-direction:column;gap:2px;position:relative;margin:0px 0px 8px 0px;padding:var(--space-3) 12px;border:1px solid var(--color-border);background:var(--color-bg)}
+.s13{font-size:var(--size-xs);line-height:1.5;color:var(--color-muted-fg);white-space:pre-wrap}
+.s14{font-family:var(--font-mono);font-size:var(--size-md);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s15{display:flex;flex-direction:row;justify-content:space-between;position:relative}
+.s16{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s17{font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s18{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;padding:8px 12px}
+.s19{width:14px;height:14px;color:var(--color-muted-fg);object-fit:cover}
+.s20{display:flex;flex-direction:column;flex-grow:1;position:relative;min-width:0px}
+.s21{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:56px;padding:0px 24px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s22{font-size:var(--size-xl);font-weight:700;line-height:1.3;white-space:pre-wrap}
+.s23{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative}
+.s24{display:flex;flex-direction:column;position:relative;width:6px;height:6px;border-radius:999px;background:var(--color-success)}
+.s25{display:flex;flex-direction:row;align-items:center;gap:16px;position:relative;height:52px;padding:0px 24px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s26{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:18px;height:18px;border:1px solid var(--color-muted-fg);border-radius:999px}
+.s27{width:11px;height:11px;color:var(--color-muted-fg);object-fit:cover}
+.s28{font-size:var(--size-sm);color:var(--color-muted-fg);white-space:pre-wrap}
+.s29{display:flex;flex-direction:column;position:relative;width:40px;height:1px;background:var(--color-border)}
+.s30{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:18px;height:18px;border-radius:999px;background:var(--color-primary)}
+.s31{font-size:var(--size-xs);font-weight:600;color:var(--color-on-primary);white-space:pre-wrap}
+.s32{font-size:var(--size-sm);font-weight:600;white-space:pre-wrap}
+.s33{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:18px;height:18px;border:1px solid var(--color-border);border-radius:999px}
+.s34{display:flex;flex-direction:row;align-items:stretch;flex-grow:1;position:relative}
+.s35{display:flex;flex-direction:column;gap:32px;flex-grow:1;position:relative;min-width:0px;padding:var(--space-6) 48px}
+.s36{display:flex;flex-direction:column;gap:12px;position:relative;max-width:600px}
+.s37{display:flex;flex-direction:column;gap:4px;position:relative}
+.s38{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px;position:relative}
+.s39{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) 12px;border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer}
+.s40{padding:0px var(--space-2);font-size:var(--size-xs);font-weight:600;color:var(--color-primary);background:var(--color-primary-soft);white-space:pre-wrap}
+.s41{display:flex;flex-direction:row;align-items:flex-end;gap:16px;position:relative}
+.s42{display:flex;flex-direction:column;gap:var(--space-2);position:relative;width:180px}
+.s43{display:flex;flex-direction:row;align-items:center;position:relative;height:36px;padding:0px 12px;border:1px solid var(--color-input);border-radius:var(--radius-md)}
+.s44{flex-grow:1;font-family:var(--font-mono);font-size:var(--size-sm);white-space:pre-wrap}
+.s45{display:flex;flex-direction:column;gap:var(--space-2);position:relative;width:120px}
+.s46{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;height:36px;cursor:pointer}
+.s47{display:flex;flex-direction:row;position:relative;width:32px;height:18px;padding:2px;border-radius:999px;background:var(--color-muted)}
+.s48{display:flex;flex-direction:column;position:relative;width:14px;height:14px;border-radius:999px;background:var(--color-fg)}
+.s49{font-size:var(--size-sm);white-space:pre-wrap}
+.s50{display:flex;flex-direction:row;gap:16px;position:relative}
+.s51{display:flex;flex-direction:column;gap:var(--space-2);position:relative;width:160px}
+.s52{display:flex;flex-direction:row;align-items:flex-start;gap:32px;position:relative}
+.s53{display:flex;flex-direction:column;gap:var(--space-2);position:relative}
+.s54{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative}
+.s55{display:flex;flex-direction:row;position:relative;height:32px;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s56{display:flex;flex-direction:column;justify-content:center;position:relative;padding:0px 12px;background:var(--color-muted)}
+.s57{font-size:var(--size-xs);font-weight:600;color:var(--color-primary);white-space:pre-wrap}
+.s58{display:flex;flex-direction:column;justify-content:center;position:relative;padding:0px 12px}
+.s59{font-size:var(--size-xs);font-weight:400;color:var(--color-muted-fg);white-space:pre-wrap}
+.s60{display:flex;flex-direction:row;align-items:center;position:relative;width:72px;height:32px;padding:0px var(--space-3);border:1px solid var(--color-input);border-radius:var(--radius-md)}
+.s61{display:flex;flex-direction:row;align-items:center;gap:var(--space-2);position:relative}
+.s62{display:flex;flex-direction:column;justify-content:center;position:relative;padding:0px 12px;cursor:pointer}
+.s63{font-size:var(--size-xs);font-weight:600;color:var(--color-muted-fg);white-space:pre-wrap}
+.s64{display:flex;flex-direction:column;gap:var(--space-4);position:relative;max-width:600px}
+.s65{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative}
+.s66{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;cursor:pointer}
+.s67{display:flex;flex-direction:column;gap:16px;position:relative}
+.s68{display:flex;flex-direction:column;gap:var(--space-2);position:relative;width:140px}
+.s69{flex-grow:1;font-family:var(--font-mono);font-size:var(--size-sm);color:var(--color-success);white-space:pre-wrap}
+.s70{flex-grow:1;font-family:var(--font-mono);font-size:var(--size-sm);color:var(--color-danger);white-space:pre-wrap}
+.s71{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px;position:relative}
+.s72{display:flex;flex-direction:row;align-items:center;position:relative;width:84px;height:32px;padding:0px var(--space-3);border:1px solid var(--color-input);border-radius:var(--radius-md)}
+.s73{display:flex;flex-direction:column;gap:var(--space-2);position:relative;padding:var(--space-4) 16px;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card)}
+.s74{display:flex;flex-direction:column;position:relative;height:44px}
+.s75{display:flex;flex-direction:column;position:absolute;top:20px;left:0px;width:100%;height:2px;background:var(--color-border)}
+.s76{display:flex;flex-direction:column;position:absolute;top:20px;left:0%;width:25%;height:2px;background:var(--color-danger)}
+.s77{display:flex;flex-direction:column;position:absolute;top:20px;left:25%;width:75%;height:2px;background:var(--color-success)}
+.s78{display:flex;flex-direction:column;position:absolute;top:14px;left:0%;width:2px;height:14px;background:var(--color-danger)}
+.s79{display:flex;flex-direction:column;position:absolute;top:14px;left:25%;width:2px;height:14px;background:var(--color-fg)}
+.s80{display:flex;flex-direction:column;position:absolute;top:14px;left:55%;width:2px;height:14px;background:var(--color-chart-avg)}
+.s81{display:flex;flex-direction:column;position:absolute;top:14px;right:0px;width:2px;height:14px;background:var(--color-success)}
+.s82{position:absolute;top:30px;left:0%;font-size:var(--size-xs);color:var(--color-danger);white-space:pre-wrap}
+.s83{position:absolute;top:0px;left:23%;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s84{position:absolute;top:30px;left:47%;font-size:var(--size-xs);color:var(--color-chart-avg);white-space:pre-wrap}
+.s85{position:absolute;top:30px;right:0px;font-size:var(--size-xs);color:var(--color-success);white-space:pre-wrap}
+.s86{display:flex;flex-direction:column;gap:0px;position:relative;max-width:600px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s87{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:44px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s88{display:flex;flex-direction:column;gap:16px;flex-shrink:0;position:relative;width:380px;padding:var(--space-6) 24px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 0px 1px;background:var(--color-card)}
+.s89{font-size:var(--size-md);font-weight:600;white-space:pre-wrap}
+.s90{display:flex;flex-direction:column;position:relative}
+.s91{display:flex;flex-direction:row;align-items:center;position:relative;height:32px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s92{flex-grow:1;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s93{width:80px;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s94{width:64px;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s95{width:84px;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s96{display:flex;flex-direction:row;align-items:center;position:relative;height:44px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s97{width:80px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;white-space:pre-wrap}
+.s98{width:64px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;white-space:pre-wrap}
+.s99{width:84px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;color:var(--color-success);white-space:pre-wrap}
+.s100{display:flex;flex-direction:column;gap:8px;position:relative}
+.s101{font-family:var(--font-mono);font-size:var(--size-sm);white-space:pre-wrap}
+.s102{display:flex;flex-direction:row;gap:8px;position:relative;padding:var(--space-3) 12px;border-radius:var(--radius-md);background:var(--color-primary-soft)}
+.s103{width:14px;height:14px;color:var(--color-warning);object-fit:cover}
+.s104{flex-grow:1;font-size:var(--size-xs);color:var(--color-fg);white-space:pre-wrap}
+.s105{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:64px;padding:0px 24px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s106{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px 12px}
+.s107{font-size:var(--size-sm);font-weight:600;color:var(--color-muted-fg);white-space:pre-wrap}
+.s108{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px 16px;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s109{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px 16px;border-radius:var(--radius-md);background:var(--color-primary);color:inherit;text-decoration:inherit;cursor:pointer}
+.s110{font-size:var(--size-sm);font-weight:600;color:var(--color-on-primary);white-space:pre-wrap}
+.s111{display:flex;flex-direction:column;gap:4px;position:relative;width:220px;padding:24px 16px 16px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 1px 0px 0px;background:var(--color-card)}
+.s112{width:11px;height:11px;object-fit:cover}
+.s113{flex-grow:1;font-size:var(--size-sm);color:var(--color-muted-fg);white-space:pre-wrap}
+.s114{display:flex;flex-direction:row;align-items:center;gap:var(--space-2);position:relative;cursor:pointer}
+.s115{display:flex;flex-direction:row;position:relative;height:36px;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s116{display:flex;flex-direction:row;position:relative;height:28px;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s117{display:flex;flex-direction:column;justify-content:center;position:relative;padding:0px var(--space-3);cursor:pointer}
+.s118{font-family:var(--font-mono);font-size:var(--size-sm);color:var(--color-muted-fg);white-space:pre-wrap}
+.s119{display:flex;flex-direction:column;gap:0px;position:relative;padding:0px 0px 0px var(--space-4);border-style:solid;border-color:var(--color-border);border-width:0px 0px 0px 2px}
+.s120{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-2) 0px}
+.s121{display:flex;flex-direction:column;position:absolute;top:14px;left:-21px;width:8px;height:8px;border-radius:999px;background:var(--color-success)}
+.s122{display:flex;flex-direction:column;position:absolute;top:14px;left:-21px;width:8px;height:8px;border-radius:999px;background:var(--color-fg)}
+.s123{font-family:var(--font-mono);font-size:var(--size-md);font-weight:600;white-space:pre-wrap}
+.s124{display:flex;flex-direction:column;position:absolute;top:14px;left:-21px;width:8px;height:8px;border-radius:999px;background:var(--color-warning)}
+.s125{font-family:var(--font-mono);font-size:var(--size-md);font-weight:600;color:var(--color-warning);white-space:pre-wrap}
+.s126{display:flex;flex-direction:column;position:absolute;top:14px;left:-21px;width:8px;height:8px;border-radius:999px;background:var(--color-danger)}
+.s127{font-family:var(--font-mono);font-size:var(--size-md);font-weight:600;color:var(--color-danger);white-space:pre-wrap}
+.s128{display:flex;flex-direction:column;position:relative;height:1px;background:var(--color-border)}
+.s129{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px 16px;border:1px solid var(--color-border);border-radius:var(--radius-md);color:inherit;text-decoration:inherit;cursor:pointer}
+.s130{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px 16px;border-radius:var(--radius-md);background:var(--color-primary)}
+.s131{display:flex;flex-direction:column;gap:var(--space-5);flex-grow:1;position:relative;min-width:0px;padding:var(--space-5) 24px 24px 24px}
+.s132{display:flex;flex-direction:row;align-items:center;gap:var(--space-2);position:relative;height:22px;padding:0px var(--space-2);background:var(--color-success-soft)}
+.s133{font-size:var(--size-xs);color:var(--color-success);white-space:pre-wrap}
+.s134{display:flex;flex-direction:row;gap:8px;position:relative}
+.s135{display:flex;flex-direction:column;justify-content:center;position:relative;height:32px;padding:0px var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s136{display:flex;flex-direction:row;align-items:stretch;position:relative;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card)}
+.s137{display:flex;flex-direction:column;gap:4px;position:relative;min-width:260px;padding:16px var(--space-5);border-style:solid;border-color:var(--color-border);border-width:0px 1px 0px 0px}
+.s138{font-family:var(--font-mono);font-size:var(--size-2xl);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s139{display:flex;flex-direction:row;gap:12px;position:relative}
+.s140{display:flex;flex-direction:row;align-items:center;gap:4px;position:relative;padding:0px var(--space-2);background:var(--color-success-soft)}
+.s141{font-family:var(--font-mono);font-size:var(--size-xs);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s142{display:flex;flex-direction:column;gap:4px;flex-grow:1;position:relative;padding:16px var(--space-5);border-style:solid;border-color:var(--color-border);border-width:0px 1px 0px 0px}
+.s143{font-family:var(--font-mono);font-size:var(--size-lg);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s144{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-success);white-space:pre-wrap}
+.s145{font-family:var(--font-mono);font-size:var(--size-lg);font-weight:600;white-space:pre-wrap}
+.s146{display:flex;flex-direction:column;gap:4px;flex-grow:1;position:relative;padding:16px var(--space-5)}
+.s147{display:flex;flex-direction:row;gap:24px;position:relative;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s148{display:flex;flex-direction:row;align-items:center;gap:var(--space-2);position:relative;height:36px;cursor:pointer}
+.s149{display:flex;flex-direction:row;align-items:center;gap:var(--space-2);position:relative;height:36px;border-style:solid;border-color:var(--color-primary);border-width:0px 0px 2px 0px}
+.s150{padding:0px var(--space-1);font-size:var(--size-xs);font-weight:600;color:var(--color-primary);background:var(--color-primary-soft);white-space:pre-wrap}
+.s151{display:flex;flex-direction:row;align-items:center;position:relative;height:36px}
+.s152{display:flex;flex-direction:row;position:relative;height:30px;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s153{display:flex;flex-direction:column;justify-content:center;position:relative;padding:0px var(--space-3)}
+.s154{display:flex;flex-direction:column;justify-content:center;position:relative;padding:0px var(--space-3);background:var(--color-muted)}
+.s155{display:flex;flex-direction:column;position:relative;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-card)}
+.s156{display:flex;flex-direction:row;align-items:center;position:relative;height:36px;padding:0px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s157{width:120px;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s158{width:90px;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s159{width:240px;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s160{width:100px;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s161{width:120px;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s162{width:90px;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s163{flex-grow:1;padding:0px 0px 0px var(--space-5);font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s164{display:flex;flex-direction:row;align-items:center;position:relative;height:52px;padding:0px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s165{display:flex;flex-direction:row;align-items:center;gap:8px;position:relative;width:120px}
+.s166{display:flex;flex-direction:column;position:relative;width:2px;height:28px;background:var(--color-success)}
+.s167{width:90px;font-size:var(--size-sm);white-space:pre-wrap}
+.s168{display:flex;flex-direction:column;position:relative;width:240px}
+.s169{font-family:var(--font-mono);font-size:var(--size-sm);white-space:nowrap}
+.s170{display:flex;flex-direction:column;align-items:flex-end;position:relative;width:100px}
+.s171{width:120px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;white-space:pre-wrap}
+.s172{width:120px;font-family:var(--font-mono);font-size:var(--size-sm);font-weight:600;text-align:right;color:var(--color-success);white-space:pre-wrap}
+.s173{width:90px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;color:var(--color-success);white-space:pre-wrap}
+.s174{display:flex;flex-direction:row;flex-grow:1;position:relative;padding:0px 0px 0px var(--space-5)}
+.s175{padding:2px var(--space-2);font-size:var(--size-xs);color:var(--color-success);background:var(--color-success-soft);white-space:pre-wrap}
+.s176{display:flex;flex-direction:column;position:relative;width:2px;height:28px;background:var(--color-danger)}
+.s177{font-size:var(--size-xs);color:var(--color-danger);white-space:pre-wrap}
+.s178{padding:2px var(--space-2);font-size:var(--size-xs);color:var(--color-muted-fg);background:var(--color-muted);white-space:pre-wrap}
+.s179{width:120px;font-family:var(--font-mono);font-size:var(--size-sm);font-weight:600;text-align:right;color:var(--color-danger);white-space:pre-wrap}
+.s180{width:90px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;color:var(--color-danger);white-space:pre-wrap}
+.s181{padding:2px var(--space-2);font-size:var(--size-xs);color:var(--color-danger);background:var(--color-danger-soft);white-space:pre-wrap}
+.s182{padding:2px var(--space-2);font-size:var(--size-xs);color:var(--color-warning);background:var(--color-primary-soft);white-space:pre-wrap}
+.s183{display:flex;flex-direction:row;align-items:center;position:relative;height:52px;padding:0px 16px}
+.s184{display:flex;flex-direction:row;align-items:stretch;flex-grow:1;position:relative;min-width:0px}
+.s185{display:flex;flex-direction:column;gap:var(--space-4);flex-grow:1;position:relative;min-width:0px;padding:var(--space-5) 24px}
+.s186{font-size:var(--size-xl);font-weight:700;white-space:pre-wrap}
+.s187{width:200px;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s188{width:70px;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s189{flex-grow:1;font-size:var(--size-xs);text-align:right;color:var(--color-muted-fg);white-space:pre-wrap}
+.s190{display:flex;flex-direction:row;align-items:center;position:relative;height:52px;padding:0px 16px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;background:var(--color-muted)}
+.s191{width:200px;font-family:var(--font-mono);font-size:var(--size-sm);white-space:pre-wrap}
+.s192{width:70px;font-size:var(--size-sm);font-weight:600;text-align:right;color:var(--color-primary);white-space:pre-wrap}
+.s193{flex-grow:1;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;color:var(--color-success);white-space:pre-wrap}
+.s194{width:90px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;white-space:pre-wrap}
+.s195{width:70px;font-size:var(--size-sm);font-weight:600;text-align:right;white-space:pre-wrap}
+.s196{flex-grow:1;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;color:var(--color-danger);white-space:pre-wrap}
+.s197{display:flex;flex-direction:column;flex-shrink:0;position:relative;width:560px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 0px 1px;background:var(--color-card);box-shadow:-8px 0 24px rgba(0,0,0,0.35)}
+.s198{display:flex;flex-direction:row;justify-content:space-between;align-items:flex-start;position:relative;padding:var(--space-5) 24px 16px 24px}
+.s199{padding:2px var(--space-2);font-size:var(--size-xs);font-weight:600;color:var(--color-primary);background:var(--color-primary-soft);white-space:pre-wrap}
+.s200{width:18px;height:18px;object-fit:cover}
+.s201{display:flex;flex-direction:row;gap:24px;position:relative;padding:0px 24px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s202{display:flex;flex-direction:column;gap:var(--space-5);flex-grow:1;position:relative;padding:var(--space-5) 24px}
+.s203{display:flex;flex-direction:row;align-items:flex-end;gap:12px;position:relative}
+.s204{display:flex;flex-direction:column;gap:var(--space-2);position:relative;width:150px}
+.s205{display:flex;flex-direction:column;gap:var(--space-2);position:relative;width:110px}
+.s206{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s207{display:flex;flex-direction:column;gap:12px;position:relative}
+.s208{display:flex;flex-direction:row;justify-content:space-between;align-items:flex-end;position:relative}
+.s209{display:flex;flex-direction:column;gap:2px;position:relative}
+.s210{display:flex;flex-direction:row;align-items:baseline;gap:12px;position:relative}
+.s211{display:flex;flex-direction:column;align-items:flex-end;gap:2px;position:relative}
+.s212{width:512px;height:150px;object-fit:cover}
+.s213{display:flex;flex-direction:column;position:relative;width:10px;height:10px;background:var(--color-primary)}
+.s214{display:flex;flex-direction:column;position:relative;width:10px;height:10px;background:var(--color-chart-avg)}
+.s215{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:0px;position:relative;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s216{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-4);border-style:solid;border-color:var(--color-border);border-width:0px 1px 1px 0px}
+.s217{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-4);border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s218{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-4);border-style:solid;border-color:var(--color-border);border-width:0px 1px 0px 0px}
+.s219{font-size:var(--size-md);font-weight:600;color:var(--color-warning);white-space:pre-wrap}
+.s220{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-4)}
+.s221{padding:0px 0px var(--space-2) 0px;font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s222{flex-grow:1;font-size:var(--size-sm);white-space:pre-wrap}
+.s223{display:flex;flex-direction:column;position:relative;width:120px;padding:0px var(--space-3)}
+.s224{display:flex;flex-direction:column;position:relative;width:100%;height:6px;background:var(--color-success)}
+.s225{width:80px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;color:var(--color-success);white-space:pre-wrap}
+.s226{display:flex;flex-direction:column;position:relative;width:65%;height:6px;background:var(--color-success)}
+.s227{display:flex;flex-direction:column;position:relative;width:11%;height:6px;background:var(--color-success)}
+.s228{display:flex;flex-direction:row;align-items:center;position:relative;height:32px}
+.s229{display:flex;flex-direction:column;position:relative;width:7%;height:6px;background:var(--color-danger)}
+.s230{width:80px;font-family:var(--font-mono);font-size:var(--size-sm);text-align:right;color:var(--color-danger);white-space:pre-wrap}
+.s231{display:flex;flex-direction:row;gap:var(--space-2);position:relative;padding:var(--space-3) 12px;border-radius:var(--radius-md);background:var(--color-primary-soft)}
+.s232{width:14px;height:14px;object-fit:cover}
+.s233{flex-grow:1;font-size:var(--size-xs);white-space:pre-wrap}
+.s234{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:12px;position:relative;padding:16px 24px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px}
+.s235{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px var(--space-4);border-radius:var(--radius-md);background:var(--color-primary);color:inherit;text-decoration:inherit;cursor:pointer}
+.s236{display:flex;flex-direction:column;gap:var(--space-5);flex-grow:1;position:relative;min-width:0px;padding:var(--space-5) 24px var(--space-6) 24px}
+.s237{display:flex;flex-direction:row;align-items:center;position:relative;height:36px;border-style:solid;border-color:var(--color-primary);border-width:0px 0px 2px 0px}
+.s238{display:flex;flex-direction:column;gap:32px;flex-shrink:0;position:relative;width:680px}
+.s239{display:flex;flex-direction:column;gap:12px;position:relative;padding:16px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 1px 0px}
+.s240{display:flex;flex-direction:row;position:relative;width:32px;height:18px;padding:2px;border-radius:999px;background:var(--color-muted);cursor:pointer}
+.s241{display:flex;flex-direction:row;align-items:flex-end;gap:12px;position:relative;padding:0px 0px 0px var(--space-6)}
+.s242{display:flex;flex-direction:column;gap:var(--space-2);flex-grow:1;position:relative}
+.s243{flex-grow:1;font-family:var(--font-mono);font-size:var(--size-sm);color:var(--color-muted-fg);white-space:pre-wrap}
+.s244{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s245{display:flex;flex-direction:column;gap:12px;position:relative;padding:16px 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s246{display:flex;flex-direction:column;gap:12px;position:relative;padding:0px 0px 0px var(--space-6)}
+.s247{display:flex;flex-direction:row;align-self:flex-start;position:relative;height:30px;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s248{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:56px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s249{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:56px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 1px 0px}
+.s250{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:18px;height:18px;border-radius:var(--radius-sm);background:var(--color-primary)}
+.s251{width:12px;height:12px;object-fit:cover}
+.s252{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:56px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;cursor:pointer}
+.s253{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;width:18px;height:18px;border:1px solid var(--color-input);border-radius:var(--radius-sm)}
+.s254{display:flex;flex-direction:row;justify-content:space-between;align-items:center;position:relative;height:64px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 1px 0px}
+.s255{display:flex;flex-direction:row;align-items:center;position:relative;width:96px;height:32px;padding:0px var(--space-3);border:1px solid var(--color-input);border-radius:var(--radius-md)}
+.s256{display:flex;flex-direction:row;justify-content:flex-end;position:relative}
+.s257{display:flex;flex-direction:column;justify-content:center;position:relative;height:36px;padding:0px var(--space-4);border-radius:var(--radius-md);background:var(--color-primary)}
+.s258{display:flex;flex-direction:column;gap:12px;flex-shrink:0;position:relative;width:340px}
+.s259{display:flex;flex-direction:column;gap:var(--space-2);position:relative;padding:12px var(--space-4);border-style:solid;border-color:var(--color-danger);border-width:1px 1px 1px 3px;border-radius:var(--radius-lg);background:var(--color-card)}
+.s260{font-size:var(--size-sm);font-weight:600;color:var(--color-danger);white-space:pre-wrap}
+.s261{display:flex;flex-direction:column;gap:var(--space-2);position:relative;padding:12px var(--space-4);border-style:solid;border-color:var(--color-success);border-width:1px 1px 1px 3px;border-radius:var(--radius-lg);background:var(--color-card)}
+.s262{font-size:var(--size-sm);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s263{display:flex;flex-direction:column;gap:var(--space-2);position:relative;padding:12px var(--space-4);border-style:solid;border-color:var(--color-input);border-width:1px 1px 1px 3px;border-radius:var(--radius-lg);background:var(--color-card)}
+.s264{display:flex;flex-direction:column;position:relative;padding:0px;font-family:var(--font-body);color:var(--color-fg);background:var(--color-bg);width:390px;margin:0 auto}
+.s265{display:flex;flex-direction:column;flex-grow:1;position:relative;margin:var(--space-6) 0px 0px 0px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;border-radius:8px 8px 0px 0px;background:var(--color-card)}
+.s266{display:flex;flex-direction:row;justify-content:center;position:relative;padding:var(--space-2) 0px}
+.s267{display:flex;flex-direction:column;position:relative;width:36px;height:4px;border-radius:999px;background:var(--color-input)}
+.s268{display:flex;flex-direction:row;justify-content:space-between;align-items:flex-start;position:relative;padding:var(--space-2) var(--space-4) var(--space-3) var(--space-4)}
+.s269{width:20px;height:20px;object-fit:cover}
+.s270{display:flex;flex-direction:row;gap:20px;position:relative;padding:0px var(--space-4);border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s271{display:flex;flex-direction:row;align-items:center;position:relative;height:40px}
+.s272{display:flex;flex-direction:row;align-items:center;position:relative;height:40px;border-style:solid;border-color:var(--color-primary);border-width:0px 0px 2px 0px}
+.s273{display:flex;flex-direction:column;gap:var(--space-4);position:relative;padding:var(--space-4) var(--space-4)}
+.s274{display:flex;flex-direction:row;gap:var(--space-2);position:relative}
+.s275{display:flex;flex-direction:row;align-items:center;position:relative;height:40px;padding:0px 12px;border:1px solid var(--color-input);border-radius:var(--radius-md)}
+.s276{display:flex;flex-direction:row;position:relative;height:40px;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s277{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:600;color:var(--color-success);white-space:pre-wrap}
+.s278{width:358px;height:140px;object-fit:cover}
+.s279{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:0px;position:relative;border:1px solid var(--color-border);border-radius:var(--radius-md)}
+.s280{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-3);border-style:solid;border-color:var(--color-border);border-width:0px 1px 1px 0px}
+.s281{font-family:var(--font-mono);font-size:var(--size-md);font-weight:500;color:var(--color-danger);white-space:pre-wrap}
+.s282{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-3);border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s283{font-size:var(--size-md);font-weight:500;white-space:pre-wrap}
+.s284{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-3);border-style:solid;border-color:var(--color-border);border-width:0px 1px 0px 0px}
+.s285{font-size:var(--size-md);font-weight:500;color:var(--color-warning);white-space:pre-wrap}
+.s286{display:flex;flex-direction:column;gap:2px;position:relative;padding:var(--space-3) var(--space-3)}
+.s287{font-family:var(--font-mono);font-size:var(--size-md);font-weight:500;white-space:pre-wrap}
+.s288{display:flex;flex-direction:column;gap:var(--space-2);position:sticky;bottom:0px;z-index:10;padding:var(--space-3) var(--space-4);border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;background:var(--color-card)}
+.s289{display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;height:44px;border-radius:var(--radius-md);background:var(--color-primary)}
+.s290{font-size:var(--size-xs);text-align:center;color:var(--color-muted-fg);white-space:pre-wrap}
+.s291{display:flex;flex-direction:row;align-items:center;gap:var(--space-1);position:sticky;top:0px;z-index:10;height:56px;padding:0px var(--space-4);border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px;background:var(--color-bg)}
+.s292{flex-grow:1;font-size:var(--size-lg);font-weight:600;white-space:pre-wrap}
+.s293{display:flex;flex-direction:column;gap:4px;position:relative;padding:var(--space-4) var(--space-4)}
+.s294{padding:0px var(--space-2);font-size:var(--size-xs);font-weight:600;color:var(--color-success);background:var(--color-success-soft);white-space:pre-wrap}
+.s295{display:flex;flex-direction:row;gap:20px;position:relative;padding:var(--space-2) 0px 0px 0px}
+.s296{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:600;white-space:pre-wrap}
+.s297{padding:var(--space-3) var(--space-4) 0px var(--space-4);font-size:var(--size-xs);color:var(--color-muted-fg);white-space:pre-wrap}
+.s298{display:flex;flex-direction:column;position:relative;padding:0px var(--space-4)}
+.s299{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;padding:var(--space-3) 0px;border-style:solid;border-color:var(--color-border);border-width:0px 0px 1px 0px}
+.s300{display:flex;flex-direction:column;position:relative;width:2px;height:40px;background:var(--color-success)}
+.s301{display:flex;flex-direction:column;gap:2px;flex-grow:1;position:relative}
+.s302{padding:0px var(--space-2);font-size:var(--size-xs);color:var(--color-success);background:var(--color-success-soft);white-space:pre-wrap}
+.s303{display:flex;flex-direction:column;position:relative;width:2px;height:40px;background:var(--color-danger)}
+.s304{padding:0px var(--space-2);font-size:var(--size-xs);color:var(--color-muted-fg);background:var(--color-muted);white-space:pre-wrap}
+.s305{padding:0px var(--space-2);font-size:var(--size-xs);color:var(--color-danger);background:var(--color-danger-soft);white-space:pre-wrap}
+.s306{font-family:var(--font-mono);font-size:var(--size-sm);font-weight:600;color:var(--color-danger);white-space:pre-wrap}
+.s307{font-family:var(--font-mono);font-size:var(--size-xs);color:var(--color-danger);white-space:pre-wrap}
+.s308{padding:0px var(--space-2);font-size:var(--size-xs);color:var(--color-warning);background:var(--color-primary-soft);white-space:pre-wrap}
+.s309{display:flex;flex-direction:row;justify-content:center;position:relative;padding:var(--space-4) 0px var(--space-6) 0px}
+.s310{display:flex;flex-direction:row;position:sticky;bottom:0px;z-index:10;height:56px;border-style:solid;border-color:var(--color-border);border-width:1px 0px 0px 0px;background:var(--color-card)}
+.s311{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;flex-grow:1;position:relative}
+.s312{font-size:var(--size-xs);color:var(--color-primary);white-space:pre-wrap}
+</style>
+</head>
+<body>
+<input class="dm-r" type="radio" name="dm-frame" id="dm-f0" checked><input class="dm-r" type="radio" name="dm-frame" id="dm-f1"><input class="dm-r" type="radio" name="dm-frame" id="dm-f2"><input class="dm-r" type="radio" name="dm-frame" id="dm-f3"><input class="dm-r" type="radio" name="dm-frame" id="dm-f4"><input class="dm-r" type="radio" name="dm-frame" id="dm-f5"><input class="dm-r" type="radio" name="dm-frame" id="dm-f6"><nav class="dm-tabs"><label for="dm-f0">新建任务 · 设规则（新增）</label><label for="dm-f1">新建任务 · 风控（新增）</label><label for="dm-f2">任务详情 · 历史仓位</label><label for="dm-f3">跟单员广场 · 跟单模拟</label><label for="dm-f4">设置 · 通知与心跳</label><label for="dm-f5">移动端 / 跟单模拟</label><label for="dm-f6">移动端 / 历史仓位</label></nav><main><section class="dm-frame dm-s0" data-dm-frame="0"><div class="s1"><div class="s2"><div class="s3"><div class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4PSIzIiB5PSIzIiByeD0iMiIvPjxwYXRoIGQ9Ik03IDExdjRhMiAyIDAgMCAwIDIgMmg0Ii8+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIvPjwvc3ZnPg==" alt class="s5"></div><div class="s6">Merchandiser</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIxNCIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIxNCIgcng9IjEiLz48L3N2Zz4=" alt class="s8"><div class="s9">总览</div></div><div class="s7"><div class="s10"></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHg9IjgiIHk9IjgiIHJ4PSIyIiByeT0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s8"><div class="s9">跟单任务</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgMTQuNjZWMTdhMSAxIDAgMCAxLTEgMSAyIDIgMCAwIDAtMiAydjIiLz48cGF0aCBkPSJNMTQgMTQuNjZWMTdhMSAxIDAgMCAwIDEgMSAyIDIgMCAwIDEgMiAydjIiLz48cGF0aCBkPSJNMTcuOTE2IDEwSDE5LjVBMi41IDIuNSAwIDAgMCAyMiA3LjVWNWExIDEgMCAwIDAtMS0xaC0zIi8+PHBhdGggZD0iTTQgMjJoMTYiLz48cGF0aCBkPSJNNiA5YTYgNiAwIDAgMCAxMiAwVjNhMSAxIDAgMCAwLTEtMUg3YTEgMSAwIDAgMC0xIDF6Ii8+PHBhdGggZD0iTTYuMDg0IDEwSDQuNUEyLjUgMi41IDAgMCAxIDIgNy41VjVhMSAxIDAgMCAxIDEtMWgzIi8+PC9zdmc+" alt class="s8"><div class="s9">跟单员广场</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYuMjQ3IDcuNzYxYTYgNiAwIDAgMSAwIDguNDc4Ii8+PHBhdGggZD0iTTE5LjA3NSA0LjkzM2ExMCAxMCAwIDAgMSAwIDE0LjEzNCIvPjxwYXRoIGQ9Ik00LjkyNSAxOS4wNjdhMTAgMTAgMCAwIDEgMC0xNC4xMzQiLz48cGF0aCBkPSJNNy43NTMgMTYuMjM5YTYgNiAwIDAgMSAwLTguNDc4Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">信号源</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNOSAxN0g3QTUgNSAwIDAgMSA3IDdoMiIvPjxwYXRoIGQ9Ik0xNSA3aDJhNSA1IDAgMSAxIDAgMTBoLTIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">交易账户</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMyA1aC4wMSIvPjxwYXRoIGQ9Ik0zIDEyaC4wMSIvPjxwYXRoIGQ9Ik0zIDE5aC4wMSIvPjxwYXRoIGQ9Ik04IDVoMTMiLz48cGF0aCBkPSJNOCAxMmgxMyIvPjxwYXRoIGQ9Ik04IDE5aDEzIi8+PC9zdmc+" alt class="s8"><div class="s9">成交与盈亏</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgNUgzIi8+PHBhdGggZD0iTTEyIDE5SDMiLz48cGF0aCBkPSJNMTQgM3Y0Ii8+PHBhdGggZD0iTTE2IDE3djQiLz48cGF0aCBkPSJNMjEgMTJoLTkiLz48cGF0aCBkPSJNMjEgMTloLTUiLz48cGF0aCBkPSJNMjEgNWgtNyIvPjxwYXRoIGQ9Ik04IDEwdjQiLz48cGF0aCBkPSJNOCAxMkgzIi8+PC9zdmc+" alt class="s8"><div class="s9">设置</div></div><div class="s11"></div><div class="s12"><div class="s13">今日跟单盈亏</div><div class="s14">+412.08</div><div class="s15"><div class="s16">+1.86%</div><div class="s17">3 个任务运行</div></div></div><div class="s18"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTEiIHg9IjMiIHk9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4=" alt class="s19"><div class="s17">锁定界面</div></div></div><div data-dm-p="0-0" class="s20"><div class="s21"><div class="s22">新建跟单任务</div><div class="s23"><div class="s24"></div><div class="s17">引擎运行中 · HL 延迟 182 ms</div></div></div><div class="s25"><div class="s23"><div class="s26"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s27"></div><div class="s28">信号源</div></div><div class="s29"></div><div class="s23"><div class="s26"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s27"></div><div class="s28">跟单账户</div></div><div class="s29"></div><div class="s23"><div class="s30"><div class="s31">3</div></div><div class="s32">设规则</div></div><div class="s29"></div><div class="s23"><div class="s33"><div class="s17">4</div></div><div class="s28">风控</div></div><div class="s29"></div><div class="s23"><div class="s33"><div class="s17">5</div></div><div class="s28">确认</div></div></div><div class="s34"><div class="s35"><div class="s36"><div class="s37"><div class="s6">仓位计算</div><div class="s17">多个任务共用一个账户时，建议用「投入本金」：每个任务只按自己的本金下单，互不挤占。</div></div><div class="s38"><div data-dm-p="0-1" class="s39"><div class="s23"><div class="s32">投入本金</div><div class="s40">新</div></div><div class="s17">本金 ÷ 信号源权益 × 倍数，按比例跟</div></div><div data-dm-p="0-2" class="s39"><div class="s32">按权益比例</div><div class="s17">账户全部权益 ÷ 信号源权益 × 倍数</div></div><div data-dm-p="0-3" class="s39"><div class="s32">固定倍数</div><div class="s17">信号源数量 × k</div></div><div data-dm-p="0-4" class="s39"><div class="s32">固定名义金额</div><div class="s17">每次开仓固定 USDT</div></div></div><div data-dm-p="0-5" class="s41"><div class="s42"><div class="s17">每个账户投入本金</div><div class="s43"><div class="s44">1,000</div><div class="s17">USDT</div></div></div><div class="s45"><div class="s17">倍数 k</div><div class="s43"><div class="s44">1</div></div></div><div data-dm-p="0-6" class="s46"><div data-dm-p="0-7" class="s47"><div data-dm-p="0-8" class="s48"></div></div><div class="s49">复利：盈亏计入本金</div></div></div><div data-dm-p="0-9" class="s50"><div class="s51"><div class="s17">倍数 k</div><div class="s43"><div class="s44">1</div></div></div></div><div data-dm-p="0-10" class="s50"><div class="s51"><div class="s17">每次开仓金额</div><div class="s43"><div class="s44">500</div><div class="s17">USDT</div></div></div></div><div data-dm-p="0-11" class="s17">目标仓位 = 信号源仓位 × 本金 ÷ 信号源权益 × k。开启复利时，本金随本任务盈亏增减；本金可在确认页按账户单独覆盖。</div></div><div class="s36"><div class="s6">杠杆与保证金</div><div class="s52"><div class="s53"><div class="s17">杠杆</div><div class="s54"><div class="s55"><div class="s56"><div class="s57">跟随信号源</div></div><div class="s58"><div class="s59">固定值</div></div></div><div class="s17">上限</div><div class="s60"><div class="s44">10</div><div class="s17">x</div></div></div></div><div class="s53"><div class="s61"><div class="s17">保证金模式</div><div class="s40">新</div></div><div class="s55"><div data-dm-p="0-12" class="s62"><div data-dm-p="0-13" class="s63">全仓</div></div><div data-dm-p="0-14" class="s62"><div data-dm-p="0-15" class="s63">逐仓</div></div></div></div></div><div data-dm-p="0-16" class="s17">逐仓：每个币种单独占用保证金，单币爆仓不会拖累账户其他仓位。</div></div><div class="s64"><div class="s65"><div class="s23"><div class="s6">单仓止盈止损</div><div class="s40">新</div></div><div data-dm-p="0-17" class="s66"><div data-dm-p="0-18" class="s47"><div data-dm-p="0-19" class="s48"></div></div><div data-dm-p="0-20" class="s49">已开启</div></div></div><div class="s17">按本任务在该币种的持仓均价与杠杆计算收益率（ROE）。触发后市价平掉本任务的份额，该币种暂停跟随，等信号源平仓或反手后再重新跟。</div><div data-dm-p="0-21" class="s67"><div class="s50"><div class="s68"><div class="s17">止盈 ROE</div><div class="s43"><div class="s69">+50</div><div class="s17">%</div></div></div><div class="s68"><div class="s17">止损 ROE</div><div class="s43"><div class="s70">−25</div><div class="s17">%</div></div></div></div><div class="s71"><div data-dm-p="0-22" class="s66"><div data-dm-p="0-23" class="s47"><div data-dm-p="0-24" class="s48"></div></div><div class="s49">移动止盈：ROE 达到</div></div><div data-dm-p="0-25" class="s72"><div class="s44">+30</div><div class="s17">%</div></div><div data-dm-p="0-26" class="s49">后，从最高点回撤</div><div data-dm-p="0-27" class="s72"><div class="s44">10</div><div class="s17">%</div></div><div data-dm-p="0-28" class="s49">即平仓</div></div><div class="s73"><div class="s17">触发示意 · 以 10x 杠杆为例（ROE ÷ 杠杆 = 价格变动）</div><div class="s74"><div class="s75"></div><div class="s76"></div><div class="s77"></div><div class="s78"></div><div class="s79"></div><div class="s80"></div><div class="s81"></div><div class="s82">止损 −25% · 价 −2.5%</div><div class="s83">均价</div><div class="s84">激活移动止盈 +30%</div><div class="s85">止盈 +50% · 价 +5%</div></div></div></div></div><div class="s86"><div class="s87"><div class="s49">方向 · 反向跟单</div><div class="s17">双向 · 关闭</div></div><div class="s87"><div class="s49">品种名单</div><div class="s17">黑名单 2 个：PEPE、WIF</div></div><div class="s87"><div class="s49">下单方式 · 最小变动</div><div class="s17">市价 · 10 USDT</div></div><div class="s87"><div class="s49">挂单镜像 · 启动 / 停止</div><div class="s17">开启 · 只跟新开仓位 · 保留仓位</div></div></div></div><div class="s88"><div class="s89">按当前规则预览</div><div class="s17">信号源 HL 0x7a3f…c21e，权益 482,310 USDT · 4 个持仓</div><div class="s90"><div class="s91"><div class="s92">账户</div><div class="s93">本金</div><div class="s94">比例</div><div class="s95">BTC 目标</div></div><div class="s96"><div class="s11"><div class="s49">主账户</div><div class="s17">可用 3,204 USDT</div></div><div class="s97">1,000</div><div class="s98">0.21%</div><div class="s99">+0.0042</div></div><div class="s96"><div class="s11"><div class="s49">模拟 A</div><div class="s17">可用 10,000 USDT</div></div><div class="s97">2,000</div><div class="s98">0.41%</div><div class="s99">+0.0083</div></div></div><div class="s100"><div class="s15"><div class="s17">投入本金合计</div><div class="s101">3,000 USDT</div></div><div class="s15"><div class="s17">若立即同步，名义仓位合计</div><div class="s101">7,412 USDT</div></div><div class="s15"><div class="s17">信号源当前有效杠杆</div><div class="s101">2.47x</div></div></div><div class="s102"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGMEEwMzAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtMjEuNzMgMTgtOC0xNGEyIDIgMCAwIDAtMy40OCAwbC04IDE0QTIgMiAwIDAgMCA0IDIxaDE2YTIgMiAwIDAgMCAxLjczLTMiLz48cGF0aCBkPSJNMTIgOXY0Ii8+PHBhdGggZD0iTTEyIDE3aC4wMSIvPjwvc3ZnPg==" alt class="s103"><div class="s104">主账户已有另一个任务占用本金 1,500 USDT；两项合计 2,500，低于账户权益 3,204，可以运行。</div></div></div></div><div class="s105"><button type="button" class="s106"><div class="s107">取消</div></button><div class="s54"><div class="s17">规则已填完</div><button type="button" class="s108"><div class="s32">上一步</div></button><label for="dm-f1" class="s109"><div class="s110">下一步：风控</div></label></div></div></div></div></section><section class="dm-frame dm-s1" data-dm-frame="1"><div class="s1"><div class="s111"><div class="s3"><div class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4PSIzIiB5PSIzIiByeD0iMiIvPjxwYXRoIGQ9Ik03IDExdjRhMiAyIDAgMCAwIDIgMmg0Ii8+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIvPjwvc3ZnPg==" alt class="s5"></div><div class="s6">Merchandiser</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIxNCIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIxNCIgcng9IjEiLz48L3N2Zz4=" alt class="s8"><div class="s9">总览</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHg9IjgiIHk9IjgiIHJ4PSIyIiByeT0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s8"><div class="s9">跟单任务</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgMTQuNjZWMTdhMSAxIDAgMCAxLTEgMSAyIDIgMCAwIDAtMiAydjIiLz48cGF0aCBkPSJNMTQgMTQuNjZWMTdhMSAxIDAgMCAwIDEgMSAyIDIgMCAwIDEgMiAydjIiLz48cGF0aCBkPSJNMTcuOTE2IDEwSDE5LjVBMi41IDIuNSAwIDAgMCAyMiA3LjVWNWExIDEgMCAwIDAtMS0xaC0zIi8+PHBhdGggZD0iTTQgMjJoMTYiLz48cGF0aCBkPSJNNiA5YTYgNiAwIDAgMCAxMiAwVjNhMSAxIDAgMCAwLTEtMUg3YTEgMSAwIDAgMC0xIDF6Ii8+PHBhdGggZD0iTTYuMDg0IDEwSDQuNUEyLjUgMi41IDAgMCAxIDIgNy41VjVhMSAxIDAgMCAxIDEtMWgzIi8+PC9zdmc+" alt class="s8"><div class="s9">跟单员广场</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYuMjQ3IDcuNzYxYTYgNiAwIDAgMSAwIDguNDc4Ii8+PHBhdGggZD0iTTE5LjA3NSA0LjkzM2ExMCAxMCAwIDAgMSAwIDE0LjEzNCIvPjxwYXRoIGQ9Ik00LjkyNSAxOS4wNjdhMTAgMTAgMCAwIDEgMC0xNC4xMzQiLz48cGF0aCBkPSJNNy43NTMgMTYuMjM5YTYgNiAwIDAgMSAwLTguNDc4Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">信号源</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNOSAxN0g3QTUgNSAwIDAgMSA3IDdoMiIvPjxwYXRoIGQ9Ik0xNSA3aDJhNSA1IDAgMSAxIDAgMTBoLTIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">交易账户</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMyA1aC4wMSIvPjxwYXRoIGQ9Ik0zIDEyaC4wMSIvPjxwYXRoIGQ9Ik0zIDE5aC4wMSIvPjxwYXRoIGQ9Ik04IDVoMTMiLz48cGF0aCBkPSJNOCAxMmgxMyIvPjxwYXRoIGQ9Ik04IDE5aDEzIi8+PC9zdmc+" alt class="s8"><div class="s9">成交与盈亏</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgNUgzIi8+PHBhdGggZD0iTTEyIDE5SDMiLz48cGF0aCBkPSJNMTQgM3Y0Ii8+PHBhdGggZD0iTTE2IDE3djQiLz48cGF0aCBkPSJNMjEgMTJoLTkiLz48cGF0aCBkPSJNMjEgMTloLTUiLz48cGF0aCBkPSJNMjEgNWgtNyIvPjxwYXRoIGQ9Ik04IDEwdjQiLz48cGF0aCBkPSJNOCAxMkgzIi8+PC9zdmc+" alt class="s8"><div class="s9">设置</div></div><div class="s11"></div><div class="s12"><div class="s13">今日跟单盈亏</div><div class="s14">+412.08</div><div class="s15"><div class="s16">+1.86%</div><div class="s17">3 个任务运行</div></div></div><div class="s18"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTEiIHg9IjMiIHk9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4=" alt class="s19"><div class="s17">锁定界面</div></div></div><div data-dm-p="1-0" class="s20"><div class="s21"><div class="s22">新建跟单任务</div><div class="s23"><div class="s24"></div><div class="s17">引擎运行中</div></div></div><div class="s25"><div class="s23"><div class="s26"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s112"></div><div class="s28">信号源</div></div><div class="s29"></div><div class="s23"><div class="s26"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s112"></div><div class="s28">跟单账户</div></div><div class="s29"></div><div class="s23"><div class="s26"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s112"></div><div class="s28">设规则</div></div><div class="s29"></div><div class="s23"><div class="s30"><div class="s31">4</div></div><div class="s32">风控</div></div><div class="s29"></div><div class="s23"><div class="s33"><div class="s17">5</div></div><div class="s28">确认</div></div></div><div class="s34"><div class="s35"><div class="s36"><div class="s37"><div class="s6">仓位上限</div><div class="s17">超出上限的部分跳过并记日志；留空表示不限。</div></div><div class="s50"><div class="s42"><div class="s17">单币种最大名义仓位</div><div class="s43"><div class="s44">2,000</div><div class="s17">USDT</div></div></div><div class="s42"><div class="s17">账户总名义仓位</div><div class="s43"><div class="s113">不限</div><div class="s17">USDT</div></div></div><div class="s42"><div class="s61"><div class="s17">最多同时持有币种</div><div class="s40">新</div></div><div class="s43"><div class="s44">5</div><div class="s17">个</div></div></div></div><div class="s17">已持有 5 个币种时，信号源再开新币种不跟；已持有币种的加减仓照常跟。</div></div><div class="s36"><div class="s65"><div class="s61"><div class="s6">盈利目标</div><div class="s40">新</div></div><div data-dm-p="1-1" class="s114"><div data-dm-p="1-2" class="s47"><div data-dm-p="1-3" class="s48"></div></div><div data-dm-p="1-4" class="s49">已开启</div></div></div><div class="s17">本任务累计盈亏（已实现 + 浮动）达到目标后锁定收益。</div><div data-dm-p="1-5" class="s41"><div class="s42"><div class="s17">累计盈利达到</div><div class="s43"><div class="s69">+1,500</div><div class="s17">USDT</div></div></div><div class="s53"><div class="s17">达到后</div><div class="s115"><div data-dm-p="1-6" class="s62"><div data-dm-p="1-7" class="s63">暂停任务，保留仓位</div></div><div data-dm-p="1-8" class="s62"><div data-dm-p="1-9" class="s63">平仓并暂停</div></div></div></div></div><div data-dm-p="1-10" class="s17">按投入本金 3,000 USDT 计，约为本金收益率 +50%。</div></div><div class="s36"><div class="s65"><div class="s37"><div class="s6">亏损上限</div><div class="s17">触发后暂停任务并推送通知，需手动恢复。</div></div><div class="s116"><div data-dm-p="1-11" class="s117"><div data-dm-p="1-12" class="s63">USDT</div></div><div data-dm-p="1-13" class="s117"><div data-dm-p="1-14" class="s63">本金 %</div></div></div></div><div class="s50"><div class="s42"><div class="s17">日亏损上限</div><div class="s43"><div data-dm-p="1-15" class="s44">5</div><div data-dm-p="1-16" class="s17">%</div></div></div><div class="s42"><div class="s17">累计亏损上限</div><div class="s43"><div data-dm-p="1-17" class="s44">20</div><div data-dm-p="1-18" class="s17">%</div></div></div></div><div data-dm-p="1-19" class="s17">按本金 3,000 USDT 折算：日亏损 150 USDT，累计亏损 600 USDT。开启复利后按当前本金实时折算。</div><div data-dm-p="1-20" class="s114"><div data-dm-p="1-21" class="s47"><div data-dm-p="1-22" class="s48"></div></div><div class="s49">触发时同时市价平仓</div></div></div><div class="s86"><div class="s87"><div class="s49">单笔最大滑点</div><div class="s118">0.3%</div></div><div class="s87"><div class="s49">信号源失联</div><div class="s17">超过 30 秒保持仓位</div></div><div class="s87"><div class="s49">对账</div><div class="s17">每 15 秒，容差 2%，自动补单</div></div></div></div><div class="s88"><div class="s89">触发线一览</div><div class="s17">以投入本金 3,000 USDT 为基准，本任务盈亏落在以下区间时自动处理。</div><div class="s119"><div class="s120"><div class="s121"></div><div class="s17">盈利目标 · 平仓并暂停</div><div class="s14">+1,500.00</div></div><div class="s120"><div class="s122"></div><div class="s17">当前（新任务）</div><div class="s123">0.00</div></div><div class="s120"><div class="s124"></div><div class="s17">日亏损上限（每日重置）· 平仓并暂停</div><div class="s125">−150.00</div></div><div class="s120"><div class="s126"></div><div class="s17">累计亏损上限 · 平仓并暂停</div><div class="s127">−600.00</div></div></div><div class="s128"></div><div class="s53"><div class="s15"><div class="s17">单仓止盈 / 止损（ROE）</div><div class="s49">+50% / −25%</div></div><div class="s15"><div class="s17">移动止盈</div><div class="s49">+30% 后回撤 10%</div></div><div class="s15"><div class="s17">保证金模式</div><div class="s49">逐仓 · 杠杆上限 10x</div></div></div></div></div><div class="s105"><button type="button" class="s106"><div class="s107">取消</div></button><div class="s54"><div class="s17">风控已填完</div><label for="dm-f0" class="s129"><div class="s32">上一步</div></label><button type="button" class="s130"><div class="s110">下一步：确认</div></button></div></div></div></div></section><section class="dm-frame dm-s2" data-dm-frame="2"><div class="s1"><div class="s34"><div class="s111"><div class="s3"><div class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4PSIzIiB5PSIzIiByeD0iMiIvPjxwYXRoIGQ9Ik03IDExdjRhMiAyIDAgMCAwIDIgMmg0Ii8+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIvPjwvc3ZnPg==" alt class="s5"></div><div class="s6">Merchandiser</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIxNCIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIxNCIgcng9IjEiLz48L3N2Zz4=" alt class="s8"><div class="s9">总览</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHg9IjgiIHk9IjgiIHJ4PSIyIiByeT0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s8"><div class="s9">跟单任务</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgMTQuNjZWMTdhMSAxIDAgMCAxLTEgMSAyIDIgMCAwIDAtMiAydjIiLz48cGF0aCBkPSJNMTQgMTQuNjZWMTdhMSAxIDAgMCAwIDEgMSAyIDIgMCAwIDEgMiAydjIiLz48cGF0aCBkPSJNMTcuOTE2IDEwSDE5LjVBMi41IDIuNSAwIDAgMCAyMiA3LjVWNWExIDEgMCAwIDAtMS0xaC0zIi8+PHBhdGggZD0iTTQgMjJoMTYiLz48cGF0aCBkPSJNNiA5YTYgNiAwIDAgMCAxMiAwVjNhMSAxIDAgMCAwLTEtMUg3YTEgMSAwIDAgMC0xIDF6Ii8+PHBhdGggZD0iTTYuMDg0IDEwSDQuNUEyLjUgMi41IDAgMCAxIDIgNy41VjVhMSAxIDAgMCAxIDEtMWgzIi8+PC9zdmc+" alt class="s8"><div class="s9">跟单员广场</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYuMjQ3IDcuNzYxYTYgNiAwIDAgMSAwIDguNDc4Ii8+PHBhdGggZD0iTTE5LjA3NSA0LjkzM2ExMCAxMCAwIDAgMSAwIDE0LjEzNCIvPjxwYXRoIGQ9Ik00LjkyNSAxOS4wNjdhMTAgMTAgMCAwIDEgMC0xNC4xMzQiLz48cGF0aCBkPSJNNy43NTMgMTYuMjM5YTYgNiAwIDAgMSAwLTguNDc4Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">信号源</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNOSAxN0g3QTUgNSAwIDAgMSA3IDdoMiIvPjxwYXRoIGQ9Ik0xNSA3aDJhNSA1IDAgMSAxIDAgMTBoLTIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">交易账户</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMyA1aC4wMSIvPjxwYXRoIGQ9Ik0zIDEyaC4wMSIvPjxwYXRoIGQ9Ik0zIDE5aC4wMSIvPjxwYXRoIGQ9Ik04IDVoMTMiLz48cGF0aCBkPSJNOCAxMmgxMyIvPjxwYXRoIGQ9Ik04IDE5aDEzIi8+PC9zdmc+" alt class="s8"><div class="s9">成交与盈亏</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgNUgzIi8+PHBhdGggZD0iTTEyIDE5SDMiLz48cGF0aCBkPSJNMTQgM3Y0Ii8+PHBhdGggZD0iTTE2IDE3djQiLz48cGF0aCBkPSJNMjEgMTJoLTkiLz48cGF0aCBkPSJNMjEgMTloLTUiLz48cGF0aCBkPSJNMjEgNWgtNyIvPjxwYXRoIGQ9Ik04IDEwdjQiLz48cGF0aCBkPSJNOCAxMkgzIi8+PC9zdmc+" alt class="s8"><div class="s9">设置</div></div><div class="s11"></div><div class="s12"><div class="s13">今日跟单盈亏</div><div class="s14">+412.08</div><div class="s15"><div class="s16">+1.86%</div><div class="s17">3 个任务运行</div></div></div><div class="s18"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTEiIHg9IjMiIHk9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4=" alt class="s19"><div class="s17">锁定界面</div></div></div><div data-dm-p="2-0" class="s131"><div class="s65"><div class="s37"><div class="s17">跟单任务 /</div><div class="s54"><div class="s22">HL 聪明钱 #1</div><div class="s132"><div class="s24"></div><div class="s133">运行中</div></div></div><div class="s17">HL 0x7a3f…c21e → 2 个账户，投入本金 3,000 USDT（复利）</div></div><div class="s134"><button type="button" class="s135"><div class="s32">规则</div></button><button type="button" class="s135"><div class="s32">立即对账</div></button><button type="button" class="s135"><div class="s32">暂停跟单</div></button></div></div><div class="s136"><div class="s137"><div class="s17">累计盈亏 USDT</div><div class="s138">+1,284.50</div><div class="s139"><div class="s140"><div class="s133">本金收益率</div><div class="s141">+42.82%</div></div><div class="s17">今日 +86.20</div></div></div><div class="s142"><div class="s17">已实现 / 浮动</div><div class="s143">+1,102.40</div><div class="s144">浮动 +182.10</div></div><div class="s142"><div class="s17">胜率</div><div class="s145">64.3%</div><div class="s17">盈 18 笔，亏 10 笔</div></div><div class="s142"><div class="s17">盈亏比</div><div class="s145">2.31</div><div class="s17">平均盈 +98.6，平均亏 −42.7</div></div><div class="s146"><div class="s17">平均持仓</div><div class="s145">9h 24m</div><div class="s17">止盈 4 次，止损 3 次</div></div></div><div class="s147"><div class="s148"><div class="s28">当前持仓 3</div></div><div class="s149"><div class="s32">历史仓位 28</div><div class="s150">新</div></div><div class="s151"><div class="s28">仓位对比</div></div><div class="s151"><div class="s28">挂单镜像 2</div></div><div class="s151"><div class="s28">执行日志</div></div></div><div class="s65"><div class="s54"><div class="s152"><div data-dm-p="2-1" class="s117"><div data-dm-p="2-2" class="s63">全部账户</div></div><div data-dm-p="2-3" class="s117"><div data-dm-p="2-4" class="s63">主账户</div></div><div data-dm-p="2-5" class="s117"><div data-dm-p="2-6" class="s63">模拟 A</div></div></div><div class="s152"><div class="s153"><div class="s59">7 天</div></div><div class="s154"><div class="s57">30 天</div></div><div class="s153"><div class="s59">全部</div></div></div></div><div class="s17">导出 CSV</div></div><div class="s155"><div class="s156"><div class="s157">币种</div><div class="s158">账户</div><div class="s159">开仓 → 平仓</div><div class="s160">最大仓位</div><div class="s161">开仓均价</div><div class="s161">平仓均价</div><div class="s161">已实现盈亏</div><div class="s162">ROE</div><div class="s163">平仓原因</div></div><div class="s164"><div class="s165"><div class="s166"></div><div class="s90"><div class="s32">HYPE</div><div class="s133">多 5x</div></div></div><div class="s167">主账户</div><div class="s168"><div class="s169">11-19 10:00 → 21:48</div><div class="s17">持仓 11h 48m</div></div><div class="s170"><div class="s101">120</div><div class="s16">≈ 4,586</div></div><div class="s171">38.214</div><div class="s171">41.990</div><div class="s172">+453.12</div><div class="s173">+49.4%</div><div class="s174"><div class="s175">止盈</div></div></div><div class="s164"><div class="s165"><div class="s176"></div><div class="s90"><div class="s32">ETH</div><div class="s177">空 4x</div></div></div><div class="s167">主账户</div><div class="s168"><div class="s169">11-20 08:40 → 16:22</div><div class="s17">持仓 7h 42m</div></div><div class="s170"><div class="s101">1.25</div><div class="s16">≈ 4,266</div></div><div class="s171">3,412.5</div><div class="s171">3,268.1</div><div class="s172">+180.50</div><div class="s173">+16.9%</div><div class="s174"><div class="s175">移动止盈</div></div></div><div class="s164"><div class="s165"><div class="s166"></div><div class="s90"><div class="s32">BTC</div><div class="s133">多 10x</div></div></div><div class="s167">主账户</div><div class="s168"><div class="s169">11-20 14:02 → 11-21 09:15</div><div class="s17">持仓 19h 13m</div></div><div class="s170"><div class="s101">0.0420</div><div class="s16">≈ 4,012</div></div><div class="s171">95,210.0</div><div class="s171">97,860.0</div><div class="s172">+111.30</div><div class="s173">+27.8%</div><div class="s174"><div class="s178">跟随信号源平仓</div></div></div><div class="s164"><div class="s165"><div class="s166"></div><div class="s90"><div class="s32">SOL</div><div class="s133">多 10x</div></div></div><div class="s167">模拟 A</div><div class="s168"><div class="s169">11-19 22:10 → 11-20 03:05</div><div class="s17">持仓 4h 55m</div></div><div class="s170"><div class="s101">18.4</div><div class="s16">≈ 4,438</div></div><div class="s171">241.20</div><div class="s171">229.10</div><div class="s179">−222.64</div><div class="s180">−50.2%</div><div class="s174"><div class="s181">止损</div></div></div><div class="s164"><div class="s165"><div class="s166"></div><div class="s90"><div class="s32">AVAX</div><div class="s133">多 5x</div></div></div><div class="s167">主账户</div><div class="s168"><div class="s169">11-18 19:31 → 23:02</div><div class="s17">持仓 3h 31m</div></div><div class="s170"><div class="s101">96.0</div><div class="s16">≈ 3,210</div></div><div class="s171">33.440</div><div class="s171">32.770</div><div class="s179">−64.30</div><div class="s180">−10.0%</div><div class="s174"><div class="s182">风控：日亏损上限</div></div></div><div class="s183"><div class="s165"><div class="s176"></div><div class="s90"><div class="s32">DOGE</div><div class="s177">空 3x</div></div></div><div class="s167">模拟 A</div><div class="s168"><div class="s169">11-18 02:12 → 11-18 15:40</div><div class="s17">持仓 13h 28m</div></div><div class="s170"><div class="s101">9,800</div><div class="s16">≈ 3,724</div></div><div class="s171">0.38010</div><div class="s171">0.38400</div><div class="s179">−38.22</div><div class="s180">−3.1%</div><div class="s174"><div class="s178">跟随信号源平仓</div></div></div></div><div class="s65"><div class="s17">显示 6 / 28 笔 · 按平仓时间倒序 · 盈亏不含手续费与资金费</div><button type="button" class="s135"><div class="s32">加载更多</div></button></div></div></div></div></section><section class="dm-frame dm-s3" data-dm-frame="3"><div class="s1"><div data-dm-p="3-0" class="s34"><div class="s111"><div class="s3"><div class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4PSIzIiB5PSIzIiByeD0iMiIvPjxwYXRoIGQ9Ik03IDExdjRhMiAyIDAgMCAwIDIgMmg0Ii8+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIvPjwvc3ZnPg==" alt class="s5"></div><div class="s6">Merchandiser</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIxNCIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIxNCIgcng9IjEiLz48L3N2Zz4=" alt class="s8"><div class="s9">总览</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHg9IjgiIHk9IjgiIHJ4PSIyIiByeT0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s8"><div class="s9">跟单任务</div></div><div class="s7"><div class="s10"></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgMTQuNjZWMTdhMSAxIDAgMCAxLTEgMSAyIDIgMCAwIDAtMiAydjIiLz48cGF0aCBkPSJNMTQgMTQuNjZWMTdhMSAxIDAgMCAwIDEgMSAyIDIgMCAwIDEgMiAydjIiLz48cGF0aCBkPSJNMTcuOTE2IDEwSDE5LjVBMi41IDIuNSAwIDAgMCAyMiA3LjVWNWExIDEgMCAwIDAtMS0xaC0zIi8+PHBhdGggZD0iTTQgMjJoMTYiLz48cGF0aCBkPSJNNiA5YTYgNiAwIDAgMCAxMiAwVjNhMSAxIDAgMCAwLTEtMUg3YTEgMSAwIDAgMC0xIDF6Ii8+PHBhdGggZD0iTTYuMDg0IDEwSDQuNUEyLjUgMi41IDAgMCAxIDIgNy41VjVhMSAxIDAgMCAxIDEtMWgzIi8+PC9zdmc+" alt class="s8"><div class="s9">跟单员广场</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYuMjQ3IDcuNzYxYTYgNiAwIDAgMSAwIDguNDc4Ii8+PHBhdGggZD0iTTE5LjA3NSA0LjkzM2ExMCAxMCAwIDAgMSAwIDE0LjEzNCIvPjxwYXRoIGQ9Ik00LjkyNSAxOS4wNjdhMTAgMTAgMCAwIDEgMC0xNC4xMzQiLz48cGF0aCBkPSJNNy43NTMgMTYuMjM5YTYgNiAwIDAgMSAwLTguNDc4Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">信号源</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNOSAxN0g3QTUgNSAwIDAgMSA3IDdoMiIvPjxwYXRoIGQ9Ik0xNSA3aDJhNSA1IDAgMSAxIDAgMTBoLTIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">交易账户</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMyA1aC4wMSIvPjxwYXRoIGQ9Ik0zIDEyaC4wMSIvPjxwYXRoIGQ9Ik0zIDE5aC4wMSIvPjxwYXRoIGQ9Ik04IDVoMTMiLz48cGF0aCBkPSJNOCAxMmgxMyIvPjxwYXRoIGQ9Ik04IDE5aDEzIi8+PC9zdmc+" alt class="s8"><div class="s9">成交与盈亏</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgNUgzIi8+PHBhdGggZD0iTTEyIDE5SDMiLz48cGF0aCBkPSJNMTQgM3Y0Ii8+PHBhdGggZD0iTTE2IDE3djQiLz48cGF0aCBkPSJNMjEgMTJoLTkiLz48cGF0aCBkPSJNMjEgMTloLTUiLz48cGF0aCBkPSJNMjEgNWgtNyIvPjxwYXRoIGQ9Ik04IDEwdjQiLz48cGF0aCBkPSJNOCAxMkgzIi8+PC9zdmc+" alt class="s8"><div class="s9">设置</div></div><div class="s11"></div><div class="s12"><div class="s13">今日跟单盈亏</div><div class="s14">+412.08</div><div class="s15"><div class="s16">+1.86%</div><div class="s17">3 个任务运行</div></div></div><div class="s18"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTEiIHg9IjMiIHk9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4=" alt class="s19"><div class="s17">锁定界面</div></div></div><div class="s184"><div class="s185"><div class="s186">跟单员广场</div><div class="s17">60 个钱包已分析 · 按 30 天跟单适配度排序</div><div class="s155"><div class="s156"><div class="s187">钱包</div><div class="s188">适配度</div><div class="s189">30 天收益</div><div class="s162">回撤</div></div><div class="s190"><div class="s191">0x5d2f…91ab</div><div class="s192">82</div><div class="s193">+38.2%</div><div class="s194">12.4%</div></div><div class="s164"><div class="s191">0x91c0…07ee</div><div class="s195">77</div><div class="s193">+21.5%</div><div class="s194">8.1%</div></div><div class="s164"><div class="s191">0x0b3a…c4d2</div><div class="s195">71</div><div class="s193">+64.0%</div><div class="s194">27.9%</div></div><div class="s183"><div class="s191">0xe77d…1f30</div><div class="s195">66</div><div class="s196">−4.2%</div><div class="s194">15.0%</div></div></div></div><div class="s197"><div class="s198"><div class="s37"><div class="s23"><div class="s145">0x5d2f…91ab</div><div class="s199">适配度 82</div></div><div class="s17">权益 $3.21M，常做 BTC、HYPE、ETH</div></div><div class="s139"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGMEI5MEIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTEuNTI1IDIuMjk1YS41My41MyAwIDAgMSAuOTUgMGwyLjMxIDQuNjc5YTIuMTIzIDIuMTIzIDAgMCAwIDEuNTk1IDEuMTZsNS4xNjYuNzU2YS41My41MyAwIDAgMSAuMjk0LjkwNGwtMy43MzYgMy42MzhhMi4xMjMgMi4xMjMgMCAwIDAtLjYxMSAxLjg3OGwuODgyIDUuMTRhLjUzLjUzIDAgMCAxLS43NzEuNTZsLTQuNjE4LTIuNDI4YTIuMTIyIDIuMTIyIDAgMCAwLTEuOTczIDBMNi4zOTYgMjEuMDFhLjUzLjUzIDAgMCAxLS43Ny0uNTZsLjg4MS01LjEzOWEyLjEyMiAyLjEyMiAwIDAgMC0uNjExLTEuODc5TDIuMTYgOS43OTVhLjUzLjUzIDAgMCAxIC4yOTQtLjkwNmw1LjE2NS0uNzU1YTIuMTIyIDIuMTIyIDAgMCAwIDEuNTk3LTEuMTZ6Ii8+PC9zdmc+" alt class="s200"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTggNiA2IDE4Ii8+PHBhdGggZD0ibTYgNiAxMiAxMiIvPjwvc3ZnPg==" alt class="s200"></div></div><div class="s201"><div class="s151"><div class="s28">概览</div></div><div class="s151"><div class="s28">当前持仓 4</div></div><div class="s149"><div class="s32">跟单模拟</div><div class="s150">新</div></div></div><div class="s202"><div class="s203"><div class="s204"><div class="s17">模拟本金</div><div class="s43"><div class="s44">1,000</div><div class="s17">USDT</div></div></div><div class="s53"><div class="s17">区间</div><div class="s115"><div data-dm-p="3-1" class="s117"><div data-dm-p="3-2" class="s63">7 天</div></div><div data-dm-p="3-3" class="s117"><div data-dm-p="3-4" class="s63">30 天</div></div></div></div><div class="s205"><div class="s17">延迟滑点</div><div class="s43"><div class="s44">5</div><div class="s17">bps</div></div></div><button type="button" class="s206"><div class="s32">重新模拟</div></button></div><div class="s207"><div class="s208"><div class="s209"><div data-dm-p="3-5" class="s17">近 30 天跟单这个钱包，预计盈亏</div><div class="s210"><div data-dm-p="3-6" class="s138">+312.40</div><div data-dm-p="3-7" class="s14">+31.24%</div></div></div><div class="s211"><div class="s17">交易员同期收益率</div><div data-dm-p="3-8" class="s123">+38.20%</div></div></div><div class="s53"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NzIiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgNDcyIDE1MCI+PGxpbmUgeDE9IjAiIHgyPSI0NzIiIHkxPSIzNy41IiB5Mj0iMzcuNSIgc3Ryb2tlPSIjMkIzMTM5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMCIgeDI9IjQ3MiIgeTE9Ijc1LjAiIHkyPSI3NS4wIiBzdHJva2U9IiMyQjMxMzkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIwIiB4Mj0iNDcyIiB5MT0iMTEyLjUiIHkyPSIxMTIuNSIgc3Ryb2tlPSIjMkIzMTM5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMCIgeDI9IjQ3MiIgeTE9IjEzNy4yIiB5Mj0iMTM3LjIiIHN0cm9rZT0iIzVFNjY3MyIgc3Ryb2tlLWRhc2hhcnJheT0iMyAzIi8+PHBvbHlsaW5lIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVCOUNGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHBvaW50cz0iMi4wLDEzNy4yIDkuOSwxMzYuOSAxNy45LDEzMC45IDI1LjgsMTMwLjMgMzMuNywxMzAuNSA0MS43LDEzNS4yIDQ5LjYsMTM0LjYgNTcuNSwxMjQuMSA2NS41LDExOC43IDczLjQsMTA4LjcgODEuMywxMDQuNyA4OS4zLDk5LjUgOTcuMiw5NS45IDEwNS4xLDEwNi4yIDExMy4xLDk3LjYgMTIxLjAsOTEuNiAxMjguOSw4NS42IDEzNi44LDk2LjEgMTQ0LjgsMTA2LjkgMTUyLjcsMTExLjMgMTYwLjYsMTEyLjYgMTY4LjYsMTA4LjEgMTc2LjUsMTA2LjMgMTg0LjQsMTAwLjIgMTkyLjQsMTAyLjggMjAwLjMsOTguMiAyMDguMiw5My4xIDIxNi4yLDk1LjggMjI0LjEsODAuOCAyMzIuMCw3NC40IDI0MC4wLDYzLjIgMjQ3LjksNjUuNiAyNTUuOCw2OS4wIDI2My44LDY5LjMgMjcxLjcsNjcuOSAyNzkuNiw2MS4wIDI4Ny42LDU2LjkgMjk1LjUsNTguMCAzMDMuNCw2My4wIDMxMS40LDY0LjcgMzE5LjMsNTMuMyAzMjcuMiw1Ny4yIDMzNS4yLDUzLjEgMzQzLjEsNDcuNyAzNTEuMCw1Ni43IDM1OC45LDU0LjEgMzY2LjksNDIuMSAzNzQuOCw1NS4wIDM4Mi43LDU1LjIgMzkwLjcsNTMuNyAzOTguNiw1Ny42IDQwNi41LDUxLjcgNDE0LjUsNTAuMCA0MjIuNCw1OC43IDQzMC4zLDUwLjMgNDM4LjMsNDMuMSA0NDYuMiwzMy44IDQ1NC4xLDIwLjggNDYyLjEsMTUuOSA0NzAuMCwxMi44Ii8+PHBvbHlsaW5lIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0YwQjkwQiIgc3Ryb2tlLXdpZHRoPSIyIiBwb2ludHM9IjIuMCwxMzcuMiA5LjksMTM3LjEgMTcuOSwxMzIuMyAyNS44LDEzMi4xIDMzLjcsMTMyLjQgNDEuNywxMzYuNCA0OS42LDEzNi4xIDU3LjUsMTI3LjYgNjUuNSwxMjMuNCA3My40LDExNS40IDgxLjMsMTEyLjIgODkuMywxMDguMiA5Ny4yLDEwNS40IDEwNS4xLDExNC4wIDExMy4xLDEwNy4xIDEyMS4wLDEwMi4zIDEyOC45LDk3LjYgMTM2LjgsMTA2LjQgMTQ0LjgsMTE1LjQgMTUyLjcsMTE5LjIgMTYwLjYsMTIwLjUgMTY4LjYsMTE2LjkgMTc2LjUsMTE1LjYgMTg0LjQsMTEwLjcgMTkyLjQsMTEzLjAgMjAwLjMsMTA5LjUgMjA4LjIsMTA1LjQgMjE2LjIsMTA3LjkgMjI0LjEsOTUuNyAyMzIuMCw5MC42IDI0MC4wLDgxLjYgMjQ3LjksODMuOCAyNTUuOCw4Ni43IDI2My44LDg3LjIgMjcxLjcsODYuMiAyNzkuNiw4MC42IDI4Ny42LDc3LjUgMjk1LjUsNzguNiAzMDMuNCw4Mi44IDMxMS40LDg0LjQgMzE5LjMsNzUuMiAzMjcuMiw3OC41IDMzNS4yLDc1LjQgMzQzLjEsNzEuMSAzNTEuMCw3OC42IDM1OC45LDc2LjcgMzY2LjksNjcuMCAzNzQuOCw3Ny44IDM4Mi43LDc4LjEgMzkwLjcsNzcuMSAzOTguNiw4MC41IDQwNi41LDc1LjggNDE0LjUsNzQuNSA0MjIuNCw4MS45IDQzMC4zLDc1LjEgNDM4LjMsNjkuNCA0NDYuMiw2MS45IDQ1NC4xLDUxLjUgNDYyLjEsNDcuNiA0NzAuMCw0NS4yIi8+PC9zdmc+" alt class="s212"><div class="s50"><div class="s61"><div class="s213"></div><div class="s17">模拟跟单（含延迟、滑点、手续费、最小下单量）</div></div><div class="s61"><div class="s214"></div><div class="s17">交易员按比例</div></div></div></div></div><div class="s215"><div class="s216"><div class="s17">跟单效率</div><div class="s123">81.8%</div></div><div class="s216"><div class="s17">最大回撤</div><div class="s127">−9.8%</div></div><div class="s217"><div class="s17">模拟成交</div><div class="s89">214 笔</div></div><div class="s218"><div class="s17">低于最小下单跳过</div><div class="s219">37 笔（15%）</div></div><div class="s218"><div class="s17">手续费</div><div class="s123">−18.20</div></div><div class="s220"><div class="s17">滑点成本</div><div class="s123">−9.60</div></div></div><div class="s90"><div class="s221">按币种</div><div class="s91"><div class="s222">BTC</div><div class="s93">86 笔</div><div class="s223"><div class="s224"></div></div><div class="s225">+184.20</div></div><div class="s91"><div class="s222">HYPE</div><div class="s93">61 笔</div><div class="s223"><div class="s226"></div></div><div class="s225">+120.50</div></div><div class="s91"><div class="s222">SOL</div><div class="s93">22 笔</div><div class="s223"><div class="s227"></div></div><div class="s225">+20.00</div></div><div class="s228"><div class="s222">ETH</div><div class="s93">45 笔</div><div class="s223"><div class="s229"></div></div><div class="s230">−12.30</div></div></div><div class="s231"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGMEEwMzAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtMjEuNzMgMTgtOC0xNGEyIDIgMCAwIDAtMy40OCAwbC04IDE0QTIgMiAwIDAgMCA0IDIxaDE2YTIgMiAwIDAgMCAxLjczLTMiLz48cGF0aCBkPSJNMTIgOXY0Ii8+PHBhdGggZD0iTTEyIDE3aC4wMSIvPjwvc3ZnPg==" alt class="s232"><div class="s233">15% 的加减仓因低于 10 USDT 最小下单量被跳过。本金提高到 2,500 USDT 以上，跟单效率预计可到 90% 以上。</div></div></div><div class="s234"><div class="s17">基于该钱包公开成交回放，历史表现不代表未来收益</div><label for="dm-f0" class="s235"><div class="s110">用 1,000 USDT 本金跟单</div></label></div></div></div></div></div></section><section class="dm-frame dm-s4" data-dm-frame="4"><div class="s1"><div data-dm-p="4-0" class="s34"><div class="s111"><div class="s3"><div class="s4"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4PSIzIiB5PSIzIiByeD0iMiIvPjxwYXRoIGQ9Ik03IDExdjRhMiAyIDAgMCAwIDIgMmg0Ii8+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIvPjwvc3ZnPg==" alt class="s5"></div><div class="s6">Merchandiser</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIxNCIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIxNCIgcng9IjEiLz48L3N2Zz4=" alt class="s8"><div class="s9">总览</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHg9IjgiIHk9IjgiIHJ4PSIyIiByeT0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s8"><div class="s9">跟单任务</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgMTQuNjZWMTdhMSAxIDAgMCAxLTEgMSAyIDIgMCAwIDAtMiAydjIiLz48cGF0aCBkPSJNMTQgMTQuNjZWMTdhMSAxIDAgMCAwIDEgMSAyIDIgMCAwIDEgMiAydjIiLz48cGF0aCBkPSJNMTcuOTE2IDEwSDE5LjVBMi41IDIuNSAwIDAgMCAyMiA3LjVWNWExIDEgMCAwIDAtMS0xaC0zIi8+PHBhdGggZD0iTTQgMjJoMTYiLz48cGF0aCBkPSJNNiA5YTYgNiAwIDAgMCAxMiAwVjNhMSAxIDAgMCAwLTEtMUg3YTEgMSAwIDAgMC0xIDF6Ii8+PHBhdGggZD0iTTYuMDg0IDEwSDQuNUEyLjUgMi41IDAgMCAxIDIgNy41VjVhMSAxIDAgMCAxIDEtMWgzIi8+PC9zdmc+" alt class="s8"><div class="s9">跟单员广场</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYuMjQ3IDcuNzYxYTYgNiAwIDAgMSAwIDguNDc4Ii8+PHBhdGggZD0iTTE5LjA3NSA0LjkzM2ExMCAxMCAwIDAgMSAwIDE0LjEzNCIvPjxwYXRoIGQ9Ik00LjkyNSAxOS4wNjdhMTAgMTAgMCAwIDEgMC0xNC4xMzQiLz48cGF0aCBkPSJNNy43NTMgMTYuMjM5YTYgNiAwIDAgMSAwLTguNDc4Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">信号源</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNOSAxN0g3QTUgNSAwIDAgMSA3IDdoMiIvPjxwYXRoIGQ9Ik0xNSA3aDJhNSA1IDAgMSAxIDAgMTBoLTIiLz48bGluZSB4MT0iOCIgeDI9IjE2IiB5MT0iMTIiIHkyPSIxMiIvPjwvc3ZnPg==" alt class="s8"><div class="s9">交易账户</div></div><div class="s7"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMyA1aC4wMSIvPjxwYXRoIGQ9Ik0zIDEyaC4wMSIvPjxwYXRoIGQ9Ik0zIDE5aC4wMSIvPjxwYXRoIGQ9Ik04IDVoMTMiLz48cGF0aCBkPSJNOCAxMmgxMyIvPjxwYXRoIGQ9Ik04IDE5aDEzIi8+PC9zdmc+" alt class="s8"><div class="s9">成交与盈亏</div></div><div class="s7"><div class="s10"></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTAgNUgzIi8+PHBhdGggZD0iTTEyIDE5SDMiLz48cGF0aCBkPSJNMTQgM3Y0Ii8+PHBhdGggZD0iTTE2IDE3djQiLz48cGF0aCBkPSJNMjEgMTJoLTkiLz48cGF0aCBkPSJNMjEgMTloLTUiLz48cGF0aCBkPSJNMjEgNWgtNyIvPjxwYXRoIGQ9Ik04IDEwdjQiLz48cGF0aCBkPSJNOCAxMkgzIi8+PC9zdmc+" alt class="s8"><div class="s9">设置</div></div><div class="s11"></div><div class="s12"><div class="s13">今日跟单盈亏</div><div class="s14">+412.08</div><div class="s15"><div class="s16">+1.86%</div><div class="s17">3 个任务运行</div></div></div><div class="s18"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTEiIHg9IjMiIHk9IjExIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNyAxMVY3YTUgNSAwIDAgMSAxMCAwdjQiLz48L3N2Zz4=" alt class="s19"><div class="s17">锁定界面</div></div></div><div class="s236"><div class="s186">设置</div><div class="s147"><div class="s151"><div class="s28">通用与安全</div></div><div class="s151"><div class="s28">品种映射</div></div><div class="s237"><div class="s32">通知与心跳</div></div></div><div class="s52"><div class="s238"><div class="s90"><div class="s221">推送渠道</div><div class="s239"><div class="s65"><div class="s54"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTQuNTM2IDIxLjY4NmEuNS41IDAgMCAwIC45MzctLjAyNGw2LjUtMTlhLjQ5Ni40OTYgMCAwIDAtLjYzNS0uNjM1bC0xOSA2LjVhLjUuNSAwIDAgMC0uMDI0LjkzN2w3LjkzIDMuMThhMiAyIDAgMCAxIDEuMTEyIDEuMTF6Ii8+PHBhdGggZD0ibTIxLjg1NCAyLjE0Ny0xMC45NCAxMC45MzkiLz48L3N2Zz4=" alt class="s200"><div class="s209"><div class="s32">Telegram Bot</div><div class="s61"><div class="s24"></div><div class="s17">已连接 @merch_alert_bot，上次推送 3 分钟前</div></div></div></div><div data-dm-p="4-1" class="s240"><div data-dm-p="4-2" class="s48"></div></div></div><div data-dm-p="4-3" class="s241"><div class="s242"><div class="s17">Bot Token</div><div class="s43"><div class="s243">7712…AAH4（已保存，留空不改）</div></div></div><div class="s42"><div class="s17">Chat ID</div><div class="s43"><div class="s44">-1002233445566</div></div></div><button type="button" class="s244"><div class="s32">发送测试</div></button></div></div><div class="s245"><div class="s65"><div class="s54"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTggMTYuOThoLTUuOTljLTEuMSAwLTEuOTUuOTQtMi40OCAxLjlBNCA0IDAgMCAxIDIgMTdjLjAxLS43LjItMS40LjU3LTIiLz48cGF0aCBkPSJtNiAxNyAzLjEzLTUuNzhjLjUzLS45Ny4xLTIuMTgtLjUtMy4xYTQgNCAwIDEgMSA2Ljg5LTQuMDYiLz48cGF0aCBkPSJtMTIgNiAzLjEzIDUuNzNDMTUuNjYgMTIuNyAxNi45IDEzIDE4IDEzYTQgNCAwIDAgMSAwIDgiLz48L3N2Zz4=" alt class="s200"><div class="s209"><div class="s32">Webhook</div><div class="s61"><div class="s24"></div><div class="s17">测试成功，耗时 204 ms</div></div></div></div><div data-dm-p="4-4" class="s240"><div data-dm-p="4-5" class="s48"></div></div></div><div data-dm-p="4-6" class="s246"><div class="s247"><div data-dm-p="4-7" class="s117"><div data-dm-p="4-8" class="s63">通用 JSON</div></div><div data-dm-p="4-9" class="s117"><div data-dm-p="4-10" class="s63">飞书</div></div><div data-dm-p="4-11" class="s117"><div data-dm-p="4-12" class="s63">钉钉</div></div><div data-dm-p="4-13" class="s117"><div data-dm-p="4-14" class="s63">企业微信</div></div><div data-dm-p="4-15" class="s117"><div data-dm-p="4-16" class="s63">Discord</div></div><div data-dm-p="4-17" class="s117"><div data-dm-p="4-18" class="s63">Slack</div></div></div><div class="s203"><div class="s242"><div class="s17">Webhook 地址</div><div class="s43"><div class="s243">https://open.feishu.cn/…/hook/•••• （已保存）</div></div></div><button type="button" class="s244"><div class="s32">发送测试</div></button></div></div></div><div class="s248"><div class="s209"><div class="s49">浏览器通知</div><div class="s17">页面打开时弹出系统通知</div></div><div class="s17">已开启</div></div></div><div class="s90"><div class="s221">推送哪些事件</div><div class="s249"><div class="s209"><div class="s49">下单失败与引擎错误</div><div class="s17">重试 3 次仍失败、签名错误、时钟偏差</div></div><div class="s250"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s251"></div></div><div class="s248"><div class="s209"><div class="s49">风控触发</div><div class="s17">亏损上限、盈利目标、单仓止盈止损、信号源失联、急停</div></div><div class="s250"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s251"></div></div><div class="s248"><div class="s209"><div class="s49">任务启停与恢复</div><div class="s17">任务启动、暂停、停止，信号源恢复</div></div><div class="s250"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s251"></div></div><div data-dm-p="4-19" class="s252"><div class="s209"><div class="s49">每次开平仓</div><div class="s17">信号源开、加、减、平仓及跟单成交；成交频繁时消息较多</div></div><div data-dm-p="4-20" class="s253"><img data-dm-p="4-21" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiLz48L3N2Zz4=" alt class="s251"></div></div></div><div class="s90"><div class="s221">每日报告与心跳</div><div class="s254"><div class="s209"><div class="s49">每日报告</div><div class="s17">汇总昨日盈亏、成交、失败与各任务表现，按服务器时区发送</div></div><div class="s54"><div data-dm-p="4-22" class="s255"><div class="s44">08:00</div></div><div data-dm-p="4-23" class="s240"><div data-dm-p="4-24" class="s48"></div></div></div></div><div class="s245"><div class="s65"><div class="s209"><div class="s49">心跳外发</div><div class="s17">引擎正常运行时定时请求该地址；外部监控收不到即告警，可发现服务器宕机或断网</div></div><div data-dm-p="4-25" class="s240"><div data-dm-p="4-26" class="s48"></div></div></div><div data-dm-p="4-27" class="s203"><div class="s242"><div class="s17">心跳地址（如 healthchecks.io、Uptime Kuma 推送地址）</div><div class="s43"><div class="s243">https://hc-ping.com/••••（已保存）</div></div></div><div class="s45"><div class="s17">间隔</div><div class="s43"><div class="s44">60</div><div class="s17">秒</div></div></div></div><div data-dm-p="4-28" class="s17">上次发送 12 秒前，HTTP 200</div></div></div><div class="s256"><button type="submit" class="s257"><div class="s110">保存通知设置</div></button></div></div><div class="s258"><div class="s17">消息预览</div><div class="s259"><div class="s15"><div class="s260">风控触发</div><div class="s17">02:14</div></div><div class="s49">HL 聪明钱 #1：SOL 多仓触发止损（ROE −25.1%）</div><div class="s17">模拟 A 市价平仓 18.4 SOL @ 229.10，实现 −222.64 USDT；SOL 暂停跟随，等信号源平仓后再跟。</div></div><div class="s261"><div class="s15"><div class="s262">每日报告 11-21</div><div class="s17">08:00</div></div><div class="s14">+412.08（+1.86%）</div><div class="s209"><div class="s17">运行任务 3 个，成交 46 笔，失败 0 笔</div><div class="s17">最佳：HL 聪明钱 #1 +286.20</div><div class="s17">最差：ETH 反向 −32.10</div></div></div><div data-dm-p="4-29" class="s263"><div class="s15"><div class="s32">开仓</div><div class="s17">01:52</div></div><div class="s49">信号源 BTC 开多 +12.5，主账户跟单 +0.026 @ 97,812</div></div></div></div></div></div></div></section><section class="dm-frame dm-s5" data-dm-frame="5"><div class="s264"><div data-dm-p="5-0" class="s265"><div class="s266"><div class="s267"></div></div><div class="s268"><div class="s37"><div class="s61"><div class="s145">0x5d2f…91ab</div><div class="s199">82</div></div><div class="s17">权益 $3.21M，30 天 +38.2%，回撤 12.4%</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGMEI5MEIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTEuNTI1IDIuMjk1YS41My41MyAwIDAgMSAuOTUgMGwyLjMxIDQuNjc5YTIuMTIzIDIuMTIzIDAgMCAwIDEuNTk1IDEuMTZsNS4xNjYuNzU2YS41My41MyAwIDAgMSAuMjk0LjkwNGwtMy43MzYgMy42MzhhMi4xMjMgMi4xMjMgMCAwIDAtLjYxMSAxLjg3OGwuODgyIDUuMTRhLjUzLjUzIDAgMCAxLS43NzEuNTZsLTQuNjE4LTIuNDI4YTIuMTIyIDIuMTIyIDAgMCAwLTEuOTczIDBMNi4zOTYgMjEuMDFhLjUzLjUzIDAgMCAxLS43Ny0uNTZsLjg4MS01LjEzOWEyLjEyMiAyLjEyMiAwIDAgMC0uNjExLTEuODc5TDIuMTYgOS43OTVhLjUzLjUzIDAgMCAxIC4yOTQtLjkwNmw1LjE2NS0uNzU1YTIuMTIyIDIuMTIyIDAgMCAwIDEuNTk3LTEuMTZ6Ii8+PC9zdmc+" alt class="s269"></div><div class="s270"><div class="s271"><div class="s28">概览</div></div><div class="s271"><div class="s28">持仓 4</div></div><div class="s272"><div class="s32">跟单模拟</div></div></div><div class="s273"><div class="s274"><div class="s242"><div class="s17">模拟本金</div><div class="s275"><div class="s44">1,000</div><div class="s17">USDT</div></div></div><div class="s53"><div class="s17">区间</div><div class="s276"><div data-dm-p="5-1" class="s117"><div data-dm-p="5-2" class="s63">7 天</div></div><div data-dm-p="5-3" class="s117"><div data-dm-p="5-4" class="s63">30 天</div></div></div></div></div><div class="s37"><div data-dm-p="5-5" class="s17">近 30 天跟单预计盈亏</div><div class="s210"><div data-dm-p="5-6" class="s138">+312.40</div><div data-dm-p="5-7" class="s277">+31.24%</div></div><div data-dm-p="5-8" class="s17">交易员同期 +38.20%，跟单效率 81.8%</div></div><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzNTgiIGhlaWdodD0iMTQwIiB2aWV3Qm94PSIwIDAgMzU4IDE0MCI+PGxpbmUgeDE9IjAiIHgyPSIzNTgiIHkxPSIzNS4wIiB5Mj0iMzUuMCIgc3Ryb2tlPSIjMkIzMTM5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMCIgeDI9IjM1OCIgeTE9IjcwLjAiIHkyPSI3MC4wIiBzdHJva2U9IiMyQjMxMzkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIwIiB4Mj0iMzU4IiB5MT0iMTA1LjAiIHkyPSIxMDUuMCIgc3Ryb2tlPSIjMkIzMTM5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMCIgeDI9IjM1OCIgeTE9IjEyNy43IiB5Mj0iMTI3LjciIHN0cm9rZT0iIzVFNjY3MyIgc3Ryb2tlLWRhc2hhcnJheT0iMyAzIi8+PHBvbHlsaW5lIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVCOUNGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHBvaW50cz0iMi4wLDEyNy43IDguMCwxMjcuNCAxNC4wLDEyMS44IDIwLjAsMTIxLjMgMjYuMCwxMjEuNSAzMi4wLDEyNS45IDM4LjAsMTI1LjMgNDQuMCwxMTUuNSA1MC4wLDExMC41IDU2LjAsMTAxLjMgNjIuMCw5Ny41IDY4LjAsOTIuNyA3NC4wLDg5LjQgODAuMCw5OC45IDg2LjAsOTAuOSA5Mi4wLDg1LjQgOTguMCw3OS44IDEwNC4wLDg5LjUgMTEwLjAsOTkuNiAxMTYuMCwxMDMuNyAxMjIuMCwxMDQuOSAxMjguMCwxMDAuNyAxMzQuMCw5OS4wIDE0MC4wLDkzLjMgMTQ2LjAsOTUuNyAxNTIuMCw5MS42IDE1OC4wLDg2LjggMTY0LjAsODkuMyAxNzAuMCw3NS4zIDE3Ni4wLDY5LjQgMTgyLjAsNTkuMSAxODguMCw2MS4zIDE5NC4wLDY0LjQgMjAwLjAsNjQuNyAyMDYuMCw2My40IDIxMi4wLDU3LjAgMjE4LjAsNTMuMiAyMjQuMCw1NC4zIDIzMC4wLDU4LjkgMjM2LjAsNjAuNCAyNDIuMCw0OS45IDI0OC4wLDUzLjUgMjU0LjAsNDkuNyAyNjAuMCw0NC43IDI2Ni4wLDUzLjAgMjcyLjAsNTAuNiAyNzguMCwzOS41IDI4NC4wLDUxLjQgMjkwLjAsNTEuNiAyOTYuMCw1MC4zIDMwMi4wLDUzLjkgMzA4LjAsNDguNCAzMTQuMCw0Ni44IDMyMC4wLDU0LjkgMzI2LjAsNDcuMSAzMzIuMCw0MC40IDMzOC4wLDMxLjggMzQ0LjAsMTkuNyAzNTAuMCwxNS4yIDM1Ni4wLDEyLjMiLz48cG9seWxpbmUgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjBCOTBCIiBzdHJva2Utd2lkdGg9IjIiIHBvaW50cz0iMi4wLDEyNy43IDguMCwxMjcuNiAxNC4wLDEyMy4yIDIwLjAsMTIzLjAgMjYuMCwxMjMuMiAzMi4wLDEyNy4wIDM4LjAsMTI2LjcgNDQuMCwxMTguOCA1MC4wLDExNC45IDU2LjAsMTA3LjUgNjIuMCwxMDQuNSA2OC4wLDEwMC44IDc0LjAsOTguMiA4MC4wLDEwNi4xIDg2LjAsOTkuOCA5Mi4wLDk1LjMgOTguMCw5MS4wIDEwNC4wLDk5LjEgMTEwLjAsMTA3LjUgMTE2LjAsMTExLjAgMTIyLjAsMTEyLjIgMTI4LjAsMTA4LjkgMTM0LjAsMTA3LjYgMTQwLjAsMTAzLjIgMTQ2LjAsMTA1LjMgMTUyLjAsMTAyLjAgMTU4LjAsOTguMiAxNjQuMCwxMDAuNSAxNzAuMCw4OS4yIDE3Ni4wLDg0LjUgMTgyLjAsNzYuMiAxODguMCw3OC4yIDE5NC4wLDgwLjggMjAwLjAsODEuMyAyMDYuMCw4MC40IDIxMi4wLDc1LjIgMjE4LjAsNzIuMyAyMjQuMCw3My4zIDIzMC4wLDc3LjIgMjM2LjAsNzguNyAyNDIuMCw3MC4yIDI0OC4wLDczLjMgMjU0LjAsNzAuNCAyNjAuMCw2Ni40IDI2Ni4wLDczLjQgMjcyLjAsNzEuNiAyNzguMCw2Mi42IDI4NC4wLDcyLjYgMjkwLjAsNzIuOSAyOTYuMCw3MS45IDMwMi4wLDc1LjEgMzA4LjAsNzAuNyAzMTQuMCw2OS41IDMyMC4wLDc2LjQgMzI2LjAsNzAuMSAzMzIuMCw2NC44IDMzOC4wLDU3LjkgMzQ0LjAsNDguMiAzNTAuMCw0NC42IDM1Ni4wLDQyLjQiLz48L3N2Zz4=" alt class="s278"><div class="s50"><div class="s61"><div class="s213"></div><div class="s17">模拟跟单</div></div><div class="s61"><div class="s214"></div><div class="s17">交易员按比例</div></div></div><div class="s279"><div class="s280"><div class="s17">最大回撤</div><div class="s281">−9.8%</div></div><div class="s282"><div class="s17">模拟成交</div><div class="s283">214 笔</div></div><div class="s284"><div class="s17">跳过（低于最小下单）</div><div class="s285">37 笔（15%）</div></div><div class="s286"><div class="s17">手续费 + 滑点</div><div class="s287">−27.80</div></div></div><div class="s231"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGMEEwMzAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtMjEuNzMgMTgtOC0xNGEyIDIgMCAwIDAtMy40OCAwbC04IDE0QTIgMiAwIDAgMCA0IDIxaDE2YTIgMiAwIDAgMCAxLjczLTMiLz48cGF0aCBkPSJNMTIgOXY0Ii8+PHBhdGggZD0iTTEyIDE3aC4wMSIvPjwvc3ZnPg==" alt class="s232"><div class="s233">本金提高到 2,500 USDT 以上，跳过的加减仓会明显减少。</div></div></div><div class="s288"><button type="button" class="s289"><div class="s110">用 1,000 USDT 本金跟单</div></button><div class="s290">基于公开成交回放，历史表现不代表未来收益</div></div></div></div></section><section class="dm-frame dm-s6" data-dm-frame="6"><div class="s264"><div class="s11"><div class="s291"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNFQUVDRUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtMTUgMTgtNi02IDYtNiIvPjwvc3ZnPg==" alt class="s200"><div class="s292">HL 聪明钱 #1</div><div class="s132"><div class="s24"></div><div class="s133">运行中</div></div></div><div class="s293"><div class="s17">累计盈亏 USDT</div><div class="s210"><div class="s138">+1,284.50</div><div class="s294">本金收益率 +42.82%</div></div><div class="s295"><div class="s90"><div class="s17">胜率</div><div class="s296">64.3%</div></div><div class="s90"><div class="s17">盈亏比</div><div class="s296">2.31</div></div><div class="s90"><div class="s17">平均持仓</div><div class="s296">9h 24m</div></div></div></div><div class="s270"><div class="s271"><div class="s28">持仓 3</div></div><div class="s272"><div class="s32">历史 28</div></div><div class="s271"><div class="s28">对比</div></div><div class="s271"><div class="s28">挂单</div></div><div class="s271"><div class="s28">日志</div></div></div><div class="s297">近 30 天 · 全部账户 · 按平仓时间倒序</div><div class="s298"><div class="s299"><div class="s300"></div><div class="s301"><div class="s61"><div class="s32">HYPE 多 5x</div><div class="s302">止盈</div></div><div class="s17">主账户，11-19 10:00 起持仓 11h 48m</div></div><div class="s211"><div class="s277">+453.12</div><div class="s144">+49.4%</div></div></div><div class="s299"><div class="s303"></div><div class="s301"><div class="s61"><div class="s32">ETH 空 4x</div><div class="s302">移动止盈</div></div><div class="s17">主账户，11-20 08:40 起持仓 7h 42m</div></div><div class="s211"><div class="s277">+180.50</div><div class="s144">+16.9%</div></div></div><div class="s299"><div class="s300"></div><div class="s301"><div class="s61"><div class="s32">BTC 多 10x</div><div class="s304">跟随平仓</div></div><div class="s17">主账户，11-20 14:02 起持仓 19h 13m</div></div><div class="s211"><div class="s277">+111.30</div><div class="s144">+27.8%</div></div></div><div class="s299"><div class="s300"></div><div class="s301"><div class="s61"><div class="s32">SOL 多 10x</div><div class="s305">止损</div></div><div class="s17">模拟 A，11-19 22:10 起持仓 4h 55m</div></div><div class="s211"><div class="s306">−222.64</div><div class="s307">−50.2%</div></div></div><div class="s299"><div class="s300"></div><div class="s301"><div class="s61"><div class="s32">AVAX 多 5x</div><div class="s308">风控平仓</div></div><div class="s17">主账户，11-18 19:31 起持仓 3h 31m</div></div><div class="s211"><div class="s306">−64.30</div><div class="s307">−10.0%</div></div></div></div><div class="s309"><button type="button" class="s206"><div class="s32">加载更多（还有 23 笔）</div></button></div><div class="s11"></div><div class="s310"><div class="s311"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIzIiByeD0iMSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjciIHg9IjE0IiB5PSIxNCIgcng9IjEiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSI3IiB4PSIzIiB5PSIxNCIgcng9IjEiLz48L3N2Zz4=" alt class="s200"><div class="s17">总览</div></div><div class="s311"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNGMEI5MEIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHg9IjgiIHk9IjgiIHJ4PSIyIiByeT0iMiIvPjxwYXRoIGQ9Ik00IDE2Yy0xLjEgMC0yLS45LTItMlY0YzAtMS4xLjktMiAyLTJoMTBjMS4xIDAgMiAuOSAyIDIiLz48L3N2Zz4=" alt class="s200"><div class="s312">任务</div></div><div class="s311"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTYuMjQ3IDcuNzYxYTYgNiAwIDAgMSAwIDguNDc4Ii8+PHBhdGggZD0iTTE5LjA3NSA0LjkzM2ExMCAxMCAwIDAgMSAwIDE0LjEzNCIvPjxwYXRoIGQ9Ik00LjkyNSAxOS4wNjdhMTAgMTAgMCAwIDEgMC0xNC4xMzQiLz48cGF0aCBkPSJNNy43NTMgMTYuMjM5YTYgNiAwIDAgMSAwLTguNDc4Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjwvc3ZnPg==" alt class="s200"><div class="s17">信号源</div></div><div class="s311"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTkgN1Y0YTEgMSAwIDAgMC0xLTFINWEyIDIgMCAwIDAgMCA0aDE1YTEgMSAwIDAgMSAxIDF2NGgtM2EyIDIgMCAwIDAgMCA0aDNhMSAxIDAgMCAwIDEtMXYtMmExIDEgMCAwIDAtMS0xIi8+PHBhdGggZD0iTTMgNXYxNGEyIDIgMCAwIDAgMiAyaDE1YTEgMSAwIDAgMCAxLTF2LTQiLz48L3N2Zz4=" alt class="s200"><div class="s17">账户</div></div><div class="s311"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5QUEzQUUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxIi8+PGNpcmNsZSBjeD0iMTkiIGN5PSIxMiIgcj0iMSIvPjxjaXJjbGUgY3g9IjUiIGN5PSIxMiIgcj0iMSIvPjwvc3ZnPg==" alt class="s200"><div class="s17">更多</div></div></div></div></div></section></main>
+<script>
+// penhold-mcp 原型交互运行时
+(function () {
+var __name = function (f) { return f; };
+var createProtoEngine = function createProtoEngine() {
+    const FNS = {
+        len: (x) => String(x ?? '').length,
+        pad: (x, n) => String(x ?? '').padStart(Number(n) || 2, '0'),
+        floor: (x) => Math.floor(Number(x) || 0),
+        min: (a, b) => Math.min(Number(a), Number(b)),
+        max: (a, b) => Math.max(Number(a), Number(b)),
+    };
+    const LEVELS = [['||'], ['&&'], ['==', '!='], ['<', '>', '<=', '>='], ['+', '-'], ['*', '/', '%']];
+    const TEMPLATE_RE = /\{\{([\s\S]+?)\}\}/g;
+    class ExprError extends Error {
+    }
+    function tokenize(src) {
+        const out = [];
+        const re = /\s*(?:(\d+(?:\.\d+)?)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|([a-zA-Z_][a-zA-Z0-9_]*)|(==|!=|<=|>=|&&|\|\||[-+*/%!<>?:(),]))/y;
+        let i = 0;
+        while (i < src.length) {
+            if (/^\s*$/.test(src.slice(i)))
+                break;
+            re.lastIndex = i;
+            const m = re.exec(src);
+            if (!m)
+                throw new ExprError(`无法识别 “${src.slice(i).trim().slice(0, 12)}”`);
+            out.push(m[1] ?? m[2] ?? m[3] ?? m[4]);
+            i = re.lastIndex;
+        }
+        return out;
+    }
+    const cache = new Map();
+    function parseExpr(src) {
+        const hit = cache.get(src);
+        if (hit)
+            return hit;
+        if (src.length > 500)
+            throw new ExprError('表达式过长');
+        const t = tokenize(src);
+        let p = 0;
+        const peek = () => t[p];
+        const eat = (s) => {
+            const v = t[p];
+            if (s !== undefined && v !== s)
+                throw new ExprError(`缺少 “${s}”`);
+            if (v === undefined)
+                throw new ExprError('表达式不完整');
+            p++;
+            return v;
+        };
+        const bin = (lvl) => {
+            if (lvl === LEVELS.length)
+                return unary();
+            let a = bin(lvl + 1);
+            while (LEVELS[lvl].includes(peek())) {
+                const op = eat();
+                a = { k: 'bin', op, a, b: bin(lvl + 1) };
+            }
+            return a;
+        };
+        const unary = () => {
+            if (peek() === '!' || peek() === '-') {
+                const op = eat();
+                return { k: 'un', op, a: unary() };
+            }
+            return primary();
+        };
+        const primary = () => {
+            const v = eat();
+            if (v === '(') {
+                const e = expr();
+                eat(')');
+                return e;
+            }
+            if (/^\d/.test(v))
+                return { k: 'lit', v: Number(v) };
+            if (v[0] === "'" || v[0] === '"')
+                return { k: 'lit', v: v.slice(1, -1).replace(/\\(.)/g, '$1') };
+            if (v === 'true' || v === 'false')
+                return { k: 'lit', v: v === 'true' };
+            if (/^[a-zA-Z_]/.test(v)) {
+                if (peek() !== '(')
+                    return { k: 'var', n: v };
+                if (!FNS[v])
+                    throw new ExprError(`未知函数 ${v}()`);
+                eat('(');
+                const args = [];
+                if (peek() !== ')') {
+                    args.push(expr());
+                    while (peek() === ',') {
+                        eat(',');
+                        args.push(expr());
+                    }
+                }
+                eat(')');
+                return { k: 'call', f: v, args };
+            }
+            throw new ExprError(`意外的 “${v}”`);
+        };
+        const expr = () => {
+            const c = bin(0);
+            if (peek() !== '?')
+                return c;
+            eat('?');
+            const a = expr();
+            eat(':');
+            return { k: 'cond', c, a, b: expr() };
+        };
+        const ast = expr();
+        if (p < t.length)
+            throw new ExprError(`多余的 “${t[p]}”`);
+        if (cache.size > 2000)
+            cache.clear();
+        cache.set(src, ast);
+        return ast;
+    }
+    const eq = (a, b) => (typeof a === typeof b ? a === b : String(a) === String(b));
+    function run(a, vars) {
+        switch (a.k) {
+            case 'lit':
+                return a.v;
+            case 'var':
+                return vars[a.n] ?? '';
+            case 'un': {
+                const v = run(a.a, vars);
+                return a.op === '!' ? !v : -Number(v);
+            }
+            case 'cond':
+                return run(a.c, vars) ? run(a.a, vars) : run(a.b, vars);
+            case 'call':
+                return FNS[a.f](...a.args.map((x) => run(x, vars)));
+            case 'bin': {
+                if (a.op === '&&')
+                    return run(a.a, vars) && run(a.b, vars);
+                if (a.op === '||')
+                    return run(a.a, vars) || run(a.b, vars);
+                const l = run(a.a, vars);
+                const r = run(a.b, vars);
+                switch (a.op) {
+                    case '==':
+                        return eq(l, r);
+                    case '!=':
+                        return !eq(l, r);
+                    case '+':
+                        return typeof l === 'number' && typeof r === 'number' ? l + r : `${l}${r}`;
+                    case '-':
+                        return Number(l) - Number(r);
+                    case '*':
+                        return Number(l) * Number(r);
+                    case '/':
+                        return Number(l) / Number(r);
+                    case '%':
+                        return Number(l) % Number(r);
+                    case '<':
+                        return Number(l) < Number(r);
+                    case '>':
+                        return Number(l) > Number(r);
+                    case '<=':
+                        return Number(l) <= Number(r);
+                    case '>=':
+                        return Number(l) >= Number(r);
+                }
+            }
+        }
+        return '';
+    }
+    /** 求值；语法错误返回 undefined。 */
+    function evalExpr(src, vars) {
+        try {
+            return run(parseExpr(src), vars);
+        }
+        catch {
+            return undefined;
+        }
+    }
+    const truthy = (src, vars) => (src === undefined ? true : !!evalExpr(src, vars));
+    /** 文本插值：{{表达式}}。 */
+    function renderTemplate(text, vars) {
+        return text.replace(TEMPLATE_RE, (_, e) => {
+            const v = evalExpr(e.trim(), vars);
+            return v === undefined ? '' : typeof v === 'number' ? String(Math.round(v * 1000) / 1000) : String(v);
+        });
+    }
+    /** 一个画板的运行时：维护状态变量，执行动作，按状态刷新显隐、条件样式、文本与禁用。 */
+    class ProtoRuntime {
+        win;
+        nav;
+        vars = {};
+        entries = new Map();
+        els = [];
+        countdowns = new Map();
+        timeouts = new Set();
+        /** 进入画板或停止时递增：之前排队的动作不再执行。 */
+        gen = 0;
+        constructor(win, nav) {
+            this.win = win;
+            this.nav = nav;
+        }
+        /** 进入画板：重置状态。 */
+        reset(initial) {
+            this.stopAll();
+            this.vars = { ...initial };
+        }
+        /** 文档变化后同一画板重绘：保留当前状态，只补充新声明的变量。 */
+        merge(initial) {
+            for (const [k, v] of Object.entries(initial))
+                if (!(k in this.vars))
+                    this.vars[k] = v;
+        }
+        /** 绑定渲染结果：root 内 data-dm-p="<prefix><序号>" 的元素对应 entries[序号]。 */
+        mount(root, entries, prefix = '') {
+            this.entries = new Map(entries.map((e, i) => [prefix + i, e]));
+            this.els = [];
+            for (const [id, e] of this.entries) {
+                const el = root.querySelector(`[data-dm-p="${id}"]`);
+                if (!el)
+                    continue;
+                if (e.proto.onClick)
+                    el.setAttribute('data-dm-click', '');
+                // 内联样式模式下元素自带样式：条件样式叠加在其后
+                this.els.push([el, e, el.getAttribute('style') ?? '']);
+            }
+            this.apply();
+        }
+        owns(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id !== null && this.entries.has(id);
+        }
+        runLoad() {
+            for (const e of this.entries.values())
+                if (e.proto.onLoad)
+                    this.run(e.proto.onLoad);
+        }
+        stopAll() {
+            this.gen++;
+            for (const t of this.countdowns.values())
+                this.win.clearInterval(t);
+            for (const t of this.timeouts)
+                this.win.clearTimeout(t);
+            this.countdowns.clear();
+            this.timeouts.clear();
+        }
+        apply() {
+            const v = this.vars;
+            for (const [el, e, base] of this.els) {
+                const css = base ? [base] : [];
+                for (const s of e.styles)
+                    if (truthy(s.when, v))
+                        css.push(...s.css);
+                if (!truthy(e.proto.show, v))
+                    css.push('display:none');
+                const text = css.join(';');
+                if (el.style.cssText !== text)
+                    el.style.cssText = text;
+                el.toggleAttribute('data-dm-disabled', e.proto.disabled !== undefined && truthy(e.proto.disabled, v));
+                if (e.template && !el.firstElementChild) {
+                    const t = renderTemplate(e.template, v);
+                    if (el.textContent !== t)
+                        el.textContent = t;
+                }
+                if (e.proto.bind && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+                    const field = el;
+                    const val = String(v[e.proto.bind] ?? '');
+                    if (field.value !== val && el.ownerDocument.activeElement !== el)
+                        field.value = val;
+                }
+            }
+        }
+        entryOf(el) {
+            const id = el.getAttribute('data-dm-p');
+            return id === null ? undefined : this.entries.get(id);
+        }
+        /** 处理点击：返回是否命中了可交互元素（含被禁用的元素）。 */
+        click(target) {
+            let el = target.closest('[data-dm-click],[data-dm-href]');
+            while (el) {
+                if (el.hasAttribute('data-dm-disabled'))
+                    return true;
+                const e = this.entryOf(el);
+                const href = el.getAttribute('data-dm-href');
+                if (e?.proto.onClick || href) {
+                    const gen = this.gen;
+                    if (e?.proto.onClick)
+                        this.run(e.proto.onClick);
+                    if (href && gen === this.gen)
+                        this.nav.follow(href);
+                    return true;
+                }
+                el = el.parentElement?.closest('[data-dm-click],[data-dm-href]') ?? null;
+            }
+            return !!target.closest('[data-dm-disabled]');
+        }
+        input(target) {
+            const e = this.entryOf(target);
+            if (!e?.proto.bind || !('value' in target))
+                return;
+            this.vars[e.proto.bind] = String(target.value);
+            this.apply();
+        }
+        run(actions) {
+            const gen = this.gen;
+            for (const a of actions) {
+                if (gen !== this.gen)
+                    return;
+                switch (a.do) {
+                    case 'set': {
+                        const v = a.expr !== undefined ? evalExpr(a.expr, this.vars) : a.value;
+                        if (v !== undefined)
+                            this.vars[a.var] = v;
+                        break;
+                    }
+                    case 'toggle':
+                        this.vars[a.var] = !this.vars[a.var];
+                        break;
+                    case 'countdown': {
+                        this.clearCountdown(a.var);
+                        this.vars[a.var] = a.from;
+                        const t = this.win.setInterval(() => {
+                            const n = Number(this.vars[a.var]) - 1;
+                            this.vars[a.var] = Math.max(0, n);
+                            if (n <= 0) {
+                                this.clearCountdown(a.var);
+                                if (a.then)
+                                    this.run(a.then);
+                            }
+                            this.apply();
+                        }, a.interval ?? 1000);
+                        this.countdowns.set(a.var, t);
+                        break;
+                    }
+                    case 'stop':
+                        this.clearCountdown(a.var);
+                        break;
+                    case 'delay': {
+                        const t = this.win.setTimeout(() => {
+                            this.timeouts.delete(t);
+                            if (gen === this.gen)
+                                this.run(a.then);
+                        }, a.ms);
+                        this.timeouts.add(t);
+                        break;
+                    }
+                    case 'if':
+                        this.run((truthy(a.when, this.vars) ? a.then : a.else) ?? []);
+                        break;
+                    case 'navigate':
+                        return this.nav.go(a.frame);
+                    case 'back':
+                        return this.nav.back();
+                    case 'open':
+                        this.nav.open(a.url);
+                        break;
+                }
+            }
+            if (gen === this.gen)
+                this.apply();
+        }
+        clearCountdown(name) {
+            const t = this.countdowns.get(name);
+            if (t !== undefined)
+                this.win.clearInterval(t);
+            this.countdowns.delete(name);
+        }
+    }
+    return { ExprError, parseExpr, evalExpr, truthy, renderTemplate, ProtoRuntime };
+};
+var D = {"ids":["f_8l8g01sb","f_mkedy3oz","f_x674t0fb","f_sl0847v4","f_x95vxcn7","f_fb9rp8gf","f_dh4n0c4s"],"files":{},"frames":[{"vars":{"mode":"alloc","compound":true,"mm":"isolated","tpsl":true,"trail":true},"entries":[{"proto":{"vars":{"mode":"alloc","compound":true,"mm":"isolated","tpsl":true,"trail":true}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"mode","value":"alloc"}],"styles":[{"when":"mode=='alloc'","style":{"background":"{color.muted}","innerShadow":"0 0 0 1px {color.fg}"}}]},"styles":[{"when":"mode=='alloc'","css":["background:var(--color-muted)","box-shadow:inset 0 0 0 1px var(--color-fg)"]}]},{"proto":{"onClick":[{"do":"set","var":"mode","value":"eq"}],"styles":[{"when":"mode=='eq'","style":{"background":"{color.muted}","innerShadow":"0 0 0 1px {color.fg}"}}]},"styles":[{"when":"mode=='eq'","css":["background:var(--color-muted)","box-shadow:inset 0 0 0 1px var(--color-fg)"]}]},{"proto":{"onClick":[{"do":"set","var":"mode","value":"mul"}],"styles":[{"when":"mode=='mul'","style":{"background":"{color.muted}","innerShadow":"0 0 0 1px {color.fg}"}}]},"styles":[{"when":"mode=='mul'","css":["background:var(--color-muted)","box-shadow:inset 0 0 0 1px var(--color-fg)"]}]},{"proto":{"onClick":[{"do":"set","var":"mode","value":"fix"}],"styles":[{"when":"mode=='fix'","style":{"background":"{color.muted}","innerShadow":"0 0 0 1px {color.fg}"}}]},"styles":[{"when":"mode=='fix'","css":["background:var(--color-muted)","box-shadow:inset 0 0 0 1px var(--color-fg)"]}]},{"proto":{"show":"mode=='alloc'"},"styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"compound"}]},"styles":[]},{"proto":{"styles":[{"when":"compound","style":{"background":"{color.primary}"}}]},"styles":[{"when":"compound","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"compound","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"compound","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{"show":"mode=='eq' || mode=='mul'"},"styles":[]},{"proto":{"show":"mode=='fix'"},"styles":[]},{"proto":{"show":"mode=='alloc'"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"mm","value":"cross"}],"styles":[{"when":"mm=='cross'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"mm=='cross'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"mm=='cross'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"mm=='cross'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"mm","value":"isolated"}],"styles":[{"when":"mm=='isolated'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"mm=='isolated'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"mm=='isolated'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"mm=='isolated'","css":["color:var(--color-primary)"]}]},{"proto":{},"template":"{{mm=='isolated' ? '逐仓：每个币种单独占用保证金，单币爆仓不会拖累账户其他仓位。' : '全仓：所有仓位共用账户保证金，资金利用率高，但一笔大亏会影响全部仓位。'}}","styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"tpsl"}]},"styles":[]},{"proto":{"styles":[{"when":"tpsl","style":{"background":"{color.primary}"}}]},"styles":[{"when":"tpsl","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"tpsl","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"tpsl","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{},"template":"{{tpsl ? '已开启' : '已关闭'}}","styles":[]},{"proto":{"show":"tpsl"},"styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"trail"}]},"styles":[]},{"proto":{"styles":[{"when":"trail","style":{"background":"{color.primary}"}}]},"styles":[{"when":"trail","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"trail","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"trail","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{"styles":[{"when":"!trail","style":{"opacity":0.4}}]},"styles":[{"when":"!trail","css":["opacity:0.4"]}]},{"proto":{"styles":[{"when":"!trail","style":{"opacity":0.4}}]},"styles":[{"when":"!trail","css":["opacity:0.4"]}]},{"proto":{"styles":[{"when":"!trail","style":{"opacity":0.4}}]},"styles":[{"when":"!trail","css":["opacity:0.4"]}]},{"proto":{"styles":[{"when":"!trail","style":{"opacity":0.4}}]},"styles":[{"when":"!trail","css":["opacity:0.4"]}]}]},{"vars":{"target":true,"act":"close","unit":"pct","closeLoss":true},"entries":[{"proto":{"vars":{"target":true,"act":"close","unit":"pct","closeLoss":true}},"styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"target"}]},"styles":[]},{"proto":{"styles":[{"when":"target","style":{"background":"{color.primary}"}}]},"styles":[{"when":"target","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"target","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"target","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{},"template":"{{target ? '已开启' : '已关闭'}}","styles":[]},{"proto":{"show":"target"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"act","value":"pause"}],"styles":[{"when":"act=='pause'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"act=='pause'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"act=='pause'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"act=='pause'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"act","value":"close"}],"styles":[{"when":"act=='close'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"act=='close'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"act=='close'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"act=='close'","css":["color:var(--color-primary)"]}]},{"proto":{"show":"target"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"unit","value":"usdt"}],"styles":[{"when":"unit=='usdt'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"unit=='usdt'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"unit=='usdt'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"unit=='usdt'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"unit","value":"pct"}],"styles":[{"when":"unit=='pct'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"unit=='pct'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"unit=='pct'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"unit=='pct'","css":["color:var(--color-primary)"]}]},{"proto":{},"template":"{{unit=='pct' ? '5' : '150'}}","styles":[]},{"proto":{},"template":"{{unit=='pct' ? '%' : 'USDT'}}","styles":[]},{"proto":{},"template":"{{unit=='pct' ? '20' : '600'}}","styles":[]},{"proto":{},"template":"{{unit=='pct' ? '%' : 'USDT'}}","styles":[]},{"proto":{"show":"unit=='pct'"},"styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"closeLoss"}]},"styles":[]},{"proto":{"styles":[{"when":"closeLoss","style":{"background":"{color.primary}"}}]},"styles":[{"when":"closeLoss","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"closeLoss","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"closeLoss","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]}]},{"vars":{"tab":"hist","acct":"all"},"entries":[{"proto":{"vars":{"tab":"hist","acct":"all"}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"acct","value":"all"}],"styles":[{"when":"acct=='all'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"acct=='all'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"acct=='all'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"acct=='all'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"acct","value":"main"}],"styles":[{"when":"acct=='main'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"acct=='main'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"acct=='main'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"acct=='main'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"acct","value":"sim"}],"styles":[{"when":"acct=='sim'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"acct=='sim'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"acct=='sim'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"acct=='sim'","css":["color:var(--color-primary)"]}]}]},{"vars":{"win":"30d","cap":"1000"},"entries":[{"proto":{"vars":{"win":"30d","cap":"1000"}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"win","value":"7d"}],"styles":[{"when":"win=='7d'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"win=='7d'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"win=='7d'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"win=='7d'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"win","value":"30d"}],"styles":[{"when":"win=='30d'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"win=='30d'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"win=='30d'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"win=='30d'","css":["color:var(--color-primary)"]}]},{"proto":{},"template":"{{win=='30d' ? '近 30 天' : '近 7 天'}}跟单这个钱包，预计盈亏","styles":[]},{"proto":{},"template":"{{win=='30d' ? '+312.40' : '+58.10'}}","styles":[]},{"proto":{},"template":"{{win=='30d' ? '+31.24%' : '+5.81%'}}","styles":[]},{"proto":{},"template":"{{win=='30d' ? '+38.20%' : '+7.02%'}}","styles":[]}]},{"vars":{"tg":true,"wh":true,"fmt":"feishu","evFill":false,"daily":true,"hb":true},"entries":[{"proto":{"vars":{"tg":true,"wh":true,"fmt":"feishu","evFill":false,"daily":true,"hb":true}},"styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"tg"}],"styles":[{"when":"tg","style":{"background":"{color.primary}"}}]},"styles":[{"when":"tg","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"tg","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"tg","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{"show":"tg"},"styles":[]},{"proto":{"onClick":[{"do":"toggle","var":"wh"}],"styles":[{"when":"wh","style":{"background":"{color.primary}"}}]},"styles":[{"when":"wh","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"wh","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"wh","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{"show":"wh"},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"fmt","value":"generic"}],"styles":[{"when":"fmt=='generic'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"fmt=='generic'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"fmt=='generic'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"fmt=='generic'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"fmt","value":"feishu"}],"styles":[{"when":"fmt=='feishu'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"fmt=='feishu'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"fmt=='feishu'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"fmt=='feishu'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"fmt","value":"dingtalk"}],"styles":[{"when":"fmt=='dingtalk'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"fmt=='dingtalk'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"fmt=='dingtalk'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"fmt=='dingtalk'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"fmt","value":"wecom"}],"styles":[{"when":"fmt=='wecom'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"fmt=='wecom'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"fmt=='wecom'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"fmt=='wecom'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"fmt","value":"discord"}],"styles":[{"when":"fmt=='discord'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"fmt=='discord'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"fmt=='discord'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"fmt=='discord'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"fmt","value":"slack"}],"styles":[{"when":"fmt=='slack'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"fmt=='slack'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"fmt=='slack'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"fmt=='slack'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"toggle","var":"evFill"}]},"styles":[]},{"proto":{"styles":[{"when":"evFill","style":{"background":"{color.primary}"}}]},"styles":[{"when":"evFill","css":["background:var(--color-primary)"]}]},{"proto":{"show":"evFill"},"styles":[]},{"proto":{"styles":[{"when":"!daily","style":{"opacity":0.4}}]},"styles":[{"when":"!daily","css":["opacity:0.4"]}]},{"proto":{"onClick":[{"do":"toggle","var":"daily"}],"styles":[{"when":"daily","style":{"background":"{color.primary}"}}]},"styles":[{"when":"daily","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"daily","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"daily","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{"onClick":[{"do":"toggle","var":"hb"}],"styles":[{"when":"hb","style":{"background":"{color.primary}"}}]},"styles":[{"when":"hb","css":["background:var(--color-primary)"]}]},{"proto":{"styles":[{"when":"hb","style":{"background":"{color.on-primary}","transform":"translate(14px, 0)"}}]},"styles":[{"when":"hb","css":["background:var(--color-on-primary)","transform:translate(14px, 0)"]}]},{"proto":{"show":"hb"},"styles":[]},{"proto":{"show":"hb"},"styles":[]},{"proto":{"show":"evFill"},"styles":[]}]},{"vars":{"win":"30d"},"entries":[{"proto":{"vars":{"win":"30d"}},"styles":[]},{"proto":{"onClick":[{"do":"set","var":"win","value":"7d"}],"styles":[{"when":"win=='7d'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"win=='7d'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"win=='7d'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"win=='7d'","css":["color:var(--color-primary)"]}]},{"proto":{"onClick":[{"do":"set","var":"win","value":"30d"}],"styles":[{"when":"win=='30d'","style":{"background":"{color.muted}"}}]},"styles":[{"when":"win=='30d'","css":["background:var(--color-muted)"]}]},{"proto":{"styles":[{"when":"win=='30d'","style":{"color":"{color.primary}"}}]},"styles":[{"when":"win=='30d'","css":["color:var(--color-primary)"]}]},{"proto":{},"template":"{{win=='30d' ? '近 30 天' : '近 7 天'}}跟单预计盈亏","styles":[]},{"proto":{},"template":"{{win=='30d' ? '+312.40' : '+58.10'}}","styles":[]},{"proto":{},"template":"{{win=='30d' ? '+31.24%' : '+5.81%'}}","styles":[]},{"proto":{},"template":"{{win=='30d' ? '交易员同期 +38.20%，跟单效率 81.8%' : '交易员同期 +7.02%，跟单效率 82.8%'}}","styles":[]}]},{"vars":{},"entries":[]}]};
+var E = createProtoEngine();
+var radios = Array.prototype.slice.call(document.querySelectorAll('input.dm-r'));
+var cur = 0, hist = [0];
+var nav = {
+  go: function (id) {
+    var i = D.ids.indexOf(id);
+    if (i >= 0) { if (radios[i]) radios[i].checked = true; enter(i, true); }
+    else if (D.files[id]) location.href = D.files[id];
+  },
+  back: function () {
+    if (hist.length > 1) { hist.pop(); var i = hist[hist.length - 1]; if (radios[i]) radios[i].checked = true; enter(i, false); }
+    else history.back();
+  },
+  open: function (url) { if (/^(https?:|mailto:|tel:)/i.test(url)) window.open(url, '_blank', 'noopener'); },
+  follow: function (href) {
+    if (href === '#back') return nav.back();
+    if (href.charAt(0) === '#') return nav.go(href.slice(1));
+    nav.open(href);
+  }
+};
+var rts = D.frames.map(function (f, i) {
+  var rt = new E.ProtoRuntime(window, nav);
+  rt.reset(f.vars);
+  rt.mount(document.querySelector('[data-dm-frame="' + i + '"]') || document, f.entries, i + '-');
+  return rt;
+});
+function enter(i, push) {
+  if (push && i === cur) return;
+  rts[cur].stopAll();
+  cur = i;
+  if (push) hist.push(i);
+  rts[i].reset(D.frames[i].vars);
+  rts[i].apply();
+  rts[i].runLoad();
+  window.scrollTo(0, 0);
+}
+radios.forEach(function (r, i) { r.addEventListener('change', function () { if (r.checked) enter(i, true); }); });
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  if (!t || !t.closest) return;
+  if (rts[cur].click(t) && t.closest('[data-dm-disabled],[data-dm-href]')) e.preventDefault();
+});
+document.addEventListener('input', function (e) { if (e.target && e.target.getAttribute) rts[cur].input(e.target); });
+rts[0].runLoad();
+})();
+</script>
+</body>
+</html>

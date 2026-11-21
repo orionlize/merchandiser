@@ -48,38 +48,73 @@ export class ServerError extends Error {
   constructor(
     message: string,
     public status: number,
+    /** Machine-readable error code (e.g. otp_required). */
+    public code?: string,
   ) {
     super(message);
   }
 }
 
-/** Calls one server command; rejects with the server's error message. */
+export interface OtpRequest {
+  /** The command that needs the code. */
+  cmd: string;
+  /** Why the last code was refused (null on the first ask). */
+  error: string | null;
+}
+
+/** Asks the user for a two-step code; resolves null when cancelled. Installed by the OTP dialog. */
+let otpPrompt: ((r: OtpRequest) => Promise<string | null>) | null = null;
+export function setOtpPrompt(f: typeof otpPrompt) {
+  otpPrompt = f;
+}
+
+// A verified code earns a ticket that skips the prompt for a few minutes.
+let graceTicket: string | null = null;
+
+const OTP_CODES = new Set(["otp_required", "otp_invalid", "otp_locked"]);
+
+/**
+ * Calls one server command; rejects with the server's error message. A
+ * sensitive command that needs a two-step code asks for it (through the OTP
+ * dialog) and is retried.
+ */
 export async function call<T>(cmd: string, args: Record<string, unknown> = {}, cfg: ServerConfig | null = config): Promise<T> {
   if (!cfg) throw new ServerError("未配置服务器地址", 0);
-  let res: Response;
-  try {
-    res = await fetch(`${cfg.url}/api/${cmd}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.token}` },
-      body: JSON.stringify(args),
-    });
-  } catch (e) {
-    throw new ServerError(`无法连接服务器 ${cfg.url}：${e instanceof Error ? e.message : String(e)}`, 0);
-  }
-  const text = await res.text();
-  let body: unknown = null;
-  if (text) {
+  let otp: string | null = null;
+  for (;;) {
+    let res: Response;
+    const headers: Record<string, string> = { "Content-Type": "application/json", Authorization: `Bearer ${cfg.token}` };
+    if (otp) headers["X-OTP"] = otp;
+    if (graceTicket) headers["X-OTP-Grace"] = graceTicket;
     try {
-      body = JSON.parse(text);
-    } catch {
-      body = text;
+      res = await fetch(`${cfg.url}/api/${cmd}`, { method: "POST", headers, body: JSON.stringify(args) });
+    } catch (e) {
+      throw new ServerError(`无法连接服务器 ${cfg.url}：${e instanceof Error ? e.message : String(e)}`, 0);
     }
+    const ticket = res.headers.get("X-OTP-Grace");
+    if (ticket) graceTicket = ticket;
+    const text = await res.text();
+    let body: unknown = null;
+    if (text) {
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = text;
+      }
+    }
+    if (res.ok) return body as T;
+    const obj = body && typeof body === "object" ? (body as { error?: unknown; code?: unknown }) : null;
+    const msg = obj && "error" in obj ? String(obj.error) : `HTTP ${res.status}`;
+    const code = obj && typeof obj.code === "string" ? obj.code : undefined;
+    // The lock screen asks for its own code inline.
+    if (code && OTP_CODES.has(code) && otpPrompt && cmd !== "unlock_app") {
+      const next = await otpPrompt({ cmd, error: code === "otp_required" ? null : msg });
+      if (next == null) throw new ServerError("已取消两步验证", 403, "otp_cancelled");
+      otp = next;
+      continue;
+    }
+    throw new ServerError(msg, res.status, code);
   }
-  if (!res.ok) {
-    const msg = body && typeof body === "object" && "error" in body ? String((body as { error: unknown }).error) : `HTTP ${res.status}`;
-    throw new ServerError(msg, res.status);
-  }
-  return body as T;
 }
 
 export type EngineEvent = { kind: "changed"; scope: string } | { kind: "alert"; level: string; title: string; detail?: string | null };
