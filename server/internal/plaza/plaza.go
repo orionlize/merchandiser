@@ -121,35 +121,136 @@ func Score(w *Wallet, win string) (int, Factors) {
 // ---------- service ----------
 
 type Service struct {
-	root   context.Context
-	hl     *exchange.Hyperliquid
+	root context.Context
+	hl   *exchange.Hyperliquid
+	// The crawler's budget, and a separate one for wallets the user opens so
+	// those never queue behind the crawl. Together a quarter of HL's per-IP budget.
 	budget *exchange.TokenBucket
+	ui     *exchange.TokenBucket
 	lbHTTP *http.Client
 	// Addresses always analysed (favourites, followed sources).
-	pinned func(context.Context) []string
+	pinned  func(context.Context) []string
+	store   Store
+	dirty   bool
+	savedAt time.Time
 
 	mu       sync.RWMutex
 	cands    []string
 	wallets  map[string]*Wallet
 	lbAt     int64
 	lbErr    string
+	lbTry    time.Time
 	lastUse  time.Time
 	running  bool
 	priority []string
 }
 
-func New(root context.Context, pinned func(context.Context) []string) (*Service, error) {
+// Store persists the crawl so a restart or deploy doesn't start from an
+// empty plaza. Either func may be nil.
+type Store struct {
+	Load func(context.Context) []byte
+	Save func(context.Context, []byte)
+}
+
+func New(root context.Context, pinned func(context.Context) []string, st Store) (*Service, error) {
 	hl, err := exchange.NewHyperliquidPublic("0x0000000000000000000000000000000000000000", false, "")
 	if err != nil {
 		return nil, err
 	}
-	return &Service{
-		root: root, hl: hl, pinned: pinned,
-		// A third of HL's per-IP budget at most.
-		budget:  exchange.NewBucket(300, time.Minute),
+	s := &Service{
+		root: root, hl: hl, pinned: pinned, store: st,
+		budget:  exchange.NewBucket(240, time.Minute),
+		ui:      exchange.NewBucket(60, time.Minute),
 		lbHTTP:  &http.Client{Timeout: 90 * time.Second},
 		wallets: map[string]*Wallet{},
-	}, nil
+	}
+	if st.Load != nil {
+		if b := st.Load(root); len(b) > 0 {
+			if err := s.restore(b); err != nil {
+				slog.Warn("plaza cache", "err", err)
+			}
+		}
+	}
+	return s, nil
+}
+
+// ---------- persistence ----------
+
+type savedAnalysis struct {
+	*Analysis
+	Curve   map[string][][2]float64 `json:"curve"`
+	UpShare map[string]float64      `json:"up_share"`
+}
+
+type savedWallet struct {
+	Address     string          `json:"address"`
+	DisplayName *string         `json:"display_name"`
+	LbEquity    float64         `json:"lb_equity"`
+	Perf        map[string]Perf `json:"perf"`
+	A           *savedAnalysis  `json:"a"`
+}
+
+type snapshot struct {
+	V       int           `json:"v"`
+	LbAt    int64         `json:"lb_at"`
+	Cands   []string      `json:"cands"`
+	Wallets []savedWallet `json:"wallets"`
+}
+
+const snapVersion = 1
+
+func (s *Service) restore(b []byte) error {
+	var sn snapshot
+	if err := json.Unmarshal(b, &sn); err != nil {
+		return err
+	}
+	if sn.V != snapVersion {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, sw := range sn.Wallets {
+		w := &Wallet{Address: sw.Address, DisplayName: sw.DisplayName, LbEquity: sw.LbEquity, Perf: sw.Perf}
+		if w.Perf == nil {
+			w.Perf = map[string]Perf{}
+		}
+		if sa := sw.A; sa != nil && sa.Analysis != nil {
+			a := *sa.Analysis
+			a.Curve, a.UpShare = sa.Curve, sa.UpShare
+			w.A = &a
+		}
+		s.wallets[w.Address] = w
+	}
+	s.cands, s.lbAt = sn.Cands, sn.LbAt
+	return nil
+}
+
+// save writes the crawl at most every 30 s (force: now) when it changed.
+func (s *Service) save(force bool) {
+	if s.store.Save == nil {
+		return
+	}
+	s.mu.Lock()
+	if !s.dirty || (!force && time.Since(s.savedAt) < 30*time.Second) {
+		s.mu.Unlock()
+		return
+	}
+	sn := snapshot{V: snapVersion, LbAt: s.lbAt, Cands: s.cands}
+	for _, w := range s.wallets {
+		sw := savedWallet{Address: w.Address, DisplayName: w.DisplayName, LbEquity: w.LbEquity, Perf: w.Perf}
+		if w.A != nil {
+			sw.A = &savedAnalysis{Analysis: w.A, Curve: w.A.Curve, UpShare: w.A.UpShare}
+		}
+		sn.Wallets = append(sn.Wallets, sw)
+	}
+	b, err := json.Marshal(sn)
+	s.dirty, s.savedAt = false, time.Now()
+	s.mu.Unlock()
+	if err != nil {
+		slog.Warn("plaza cache", "err", err)
+		return
+	}
+	s.store.Save(s.root, b)
 }
 
 // Touch records use and starts the crawler if it is idle.
@@ -218,7 +319,7 @@ func (s *Service) Wallet(ctx context.Context, addr string) (*Wallet, error) {
 		c := *w
 		return &c, nil
 	}
-	if err := s.analyse(ctx, addr); err != nil {
+	if err := s.analyse(ctx, addr, s.ui); err != nil {
 		return nil, err
 	}
 	s.mu.RLock()
@@ -237,7 +338,7 @@ type Position struct {
 }
 
 func (s *Service) Positions(ctx context.Context, addr string) ([]Position, error) {
-	st, err := s.hl.PublicInfo(ctx, map[string]any{"type": "clearinghouseState", "user": addr}, 2, s.budget)
+	st, err := s.hl.PublicInfo(ctx, map[string]any{"type": "clearinghouseState", "user": addr}, 2, s.ui)
 	if err != nil {
 		return nil, err
 	}
@@ -260,6 +361,9 @@ func f64(j util.J) float64 { v, _ := j.Dec().Float64(); return v }
 
 func (s *Service) loop() {
 	defer func() {
+		if s.root.Err() == nil {
+			s.save(true)
+		}
 		s.mu.Lock()
 		s.running = false
 		s.mu.Unlock()
@@ -267,17 +371,23 @@ func (s *Service) loop() {
 	for {
 		s.mu.RLock()
 		idle := time.Since(s.lastUse)
-		lbAge := time.Since(time.UnixMilli(s.lbAt))
+		// After a failure, retry in a minute rather than on every pass.
+		lbDue := time.Since(time.UnixMilli(s.lbAt)) > lbTTL && time.Since(s.lbTry) > time.Minute
 		s.mu.RUnlock()
 		if idle > idleStop || s.root.Err() != nil {
 			return
 		}
-		if lbAge > lbTTL {
+		if lbDue {
+			s.mu.Lock()
+			s.lbTry = time.Now()
+			s.mu.Unlock()
 			if err := s.refreshLeaderboard(s.root); err != nil {
 				slog.Warn("plaza leaderboard", "err", err)
 				s.mu.Lock()
 				s.lbErr = err.Error()
 				s.mu.Unlock()
+			} else {
+				s.save(true)
 			}
 		}
 		next := s.next()
@@ -289,9 +399,10 @@ func (s *Service) loop() {
 			}
 			continue
 		}
-		if err := s.analyse(s.root, next); err != nil {
+		if err := s.analyse(s.root, next, s.budget); err != nil {
 			slog.Debug("plaza analyse", "addr", next, "err", err)
 		}
+		s.save(false)
 	}
 }
 
@@ -416,11 +527,12 @@ func (s *Service) refreshLeaderboard(ctx context.Context) error {
 	s.cands = cands
 	s.lbAt = util.NowMs()
 	s.lbErr = ""
+	s.dirty = true
 	return nil
 }
 
-func (s *Service) analyse(ctx context.Context, addr string) error {
-	a, perf, err := s.fetch(ctx, addr)
+func (s *Service) analyse(ctx context.Context, addr string, budget *exchange.TokenBucket) error {
+	a, perf, err := s.fetch(ctx, addr, budget)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	w := s.wallets[addr]
@@ -434,6 +546,7 @@ func (s *Service) analyse(ctx context.Context, addr string) error {
 	}
 	w.Err = ""
 	w.A = a
+	s.dirty = true
 	// Not on the leaderboard: derive window performance from the portfolio.
 	for k, p := range perf {
 		if _, ok := w.Perf[k]; !ok {
@@ -443,8 +556,8 @@ func (s *Service) analyse(ctx context.Context, addr string) error {
 	return nil
 }
 
-func (s *Service) fetch(ctx context.Context, addr string) (*Analysis, map[string]Perf, error) {
-	pf, err := s.hl.PublicInfo(ctx, map[string]any{"type": "portfolio", "user": addr}, 20, s.budget)
+func (s *Service) fetch(ctx context.Context, addr string, budget *exchange.TokenBucket) (*Analysis, map[string]Perf, error) {
+	pf, err := s.hl.PublicInfo(ctx, map[string]any{"type": "portfolio", "user": addr}, 20, budget)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -478,14 +591,14 @@ func (s *Service) fetch(ctx context.Context, addr string) (*Analysis, map[string
 		}
 	}
 	since := util.NowMs() - 7*24*3600*1000
-	fills, err := s.hl.PublicInfo(ctx, map[string]any{"type": "userFillsByTime", "user": addr, "startTime": since, "aggregateByTime": true}, 20, s.budget)
+	fills, err := s.hl.PublicInfo(ctx, map[string]any{"type": "userFillsByTime", "user": addr, "startTime": since, "aggregateByTime": true}, 20, budget)
 	if err != nil {
 		return nil, nil, err
 	}
 	arr := fills.Arr()
 	// Fills cost one extra weight per 20 items.
 	if extra := float64(len(arr) / 20); extra > 0 {
-		_ = s.budget.Acquire(ctx, extra, false)
+		_ = budget.Acquire(ctx, extra, false)
 	}
 	fillStats(a, arr, since)
 	return a, perf, nil

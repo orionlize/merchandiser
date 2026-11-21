@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"math"
 	"sort"
 	"strconv"
@@ -62,13 +63,20 @@ type PnlCurve struct {
 	Tasks       []TaskPnl    `json:"tasks"`
 }
 
-func loadEquity(ctx context.Context, s *Server, conn string, since int64) (eqSeries, error) {
-	// One snapshot before `since` anchors the opening value.
+// loadEquity reads one account's equity at the curve's points only: `since`,
+// each `step` boundary after it and `now`, one index seek each, plus the first
+// sample at or after `since` for accounts that joined later. Samples are taken
+// every minute, so reading them all made pnl_curve take seconds.
+func loadEquity(ctx context.Context, s *Server, conn string, since, step, now int64) (eqSeries, error) {
 	rows, err := s.E.DB.QueryContext(ctx, `
-		SELECT ts, equity FROM (SELECT ts, equity FROM equity_snapshots WHERE connection_id = ? AND ts < ? ORDER BY ts DESC LIMIT 1)
+		WITH RECURSIVE b(t) AS (
+			SELECT ?2
+			UNION ALL SELECT t - t % ?3 + ?3 FROM b WHERE t - t % ?3 + ?3 < ?4
+		), pts(t) AS (SELECT t FROM b UNION SELECT ?4)
+		SELECT t, (SELECT equity FROM equity_snapshots WHERE connection_id = ?1 AND ts <= pts.t ORDER BY ts DESC LIMIT 1) FROM pts
 		UNION ALL
-		SELECT ts, equity FROM equity_snapshots WHERE connection_id = ? AND ts >= ?
-		ORDER BY ts`, conn, since, conn, since)
+		SELECT * FROM (SELECT ts, equity FROM equity_snapshots WHERE connection_id = ?1 AND ts >= ?2 ORDER BY ts LIMIT 1)
+		ORDER BY 1`, conn, since, step, now)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +84,14 @@ func loadEquity(ctx context.Context, s *Server, conn string, since int64) (eqSer
 	out := eqSeries{}
 	for rows.Next() {
 		var p eqPoint
-		var eq string
+		var eq sql.NullString
 		if err := rows.Scan(&p.ts, &eq); err != nil {
 			return nil, err
 		}
-		if p.eq, err = strconv.ParseFloat(eq, 64); err != nil {
+		if !eq.Valid {
+			continue // before the account's first sample
+		}
+		if p.eq, err = strconv.ParseFloat(eq.String, 64); err != nil {
 			continue
 		}
 		out = append(out, p)
@@ -117,20 +128,21 @@ func pnlCurve(ctx context.Context, s *Server, body []byte) (any, error) {
 	for _, c := range conns {
 		platform[c.ID] = c.Platform
 	}
-	load := min(since, sparkFrom)
-	series := map[string]eqSeries{}
-	for _, id := range followerIDs {
-		if series[id], err = loadEquity(ctx, s, id, load); err != nil {
-			return nil, err
-		}
-	}
 	if a.Range == "all" {
 		// Start where the history starts.
+		var first sql.NullInt64
+		if err := db.QueryRowContext(ctx, "SELECT MIN(ts) FROM equity_snapshots WHERE connection_id IN (SELECT connection_id FROM task_followers)").Scan(&first); err != nil {
+			return nil, err
+		}
 		since = now
-		for _, sr := range series {
-			if len(sr) > 0 && sr[0].ts < since {
-				since = sr[0].ts
-			}
+		if first.Valid && first.Int64 < now {
+			since = first.Int64
+		}
+	}
+	series := map[string]eqSeries{}
+	for _, id := range followerIDs {
+		if series[id], err = loadEquity(ctx, s, id, since, step, now); err != nil {
+			return nil, err
 		}
 	}
 
@@ -191,26 +203,35 @@ func pnlCurve(ctx context.Context, s *Server, body []byte) (any, error) {
 		if t.Status == "stopped" && t.StoppedAt != nil {
 			end = *t.StoppedAt
 		}
-		if b, ok := sum(ids, from); ok {
+		// `from` is not on a bucket boundary: look it up exactly.
+		b, any := 0.0, false
+		for _, id := range ids {
+			// Zero means no sample at all (audit.go's equityAt).
+			if e := equityAt(ctx, db, id, from); !e.IsZero() {
+				v, _ := e.Float64()
+				b += v
+				any = true
+			}
+		}
+		if any {
 			tp.StartEquity = round2(b)
 		}
 		// The task's own PnL (ledger), not its accounts' equity change: tasks
 		// sharing an account would otherwise all show the same number.
-		pts, err := store.TaskPnlSeries(ctx, db, t.ID, min(from, sparkFrom))
-		if err != nil {
-			return nil, err
-		}
+		// About 16 indexed lookups per task instead of reading every sample.
 		cur, _ := s.E.TaskPnl(t.ID)
 		nowPnl, _ := cur.Float64()
+		var aerr error
 		at := func(ts int64) float64 {
 			if ts >= now {
 				return nowPnl
 			}
-			i := sort.Search(len(pts), func(i int) bool { return pts[i].Ts > ts })
-			if i == 0 {
-				return 0
+			v, err := store.TaskPnlAt(ctx, db, t.ID, ts)
+			if err != nil {
+				aerr = err
 			}
-			return pts[i-1].Pnl
+			f, _ := v.Float64()
+			return f
 		}
 		tp.Pnl = round2(at(end) - at(from))
 		for d := sparkFrom; d <= today; d += 86_400_000 {
@@ -220,6 +241,9 @@ func pnlCurve(ctx context.Context, s *Server, body []byte) (any, error) {
 				v = round2(at(hi) - at(lo))
 			}
 			tp.Daily = append(tp.Daily, [2]float64{float64(d), v})
+		}
+		if aerr != nil {
+			return nil, aerr
 		}
 		out.Tasks = append(out.Tasks, tp)
 	}

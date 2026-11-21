@@ -1,6 +1,7 @@
 package plaza
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"testing"
@@ -88,5 +89,43 @@ func TestScorePenalisesHFT(t *testing.T) {
 	loss.Perf["30d"] = Perf{Pnl: -1, Roi: -0.01}
 	if s, _ := Score(loss, "30d"); s >= good*6/10+1 {
 		t.Fatalf("losing window not penalised: %d", s)
+	}
+}
+
+func TestCacheRoundTrip(t *testing.T) {
+	var saved []byte
+	st := Store{Save: func(_ context.Context, b []byte) { saved = b }}
+	s, err := New(context.Background(), func(context.Context) []string { return nil }, st)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hold, wr := 3600.0, 0.6
+	name := "whale"
+	s.wallets["0xa"] = &Wallet{Address: "0xa", DisplayName: &name, LbEquity: 2e6, Perf: map[string]Perf{"30d": {Pnl: 10, Roi: 0.1}},
+		A: &Analysis{At: 123, Equity: 2e6, MaxDD: map[string]float64{"30d": 0.1}, Curve: map[string][][2]float64{"30d": {{1, 2}}}, UpShare: map[string]float64{"30d": 0.7}, AvgHoldSec: &hold, WinRate: &wr, Coins: []string{"BTC"}}}
+	s.wallets["0xb"] = &Wallet{Address: "0xb", Perf: map[string]Perf{}, Err: "boom"}
+	s.cands, s.lbAt, s.dirty = []string{"0xa", "0xb"}, 456, true
+	s.save(true)
+	if saved == nil {
+		t.Fatal("not saved")
+	}
+
+	r, _ := New(context.Background(), func(context.Context) []string { return nil }, Store{Load: func(context.Context) []byte { return saved }})
+	// Not via List: that would start the crawler and hit the network.
+	if r.lbAt != 456 || len(r.cands) != 2 || len(r.wallets) != 2 {
+		t.Fatalf("restored lbAt %d cands %v", r.lbAt, r.cands)
+	}
+	w := r.wallets["0xa"]
+	a := w.A
+	if a == nil || a.At != 123 || a.Curve["30d"][0] != [2]float64{1, 2} || a.UpShare["30d"] != 0.7 || *a.AvgHoldSec != 3600 || *w.DisplayName != "whale" {
+		t.Fatalf("wallet %+v %+v", w, a)
+	}
+	if r.wallets["0xb"].Err != "" || r.wallets["0xb"].A != nil {
+		t.Fatal("errors are not persisted")
+	}
+	if x, y := Score(s.wallets["0xa"], "30d"); true {
+		if x2, y2 := Score(w, "30d"); x != x2 || y != y2 {
+			t.Fatalf("score %d vs %d", x, x2)
+		}
 	}
 }
